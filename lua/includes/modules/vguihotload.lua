@@ -42,7 +42,7 @@ local COLOR_HOTLOAD_INDICATOR = Color( 200, 200, 0 )
 local HOTLOAD_INDICATOR_DURATION = 0.25
 
 hook.Add( "DrawOverlay", "A1_VguiHotload_DrawIndicator", function()
-
+    cam.Start2D()
     for _, vguiTable in pairs( RegisteredFrames ) do
         
         local secondsSinceHotload = CurTime() - vguiTable.HotloadTime
@@ -61,4 +61,5 @@ hook.Add( "DrawOverlay", "A1_VguiHotload_DrawIndicator", function()
         surface.DrawRect( frameX, frameY, frameWidth, frameHeight )
 
     end
+    cam.End2D()
 end )
