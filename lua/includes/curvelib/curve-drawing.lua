@@ -1,59 +1,32 @@
 AddCSLuaFile()
 if SERVER then return end
-
 require( "vguihotload" )
 local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveUtils]]
 
---#endregion [Utils]
-
 ---@class CurveDraw
-local curveDraw = {
-    Colors = {
-        Background    = Color(  60,  60,  60 ),
-        AxisLine      = Color( 200, 200, 200 ),
-        AxisGridLine  = Color( 100, 100, 100 ),
-        AxisLabelText = Color( 200, 200, 200 )
-    },
 
-    Fonts = {
-        AxisLabel       = "CurveEditor_AxisLabel",
-        NumberLineLarge = "CurveEditor_NumberLine_Large",
-        NumberLineSmall = "CurveEditor_NumberLine_Large"
-    }
+_G.CurveLib.CurveDrawing = {
+    PanelStack = util.Stack()
 }
+local drawing = _G.CurveLib.CurveDrawing
 
-function curveDraw.SetupFonts()
-    surface.CreateFont( curveDraw.Fonts.AxisLabel, {
-        font = "Roboto Regular",
-        extended = false,
-        size = 28,
-        weight = 500,
-    } )
-    
-    surface.CreateFont( curveDraw.Fonts.NumberLineLarge, {
-        font = "Roboto Regular",
-        extended = false,
-        size = 24,
-        weight = 500,
-    } )
-    
-    surface.CreateFont( curveDraw.Fonts.NumberLineSmall, {
-        font = "Roboto Regular",
-        extended = false,
-        size = 16,
-        weight = 500,
-    } )
-end
+-- Loads a panel and its settings onto the stack
+---@param panel CurveEditor
+function drawing.PushPanel( panel )
+    if not panel then return false end
 
-function curveDraw.PushOrigin( x, y )
+    drawing.PanelStack:Push( panel )
+
     local matrix = Matrix()
-    matrix:SetTranslation( Vector( x, y ) )
+    matrix:SetTranslation( Vector( panel:LocalToScreen( 0, 0 ) ) )
 
     cam.Start2D()
     cam.PushModelMatrix( matrix )
 end
 
-function curveDraw.PopOrigin()
+function drawing.PopPanel()
+    drawing.PanelStack:Pop()
+
     cam.PopModelMatrix()
     cam.End2D()
 end
@@ -65,7 +38,7 @@ end
 ---@param endY number
 ---@param lineWidth number
 ---@param color Color?
-function curveDraw.DrawLine( startX, startY, endX, endY, lineWidth, color )
+function drawing.DrawLine( startX, startY, endX, endY, lineWidth, color )
     startX, startY, endX, endY = utils.MultiFloor( startX, startY, endX, endY )
 
     if not color then 
@@ -79,7 +52,7 @@ function curveDraw.DrawLine( startX, startY, endX, endY, lineWidth, color )
 
     local perpendicularDirection = Vector( direction.y, direction.x ):GetNormalized()
 
-    -- In this function curveDraw.we're going to assuming "forward" is the 
+    -- In this function, we're going to assuming "forward" is the 
     -- direction from the start position to the end position.
     -- "Left" and "Right" are relative to that forward direction.
 
@@ -108,13 +81,13 @@ end
 
 
 -- Draws text with rotation and alignment
----@param text string
+---@param text any
 ---@param textX number The text's center position's x coordinate
 ---@param textY number The text's center position's y coordinate
 ---@param rotation number? The text's rotation, in degrees. [Default: 0]
----@param horizontalAlignment TEXT_ALIGN? The text's horizontal alignment [Default: Centered]
----@param verticalAlignment TEXT_ALIGN? The text's vertical alignment. [Default: Centered]
-function curveDraw.DrawText( text, textX, textY, rotation, horizontalAlignment, verticalAlignment )
+---@param horizontalAlignment TEXT_ALIGN|integer? The text's horizontal alignment [Default: Centered]
+---@param verticalAlignment TEXT_ALIGN|integer? The text's vertical alignment. [Default: Centered]
+function drawing.DrawText( text, textX, textY, rotation, horizontalAlignment, verticalAlignment )
     if not rotation then rotation = 0 end
 
     local textWidth, textHeight = surface.GetTextSize( text )
@@ -158,14 +131,20 @@ end
 ---@param startNumber number
 ---@param endNumber number
 ---@param middleLabelCount integer
-function curveDraw.DrawNumberLine( startX, startY, endX, endY, startNumber, endNumber, middleLabelCount )
+---@param horizontalAlignment TEXT_ALIGN|integer? The horizontal alignment of the numbers. [Default: Centered]
+---@param verticalAlignment TEXT_ALIGN|integer? The vertical alignment of the numbers. [Default: Centered]
+---@param textColor Color The color the text will be drawn in.
+---@param smallNumberFont string The font to use for the small numbers.
+---@param largeNumberFont string The font to use for the large numbers.
+function drawing.DrawNumberLine( startX, startY, endX, endY, startNumber, endNumber, middleLabelCount, horizontalAlignment, verticalAlignment, textColor, smallNumberFont, largeNumberFont )
     startX, startY, endX, endY = utils.MultiFloor( startX, startY, endX, endY )
 
-    surface.SetTextColor( curveDraw.Colors.AxisLabelText )
+    surface.SetTextColor( textColor )
 
-    surface.SetFont( curveDraw.Fonts.NumberLineLarge )
-    curveDraw.DrawText( startNumber, startX, startY )
-    curveDraw.DrawText( endNumber, endX, endY )
+    -- Start and end numbers
+    surface.SetFont( largeNumberFont )
+    drawing.DrawText( startNumber, startX, startY, 0, horizontalAlignment, verticalAlignment )
+    drawing.DrawText( endNumber, endX, endY, 0, horizontalAlignment, verticalAlignment )
 
     local startPos = Vector( startX, startY )
     local endPos = Vector( endX, endY )
@@ -175,153 +154,209 @@ function curveDraw.DrawNumberLine( startX, startY, endX, endY, startNumber, endN
 
     local direction = ( endPos - startPos ):GetNormalized()
 
-    surface.SetFont( curveDraw.Fonts.NumberLineSmall )
+    surface.SetFont( smallNumberFont )
     for i = 1, ( middleLabelCount - 1 ) do
         local pos = startPos + direction * ( i * labelInterval )
         
         local number = Lerp( i / middleLabelCount, startNumber, endNumber )
         local formattedNumber = string.format( "%.2f", number )
 
-        curveDraw.DrawText( formattedNumber, pos.x, pos.y )
+        drawing.DrawText( formattedNumber, pos.x, pos.y, 0, horizontalAlignment, verticalAlignment )
     end
 
 end
 
----@param panel CurveEditor
-function curveDraw.DrawGrid( panel )
+function drawing.DrawGrid()
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
+
     local width, height = panel:GetSize()
     local mins, maxs = panel:GetGraphMinsMaxs()
 end
 
----@param panel CurveEditor
-function curveDraw.DrawAxis( panel )
+function drawing.DrawAxis()
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     local width, height = panel:GetSize()
     local mins, maxs = panel:GetGraphMinsMaxs()
+    local vertical = panel.Settings.Axis.Vertical
+    local horizontal = panel.Settings.Axis.Horizontal
 
     --[[ Vertical Axis ]]--
     -- Axis line
     render.SetColorMaterial()
-    curveDraw.DrawLine( mins.x, mins.y, mins.x, maxs.y, panel.Settings.Axis.Vertical.Width, curveDraw.Colors.AxisLine )
+    drawing.DrawLine( mins.x, mins.y, mins.x, maxs.y, vertical.Width, vertical.Color )
 
     -- Numbers
-    local verticalLabelCount = math.ceil( height / panel.Settings.Axis.Vertical.NumberLine.SpaceBetween )
-    curveDraw.DrawNumberLine(
-        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText,
+    local verticalLabelCount = math.ceil( height / vertical.NumberLine.SpaceBetween )
+    drawing.DrawNumberLine(
+        mins.x - vertical.NumberLine.Margin,
         mins.y,
-        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText,
+        mins.x - vertical.NumberLine.Margin,
         maxs.y,
         0, 1,
-        verticalLabelCount
+        verticalLabelCount,
+        TEXT_ALIGN_LEFT,
+        TEXT_ALIGN_CENTER,
+        vertical.NumberLine.TextColor,
+        vertical.NumberLine.Fonts.SmallNumnbers,
+        vertical.NumberLine.Fonts.LargeNumbers
     )
 
     -- Label
-    surface.SetFont( "CurveEditor_AxisLabel" )
+    surface.SetFont( vertical.Label.Font )
     local verticalCenter = mins.y + math.floor( ( maxs.y - mins.y ) / 2 )
-    curveDraw.DrawText(
-        panel.Settings.Axis.Vertical.Label.Text,
-        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText - panel.Settings.Axis.Vertical.Label.RightMargin,
+    drawing.DrawText(
+        vertical.Label.Text,
+        mins.x - vertical.NumberLine.Margin - vertical.Label.RightMargin,
         verticalCenter,
-        panel.Settings.Axis.Vertical.Label.Rotation
+        vertical.Label.Rotation,
+        TEXT_ALIGN_CENTER,
+        TEXT_ALIGN_TOP
     )
 
     --[[ Horizontal Axis ]]--
     -- Axis line
     -- One of the two axis lines needs to extend backwards a little bit to cover the gap between them
-    local originCoverOffset = math.ceil( panel.Settings.Axis.Vertical.Width / 2 )
+    local originCoverOffset = math.ceil( vertical.Width / 2 )
     render.SetColorMaterial()
-    curveDraw.DrawLine( mins.x - originCoverOffset, mins.y, maxs.x, mins.y, panel.Settings.Axis.Horizontal.Width, curveDraw.Colors.AxisLine )
+    drawing.DrawLine( mins.x - originCoverOffset, mins.y, maxs.x, mins.y, horizontal.Width, vertical.Color )
 
     -- Numbers
-    local horizontalLabelCount = math.ceil( width / panel.Settings.Axis.Horizontal.NumberLine.SpaceBetween )
-    curveDraw.DrawNumberLine(
+    local horizontalLabelCount = math.ceil( width / horizontal.NumberLine.SpaceBetween )
+    drawing.DrawNumberLine(
         mins.x,
-        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText,
+        mins.y + horizontal.NumberLine.Margin,
         maxs.x,
-        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText,
+        mins.y + horizontal.NumberLine.Margin,
         0, 1,
-        horizontalLabelCount
+        horizontalLabelCount,
+        TEXT_ALIGN_CENTER,
+        TEXT_ALIGN_BOTTOM,
+        horizontal.NumberLine.TextColor,
+        horizontal.NumberLine.Fonts.SmallNumnbers,
+        horizontal.NumberLine.Fonts.LargeNumbers
     )
 
     -- Label
-    surface.SetFont( "CurveEditor_AxisLabel" )
+    surface.SetFont( horizontal.Label.Font )
     local horizontalCenter = mins.x + math.floor( ( maxs.x - mins.x ) / 2 )
-    curveDraw.DrawText( 
-        panel.Settings.Axis.Horizontal.Label.Text,
+    drawing.DrawText(
+        horizontal.Label.Text,
         horizontalCenter,
-        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText + panel.Settings.Axis.Horizontal.Label.TopMargin,
-        panel.Settings.Axis.Horizontal.Label.Rotation
+        mins.y + horizontal.NumberLine.Margin + horizontal.Label.TopMargin,
+        horizontal.Label.Rotation,
+        TEXT_ALIGN_CENTER,
+        TEXT_ALIGN_BOTTOM
     )
 end
 
 -- Converts a point in graph coordinates to screenspace coordinates
----@param panel CurveEditor
 ---@param x number
 ---@param y number
 ---@return Vector
-function curveDraw.GraphToScreen( panel, x, y )
-    local screenFramePos = Vector( panel:LocalToScreen( 0, 0 ) )
+function drawing.GraphToScreen( x, y )
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     local graphMins, graphMaxs = panel:GetGraphMinsMaxs()
     local graphSize = graphMaxs - graphMins
-    local screenOrigin = screenFramePos + graphMins
-    return screenOrigin + Vector( x * graphSize.x, y * graphSize.y )
+    return graphMins + Vector( x * graphSize.x, y * graphSize.y )
 end
 
 -- Converts a point in screenspace coordinates to graph coordinates
----@param panel CurveEditor
 ---@param x number
 ---@param y number
 ---@return Vector
-function curveDraw.ScreenToGraph( panel, x, y )
+function drawing.ScreenToGraph( x, y )
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
 
 end
 
----@param panel CurveEditor
 ---@param curvePoint CurvePoint
-function curveDraw.DrawCurvePoint( panel, curvePoint )
+function drawing.DrawCurvePoint( curvePoint )
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     local graphMins, graphMaxs = panel:GetGraphMinsMaxs()
     local graphSize = graphMaxs - graphMins
 
-    -- The point
     local pointPos = graphMins + curvePoint.Pos * graphSize
-    surface.DrawRect( pointPos.x, pointPos.y, 20, 20 )
 
-    -- Left Handle
+    -- Left handle and line
     if curvePoint.LeftHandlePos then
         local pointLeftHandlePos = graphMins + curvePoint.LeftHandlePos * graphSize
-        surface.DrawRect( pointLeftHandlePos.x, pointLeftHandlePos.y, 10, 10 )
+
+        drawing.DrawLine( pointPos.x, pointPos.y, pointLeftHandlePos.x, pointLeftHandlePos.y, panel.Settings.Handles.Line.Width, panel.Settings.Handles.Line.Color )
+
+        surface.DrawRect( pointLeftHandlePos.x - panel.Settings.Handles.Radius, pointLeftHandlePos.y - panel.Settings.Handles.Radius, panel.Settings.Handles.Radius * 2, panel.Settings.Handles.Radius * 2 )
     end
 
-    -- Right Handle
+    -- Right handle and line
     if curvePoint.RightHandlePos then
         local pointRightHandlePos = graphMins + curvePoint.RightHandlePos * graphSize
-        surface.DrawRect( pointRightHandlePos.x, pointRightHandlePos.y, 10, 10 )
+
+        drawing.DrawLine( pointPos.x, pointPos.y, pointRightHandlePos.x, pointRightHandlePos.y, panel.Settings.Handles.Line.Width, panel.Settings.Handles.Line.Color )
+
+        surface.DrawRect( pointRightHandlePos.x - panel.Settings.Handles.Radius, pointRightHandlePos.y - panel.Settings.Handles.Radius, panel.Settings.Handles.Radius * 2, panel.Settings.Handles.Radius * 2 )
     end
+
+    -- The point
+    surface.DrawRect( pointPos.x - panel.Settings.Points.Radius, pointPos.y - panel.Settings.Points.Radius, panel.Settings.Points.Radius * 2, panel.Settings.Points.Radius * 2 )
 end
 
----@param panel CurveEditor
----@param curve Curve
-function curveDraw.DrawCurve( panel, curve )
-
+---@param startCurvePoint CurvePoint
+---@param endCurvePoint CurvePoint
+---@param lineCount integer How many lines to use to draw this curve segment
+---@param lineWidth integer
+---@param color Color
+function drawing.DrawCurveSegment( startCurvePoint, endCurvePoint, lineCount, lineWidth, color )
+    color = color or Color( 255, 255, 255, 255 )
     
+    local startPos = drawing.GraphToScreen( startCurvePoint.Pos.x, startCurvePoint.Pos.y )
+    local startHandlePos = drawing.GraphToScreen( startCurvePoint.RightHandlePos.x, startCurvePoint.RightHandlePos.y )
+    local endHandlePos = drawing.GraphToScreen( endCurvePoint.LeftHandlePos.x, endCurvePoint.LeftHandlePos.y )
+    local endPos = drawing.GraphToScreen( endCurvePoint.Pos.x, endCurvePoint.Pos.y )
+    
+    local lineStart = startPos
+    for lineNumber = 1, lineCount do
+        local progress = lineNumber / lineCount
+        local lineEnd = math.CubicBezier( progress, startPos, startHandlePos, endHandlePos, endPos )
+        drawing.DrawLine( lineStart.x, lineStart.y, lineEnd.x, lineEnd.y, lineWidth, color )
 
-    surface.SetDrawColor( Color( 255, 100, 75 ) )
-    for k, curvePoint  in ipairs( curve.Points ) do
-        curvePoint = curvePoint --[[@as CurvePoint]]
+        lineStart = lineEnd
+    end
 
-        
+end
+
+---@param curve Curve
+---@param segmentCount integer
+---@param color Color
+function drawing.DrawCurve( curve, segmentCount, lineWidth, color )
+    local currentPoint = curve.Points[1]
+
+    for i = 2, #curve.Points do
+        local nextPoint = curve.Points[i]
+        drawing.DrawCurveSegment( currentPoint, nextPoint, segmentCount, lineWidth, color )
+        currentPoint = nextPoint
     end
 end
 
----@param panel CurveEditor
 ---@param curve Curve
-function curveDraw.DrawGraph( panel, curve )
-    curveDraw.DrawAxis( panel )
-    curveDraw.DrawGrid( panel )
-    curveDraw.DrawCurve( panel, curve )
+function drawing.DrawCurveHandles( curve )
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
+    surface.SetDrawColor( Color( 255, 100, 75 ) )
+    for _, curvePoint  in ipairs( curve.Points ) do
+        curvePoint = curvePoint --[[@as CurvePoint]]
+        drawing.DrawCurvePoint( curvePoint )
+    end
 end
 
-curveDraw.SetupFonts()
+---@param curve Curve
+function drawing.DrawGraph( curve )
+    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
+
+    drawing.DrawAxis()
+    drawing.DrawGrid()
+    drawing.DrawCurve( curve, 100, panel.Settings.Curve.Width, panel.Settings.Curve.Color )
+    drawing.DrawCurveHandles( curve )
+end
 
 vguihotload.HandleHotload( "CurveEditor" )
 
-return curveDraw
+_G.CurveLib.CurveDrawing = drawing
+return _G.CurveLib.CurveDrawing

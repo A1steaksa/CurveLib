@@ -1,5 +1,7 @@
 print( "CurveLib Initializing..." )
 
+_G.CurveLib = {}
+
 include( "includes/curvelib/curve-classes.lua" )
 include( "includes/curvelib/curve-utils.lua" )
 
