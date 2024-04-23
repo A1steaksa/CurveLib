@@ -42,8 +42,7 @@ local curve = {
 }
 curve.__index = curve
 
-
-function curve:Evaluate( x )
+function curve:__call( x )
     print( x )
 end
 

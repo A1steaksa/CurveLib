@@ -1,23 +1,6 @@
 AddCSLuaFile()
-
---[[ Utils ]]--
---#region
-
--- Created here to avoid creating the table every time MultiFloor is called
-local multifloor_buffer = {}
-
--- Rounds a variable set of numbers to their nearest integer and multi-returns them.
--- Thanks to SneakySquid for the optimizations.
----@vararg number
-local function MultiFloor( ... )
-    local arg_count = select( "#", ... )
-
-    for i = 1, arg_count do
-        multifloor_buffer[i] = math.floor( select( i, ... ) )
-    end
-
-    return unpack( multifloor_buffer, 1, arg_count )
-end
+if SERVER then return end
+local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveUtils]]
 
 --#endregion [Utils]
 
@@ -81,7 +64,7 @@ end
 ---@param lineWidth number
 ---@param color Color?
 function curveDraw.DrawLine( startX, startY, endX, endY, lineWidth, color )
-    startX, startY, endX, endY = MultiFloor( startX, startY, endX, endY )
+    startX, startY, endX, endY = utils.MultiFloor( startX, startY, endX, endY )
 
     if not color then 
         color = ( surface.GetDrawColor() or Color( 255, 255, 255, 255 ) )
@@ -149,7 +132,7 @@ end
 ---@param endNumber number
 ---@param middleLabelCount integer
 function curveDraw.DrawNumberLine( startX, startY, endX, endY, startNumber, endNumber, middleLabelCount )
-    startX, startY, endX, endY = MultiFloor( startX, startY, endX, endY )
+    startX, startY, endX, endY = utils.MultiFloor( startX, startY, endX, endY )
 
     surface.SetTextColor( curveDraw.Colors.AxisLabelText )
 
@@ -191,14 +174,14 @@ function curveDraw.DrawAxis( panel )
     --[[ Vertical Axis ]]--
     -- Axis line
     render.SetColorMaterial()
-    curveDraw.DrawLine( mins.x, mins.y, mins.x, maxs.y, panel.Axis.Vertical.Width, curveDraw.Colors.AxisLine )
+    curveDraw.DrawLine( mins.x, mins.y, mins.x, maxs.y, panel.Settings.Axis.Vertical.Width, curveDraw.Colors.AxisLine )
 
     -- Numbers
-    local verticalLabelCount = math.ceil( height / panel.Axis.Vertical.NumberLine.SpaceBetween )
+    local verticalLabelCount = math.ceil( height / panel.Settings.Axis.Vertical.NumberLine.SpaceBetween )
     curveDraw.DrawNumberLine(
-        mins.x - panel.Axis.Vertical.NumberLine.Margins.LargeText,
+        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText,
         mins.y,
-        mins.x - panel.Axis.Vertical.NumberLine.Margins.LargeText,
+        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText,
         maxs.y,
         0, 1,
         verticalLabelCount
@@ -208,26 +191,26 @@ function curveDraw.DrawAxis( panel )
     surface.SetFont( "CurveEditor_AxisLabel" )
     local verticalCenter = mins.y + math.floor( ( maxs.y - mins.y ) / 2 )
     curveDraw.DrawText(
-        panel.Axis.Vertical.Label.Text,
-        mins.x - panel.Axis.Vertical.NumberLine.Margins.LargeText - panel.Axis.Vertical.Label.RightMargin,
+        panel.Settings.Axis.Vertical.Label.Text,
+        mins.x - panel.Settings.Axis.Vertical.NumberLine.Margins.LargeText - panel.Settings.Axis.Vertical.Label.RightMargin,
         verticalCenter,
-        panel.Axis.Vertical.Label.Rotation
+        panel.Settings.Axis.Vertical.Label.Rotation
     )
 
     --[[ Horizontal Axis ]]--
     -- Axis line
     -- One of the two axis lines needs to extend backwards a little bit to cover the gap between them
-    local originCoverOffset = math.ceil( panel.Axis.Vertical.Width / 2 )
+    local originCoverOffset = math.ceil( panel.Settings.Axis.Vertical.Width / 2 )
     render.SetColorMaterial()
-    curveDraw.DrawLine( mins.x - originCoverOffset, mins.y, maxs.x, mins.y, panel.Axis.Horizontal.Width, curveDraw.Colors.AxisLine )
+    curveDraw.DrawLine( mins.x - originCoverOffset, mins.y, maxs.x, mins.y, panel.Settings.Axis.Horizontal.Width, curveDraw.Colors.AxisLine )
 
     -- Numbers
-    local horizontalLabelCount = math.ceil( width / panel.Axis.Horizontal.NumberLine.SpaceBetween )
+    local horizontalLabelCount = math.ceil( width / panel.Settings.Axis.Horizontal.NumberLine.SpaceBetween )
     curveDraw.DrawNumberLine(
         mins.x,
-        mins.y + panel.Axis.Horizontal.NumberLine.Margins.LargeText,
+        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText,
         maxs.x,
-        mins.y + panel.Axis.Horizontal.NumberLine.Margins.LargeText,
+        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText,
         0, 1,
         horizontalLabelCount
     )
@@ -236,10 +219,10 @@ function curveDraw.DrawAxis( panel )
     surface.SetFont( "CurveEditor_AxisLabel" )
     local horizontalCenter = mins.x + math.floor( ( maxs.x - mins.x ) / 2 )
     curveDraw.DrawText( 
-        panel.Axis.Horizontal.Label.Text,
+        panel.Settings.Axis.Horizontal.Label.Text,
         horizontalCenter,
-        mins.y + panel.Axis.Horizontal.NumberLine.Margins.LargeText + panel.Axis.Horizontal.Label.TopMargin,
-        panel.Axis.Horizontal.Label.Rotation
+        mins.y + panel.Settings.Axis.Horizontal.NumberLine.Margins.LargeText + panel.Settings.Axis.Horizontal.Label.TopMargin,
+        panel.Settings.Axis.Horizontal.Label.Rotation
     )
 end
 
