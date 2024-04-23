@@ -1,5 +1,7 @@
 AddCSLuaFile()
 if SERVER then return end
+
+require( "vguihotload" )
 local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveUtils]]
 
 --#endregion [Utils]
@@ -104,21 +106,46 @@ function curveDraw.DrawLine( startX, startY, endX, endY, lineWidth, color )
     )
 end
 
-function curveDraw.DrawText( text, textX, textY, rotation )
+
+-- Draws text with rotation and alignment
+---@param text string
+---@param textX number The text's center position's x coordinate
+---@param textY number The text's center position's y coordinate
+---@param rotation number? The text's rotation, in degrees. [Default: 0]
+---@param horizontalAlignment TEXT_ALIGN? The text's horizontal alignment [Default: Centered]
+---@param verticalAlignment TEXT_ALIGN? The text's vertical alignment. [Default: Centered]
+function curveDraw.DrawText( text, textX, textY, rotation, horizontalAlignment, verticalAlignment )
     if not rotation then rotation = 0 end
 
     local textWidth, textHeight = surface.GetTextSize( text )
 
+    local xAlignment = math.floor( textWidth / 2 )
+    local yAlignment = math.floor( textHeight / 2 )
+
+    if horizontalAlignment == TEXT_ALIGN_LEFT then
+        xAlignment = textWidth
+    elseif horizontalAlignment == TEXT_ALIGN_RIGHT then
+        -- No offset because of text's top-left origin
+        xAlignment = 0
+    end
+
+    if verticalAlignment == TEXT_ALIGN_TOP then
+        yAlignment = textHeight
+    elseif verticalAlignment == TEXT_ALIGN_BOTTOM then
+        -- No offset because of text's top-left origin
+        yAlignment = 0
+    end
+
     local matrix = Matrix()
     matrix:Translate( Vector( textX, textY ) )
     matrix:Rotate( Angle( 0, rotation, 0 ) )
-    matrix:Translate( Vector( -math.floor( textWidth / 2 ), -math.floor( textHeight / 2 ) ) )
-    
+    matrix:Translate( -Vector( xAlignment, yAlignment ) )
+
     cam.PushModelMatrix( matrix, true )
 
     surface.SetTextPos( 0, 0 )
     surface.DrawText( text )
-    
+
     cam.PopModelMatrix()
 end
 
@@ -294,5 +321,7 @@ function curveDraw.DrawGraph( panel, curve )
 end
 
 curveDraw.SetupFonts()
+
+vguihotload.HandleHotload( "CurveEditor" )
 
 return curveDraw
