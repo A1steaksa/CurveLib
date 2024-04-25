@@ -2,7 +2,7 @@ print( "CurveLib Initializing..." )
 
 _G.CurveLib = {}
 
-include( "includes/curvelib/curve-classes.lua" )
+include( "includes/curvelib/curves/curve-classes.lua" )
 include( "includes/curvelib/curve-utils.lua" )
 
 if CLIENT then
@@ -10,8 +10,9 @@ if CLIENT then
     --- All files that need to hotload are included here
     --- so that they will inherit autorun's hotloading.
     include( "includes/curvelib/curve-drawing.lua" )
-    include( "includes/curvelib/curve-editor-settings.lua" )
-    include( "includes/curvelib/curve-editor.lua" )
+
+    include( "includes/curvelib/vgui/curve-editor/curve-editor-settings.lua" )
+    include( "includes/curvelib/vgui/curve-editor/curve-editor.lua" )
 
     local minWidth, minheight = 512, 512
 

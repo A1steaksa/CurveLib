@@ -269,7 +269,7 @@ function drawing.ScreenToGraph( x, y )
 
 end
 
----@param curvePoint CurvePoint
+---@param curvePoint Curves.ControlPoint
 function drawing.DrawCurvePoint( curvePoint )
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     local graphMins, graphMaxs = panel:GetGraphMinsMaxs()
@@ -299,8 +299,8 @@ function drawing.DrawCurvePoint( curvePoint )
     surface.DrawRect( pointPos.x - panel.Settings.Points.Radius, pointPos.y - panel.Settings.Points.Radius, panel.Settings.Points.Radius * 2, panel.Settings.Points.Radius * 2 )
 end
 
----@param startCurvePoint CurvePoint
----@param endCurvePoint CurvePoint
+---@param startCurvePoint Curves.ControlPoint
+---@param endCurvePoint Curves.ControlPoint
 ---@param lineCount integer How many lines to use to draw this curve segment
 ---@param lineWidth integer
 ---@param color Color
@@ -320,10 +320,9 @@ function drawing.DrawCurveSegment( startCurvePoint, endCurvePoint, lineCount, li
 
         lineStart = lineEnd
     end
-
 end
 
----@param curve Curve
+---@param curve Curves.Curve
 ---@param segmentCount integer
 ---@param color Color
 function drawing.DrawCurve( curve, segmentCount, lineWidth, color )
@@ -336,7 +335,7 @@ function drawing.DrawCurve( curve, segmentCount, lineWidth, color )
     end
 end
 
----@param curve Curve
+---@param curve Curves.Curve
 function drawing.DrawCurveHandles( curve )
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     surface.SetDrawColor( Color( 255, 100, 75 ) )
@@ -346,7 +345,7 @@ function drawing.DrawCurveHandles( curve )
     end
 end
 
----@param curve Curve
+---@param curve Curves.Curve
 function drawing.DrawGraph( curve )
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
 

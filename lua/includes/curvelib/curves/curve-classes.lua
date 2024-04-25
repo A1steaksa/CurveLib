@@ -8,53 +8,55 @@ CURVE_END_TYPE = {
 
 --[[--------------------------------------------------------------------]]--
 
----@class CurvePoint
+---@class Curves.ControlPoint
 ---@field Pos Vector
 ---@field LeftHandlePos Vector?
 ---@field RightHandlePos Vector?
-local curvePoint = {
+local CurvePointMetatable = {
     Pos             = Vector( 0, 0 ),
     LeftHandlePos   = nil,
     RightHandlePos  = nil
 }
-curvePoint.__index = curvePoint
+CurvePointMetatable.__index = CurvePointMetatable
 
 --- Creates a new CurvePoint
----@return CurvePoint
+---@return Curves.ControlPoint
 function CurvePoint( pos, leftHandlePos, rightHandlePos )
-    ---@type CurvePoint
+    ---@type Curves.ControlPoint
     local instance = {
         Pos = pos,
         LeftHandlePos = leftHandlePos,
         RightHandlePos = rightHandlePos
     }
-    setmetatable( instance, curvePoint )
+    setmetatable( instance, CurvePointMetatable )
 
     return instance
 end
 
 --[[--------------------------------------------------------------------]]--
 
----@class Curve
----@field Points table<CurvePoint>
-local curve = {
+---@class Curves.Curve
+---@field Points table<Curves.ControlPoint>
+local CurveMetatable = {
     Points = {}
 }
-curve.__index = curve
+CurveMetatable.__index = CurveMetatable
 
-function curve:__call( x )
+function CurveMetatable:__call( x )
     print( x )
 end
 
 --- Creates a new Curve
----@param curvePoints table<CurvePoint>?
----@return Curve
+---@param curvePoints table<Curves.ControlPoint>?
+---@return Curves.Curve
 function Curve( curvePoints )
-    ---@type Curve
-    local instance = {}
+    ---@type Curves.Curve
+    local instance = {
+        Points = {}
+    }
 
-    if curvePoints then 
-        instance.Points = curvePoint
+    if curvePoints then
+        instance.Points = curvePoints
     else
         instance.Points = {
             CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
@@ -62,7 +64,7 @@ function Curve( curvePoints )
         }
     end
 
-    setmetatable( instance, curve )
+    setmetatable( instance, CurveMetatable )
 
     return instance
 end
