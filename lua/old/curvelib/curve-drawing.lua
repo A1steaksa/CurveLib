@@ -1,6 +1,6 @@
 AddCSLuaFile()
 if SERVER then return end
-require( "vguihotload" )
+require( "lua.libraries.vguihotload.vguihotload-meta" )
 local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveUtils]]
 
 ---@class CurveDraw
@@ -169,29 +169,27 @@ end
 function drawing.DrawGrid()
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
 
-    local width, height = panel:GetSize()
-    local mins, maxs = panel:GetGraphMinsMaxs()
 end
 
 function drawing.DrawAxis()
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
     local width, height = panel:GetSize()
-    local mins, maxs = panel:GetGraphMinsMaxs()
+    local info = panel:GetGraphInfo()
     local vertical = panel.Settings.Axis.Vertical
     local horizontal = panel.Settings.Axis.Horizontal
 
     --[[ Vertical Axis ]]--
     -- Axis line
     render.SetColorMaterial()
-    drawing.DrawLine( mins.x, mins.y, mins.x, maxs.y, vertical.Width, vertical.Color )
+    drawing.DrawLine( info.MinimumX, info.MinimumY, info.MinimumX, info.MaximumY, vertical.Width, vertical.Color )
 
     -- Numbers
     local verticalLabelCount = math.ceil( height / vertical.NumberLine.SpaceBetween )
     drawing.DrawNumberLine(
-        mins.x - vertical.NumberLine.Margin,
-        mins.y,
-        mins.x - vertical.NumberLine.Margin,
-        maxs.y,
+        info.MinimumX - vertical.NumberLine.Margin,
+        info.MaximumY,
+        info.MinimumX - vertical.NumberLine.Margin,
+        info.MinimumY,
         0, 1,
         verticalLabelCount,
         TEXT_ALIGN_LEFT,
@@ -203,10 +201,10 @@ function drawing.DrawAxis()
 
     -- Label
     surface.SetFont( vertical.Label.Font )
-    local verticalCenter = mins.y + math.floor( ( maxs.y - mins.y ) / 2 )
+    local verticalCenter = info.MinimumY + math.floor( info.Height / 2 )
     drawing.DrawText(
         vertical.Label.Text,
-        mins.x - vertical.NumberLine.Margin - vertical.Label.RightMargin,
+        info.MinimumX - vertical.NumberLine.Margin - vertical.Label.RightMargin,
         verticalCenter,
         vertical.Label.Rotation,
         TEXT_ALIGN_CENTER,
@@ -218,15 +216,15 @@ function drawing.DrawAxis()
     -- One of the two axis lines needs to extend backwards a little bit to cover the gap between them
     local originCoverOffset = math.ceil( vertical.Width / 2 )
     render.SetColorMaterial()
-    drawing.DrawLine( mins.x - originCoverOffset, mins.y, maxs.x, mins.y, horizontal.Width, vertical.Color )
+    drawing.DrawLine( info.MinimumX - originCoverOffset, info.MaximumY, info.MaximumX, info.MaximumY, horizontal.Width, vertical.Color )
 
     -- Numbers
     local horizontalLabelCount = math.ceil( width / horizontal.NumberLine.SpaceBetween )
     drawing.DrawNumberLine(
-        mins.x,
-        mins.y + horizontal.NumberLine.Margin,
-        maxs.x,
-        mins.y + horizontal.NumberLine.Margin,
+        info.MinimumX,
+        info.MaximumY + horizontal.NumberLine.Margin,
+        info.MaximumX,
+        info.MaximumY + horizontal.NumberLine.Margin,
         0, 1,
         horizontalLabelCount,
         TEXT_ALIGN_CENTER,
@@ -238,79 +236,40 @@ function drawing.DrawAxis()
 
     -- Label
     surface.SetFont( horizontal.Label.Font )
-    local horizontalCenter = mins.x + math.floor( ( maxs.x - mins.x ) / 2 )
+    local horizontalCenter = info.MinimumX + math.floor( info.Width / 2 )
     drawing.DrawText(
         horizontal.Label.Text,
         horizontalCenter,
-        mins.y + horizontal.NumberLine.Margin + horizontal.Label.TopMargin,
+        info.MaximumY + horizontal.NumberLine.Margin + horizontal.Label.TopMargin,
         horizontal.Label.Rotation,
         TEXT_ALIGN_CENTER,
         TEXT_ALIGN_BOTTOM
     )
 end
 
--- Converts a point in graph coordinates to screenspace coordinates
----@param x number
----@param y number
----@return Vector
-function drawing.GraphToScreen( x, y )
+-- Converts a point in graph coordinates to screenspace coordinates relative to the active panel's top left corner.
+---@param x number The X coordinate, as a percentage of the graph's width in the range [0-100].
+---@param y number The Y coordinate, as a percentage of the graph's height in the range [0-100].
+---@return Vector # The screenspace coordinates.
+function drawing.GraphToPanel( x, y )
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
-    local graphMins, graphMaxs = panel:GetGraphMinsMaxs()
-    local graphSize = graphMaxs - graphMins
-    return graphMins + Vector( x * graphSize.x, y * graphSize.y )
+    local info = panel:GetGraphInfo()
+
+    return info.Minimums + ( info.Size * Vector( x, 100 - y ) ) / 100
 end
 
--- Converts a point in screenspace coordinates to graph coordinates
----@param x number
----@param y number
----@return Vector
-function drawing.ScreenToGraph( x, y )
-    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
-
-end
-
----@param curvePoint Curves.ControlPoint
-function drawing.DrawCurvePoint( curvePoint )
-    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
-    local graphMins, graphMaxs = panel:GetGraphMinsMaxs()
-    local graphSize = graphMaxs - graphMins
-
-    local pointPos = graphMins + curvePoint.Pos * graphSize
-
-    -- Left handle and line
-    if curvePoint.LeftHandlePos then
-        local pointLeftHandlePos = graphMins + curvePoint.LeftHandlePos * graphSize
-
-        drawing.DrawLine( pointPos.x, pointPos.y, pointLeftHandlePos.x, pointLeftHandlePos.y, panel.Settings.Handles.Line.Width, panel.Settings.Handles.Line.Color )
-
-        surface.DrawRect( pointLeftHandlePos.x - panel.Settings.Handles.Radius, pointLeftHandlePos.y - panel.Settings.Handles.Radius, panel.Settings.Handles.Radius * 2, panel.Settings.Handles.Radius * 2 )
-    end
-
-    -- Right handle and line
-    if curvePoint.RightHandlePos then
-        local pointRightHandlePos = graphMins + curvePoint.RightHandlePos * graphSize
-
-        drawing.DrawLine( pointPos.x, pointPos.y, pointRightHandlePos.x, pointRightHandlePos.y, panel.Settings.Handles.Line.Width, panel.Settings.Handles.Line.Color )
-
-        surface.DrawRect( pointRightHandlePos.x - panel.Settings.Handles.Radius, pointRightHandlePos.y - panel.Settings.Handles.Radius, panel.Settings.Handles.Radius * 2, panel.Settings.Handles.Radius * 2 )
-    end
-
-    -- The point
-    surface.DrawRect( pointPos.x - panel.Settings.Points.Radius, pointPos.y - panel.Settings.Points.Radius, panel.Settings.Points.Radius * 2, panel.Settings.Points.Radius * 2 )
-end
-
----@param startCurvePoint Curves.ControlPoint
----@param endCurvePoint Curves.ControlPoint
+---@param startCurvePoint Curves.ControlPointData
+---@param endCurvePoint Curves.ControlPointData
 ---@param lineCount integer How many lines to use to draw this curve segment
 ---@param lineWidth integer
 ---@param color Color
 function drawing.DrawCurveSegment( startCurvePoint, endCurvePoint, lineCount, lineWidth, color )
     color = color or Color( 255, 255, 255, 255 )
     
-    local startPos = drawing.GraphToScreen( startCurvePoint.Pos.x, startCurvePoint.Pos.y )
-    local startHandlePos = drawing.GraphToScreen( startCurvePoint.RightHandlePos.x, startCurvePoint.RightHandlePos.y )
-    local endHandlePos = drawing.GraphToScreen( endCurvePoint.LeftHandlePos.x, endCurvePoint.LeftHandlePos.y )
-    local endPos = drawing.GraphToScreen( endCurvePoint.Pos.x, endCurvePoint.Pos.y )
+    local startPos = drawing.GraphToPanel( startCurvePoint.ControlPointPos.x, startCurvePoint.ControlPointPos.y )
+    local startHandlePos = drawing.GraphToPanel( startCurvePoint.RightHandlePos.x, startCurvePoint.RightHandlePos.y )
+    local endHandlePos = drawing.GraphToPanel( endCurvePoint.LeftHandlePos.x, endCurvePoint.LeftHandlePos.y )
+    local endPos = drawing.GraphToPanel( endCurvePoint.ControlPointPos.x, endCurvePoint.ControlPointPos.y )
     
     local lineStart = startPos
     for lineNumber = 1, lineCount do
@@ -322,7 +281,7 @@ function drawing.DrawCurveSegment( startCurvePoint, endCurvePoint, lineCount, li
     end
 end
 
----@param curve Curves.Curve
+---@param curve Curves.CurveData
 ---@param segmentCount integer
 ---@param color Color
 function drawing.DrawCurve( curve, segmentCount, lineWidth, color )
@@ -335,24 +294,13 @@ function drawing.DrawCurve( curve, segmentCount, lineWidth, color )
     end
 end
 
----@param curve Curves.Curve
-function drawing.DrawCurveHandles( curve )
-    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
-    surface.SetDrawColor( Color( 255, 100, 75 ) )
-    for _, curvePoint  in ipairs( curve.Points ) do
-        curvePoint = curvePoint --[[@as CurvePoint]]
-        drawing.DrawCurvePoint( curvePoint )
-    end
-end
-
----@param curve Curves.Curve
+---@param curve Curves.CurveData
 function drawing.DrawGraph( curve )
     local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
 
     drawing.DrawAxis()
     drawing.DrawGrid()
     drawing.DrawCurve( curve, 100, panel.Settings.Curve.Width, panel.Settings.Curve.Color )
-    drawing.DrawCurveHandles( curve )
 end
 
 vguihotload.HandleHotload( "CurveEditor" )

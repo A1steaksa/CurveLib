@@ -1,40 +1,23 @@
-print( "CurveLib Initializing..." )
+_G.CurveLib = _G.CurveLib or {}
 
-_G.CurveLib = {}
+-- Curves
+AddCSLuaFile( "libraries/curvelib/curves/curve-point.lua" )
+AddCSLuaFile( "libraries/curvelib/curves/curve-data.lua" )
 
-include( "includes/curvelib/curves/curve-classes.lua" )
-include( "includes/curvelib/curve-utils.lua" )
+include( "libraries/curvelib/curves/curve-point.lua" )
+include( "libraries/curvelib/curves/curve-data.lua" )
 
-if CLIENT then
-
-    --- All files that need to hotload are included here
-    --- so that they will inherit autorun's hotloading.
-    include( "includes/curvelib/curve-drawing.lua" )
-
-    include( "includes/curvelib/vgui/curve-editor/curve-editor-settings.lua" )
-    include( "includes/curvelib/vgui/curve-editor/curve-editor.lua" )
-
-    local minWidth, minheight = 512, 512
-
-    local function OpenCurveEditor()
-        local frame = vgui.Create( "DFrame" )
-        frame:SetTitle( "Curve Editor" )
-        frame:SetSize( minWidth, minheight )
-        frame:SetMinimumSize( minWidth, minheight )
-        frame:SetSizable( true )
-        frame:Center()
-
-        local editor = vgui.Create( "CurveEditor", frame )
-        editor:Dock( FILL )
-
-        frame:MakePopup()
-
-        return frame
-    end
-
-    concommand.Add( "curvelib_openeditor", function()
-        vguihotload.Register( "CurveEditor", OpenCurveEditor )
-    end )
+-- Curve Editor
+if SERVER then
+    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
+    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
+    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-graph.lua" )
+    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-frame.lua" )
 end
 
-print( "CurveLib Finished Initializing" )
+if CLIENT then
+    include( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
+    include( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
+    include( "libraries/curvelib/curve-editor/editor-graph.lua" )
+    include( "libraries/curvelib/curve-editor/editor-frame.lua" )
+end

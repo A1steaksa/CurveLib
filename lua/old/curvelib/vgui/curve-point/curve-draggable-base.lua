@@ -1,4 +1,4 @@
-require( "vguihotload" )
+require( "lua.libraries.vguihotload.vguihotload-meta" )
 local circles = include( "includes/circles/circles.lua" )
 
 -- Holds Color information about a Draggable
@@ -42,45 +42,11 @@ local circles = include( "includes/circles/circles.lua" )
 --- The Base Class for nodes and handles that can be clicked and dragged on the graph.
 ---@class (exact) CurveEditor.CurveDraggableBase : DPanel
 ---@field VisualSettings CurveEditor.CurveDraggableBase.VisualSettings Variables, data, and settings used in rendering the draggable.
----@field InteractionData CurveEditor.CurveDraggableBase.MouseData Variables and data used in handling interactions like clicking and dragging.
 ---@field InteractionSettings CurveEditor.CurveDraggableBase.InteractionSettings Settings for how this Draggable should behave when interacted with.
-local PANEL = {
-    VisualSettings = {
-        Circle          = circles.New( CIRCLE_TYPE_FILLED, 10, 10, 10 ),
-        Radius          = 10,
-        VertexDistance  = 10,
-        Colors = {
-            Idle        = Color( 75, 75, 200, 255 ),
-            Hovered     = Color( 100, 100, 250, 255 ),
-            Pressed     = Color( 255, 255, 255, 255 ),
-            Dragged     = Color( 100, 100, 100, 100 )
-        }
-    },
-    InteractionData = {
-        IsBeingDragged = false,
-        IsBeingHovered  = false,
-        IsBeingPressed  = false,
-        LeftMouse = {
-            KeyCode     = MOUSE_LEFT,
-            PressTime   = 0,
-            ReleaseTime = 1,
-            ClickTime   = 0,
-            IsPressed   = false,
-            ClickPos    = Vector( 0, 0, 0 )
-        },
-        RightMouse = {
-            KeyCode     = MOUSE_RIGHT,
-            PressTime   = 0,
-            ReleaseTime = 1,
-            ClickTime   = 0,
-            IsPressed   = false,
-            ClickPos    = Vector( 0, 0, 0 )
-        }
-    },
-    InteractionSettings = {
-        DragDeadzoneSize = 5
-    }
-}
+---@field InteractionData CurveEditor.CurveDraggableBase.MouseData Variables and data used in handling interactions like clicking and dragging.
+local PANEL = {}
+
+--#region Visual Settings - Circle
 
 function PANEL:SetRadius( radius )
     if not radius or not isnumber( radius ) then return end
@@ -113,24 +79,9 @@ function PANEL:GetVertexDistance()
     return self.VisualSettings.VertexDistance
 end
 
-function PANEL:SetColor( color )
-    if not color or not IsColor( color ) then return end
+--#endregion Visual Settings - Circle
 
-    self.VisualSettings.Circle:SetColor( color )
-end
-
-function PANEL:GetColor()
-    return self.VisualSettings.Circle:GetColor()
-end
-
-function PANEL:SetHovering( hovering )
-    self.InteractionData.IsBeingHovered = hovering
-    
-end
-
-function PANEL:IsBeingHovered()
-    return self.InteractionData.IsBeingHovered
-end
+--#region Visual Settings - Colors
 
 function PANEL:UpdateColors()
     local colors = self.VisualSettings.Colors
@@ -147,6 +98,77 @@ function PANEL:UpdateColors()
 
     self.VisualSettings.Circle:SetColor( color )
 end
+
+function PANEL:SetIdleColor( color )
+    if not color or not IsColor( color ) then return end
+
+    self.VisualSettings.Colors.Idle = color
+    self:UpdateColors()
+end
+
+function PANEL:GetIdleColor()
+    return self.VisualSettings.Colors.Idle
+end
+
+function PANEL:SetHoveredColor( color )
+    if not color or not IsColor( color ) then return end
+
+    self.VisualSettings.Colors.Hovered = color
+    self:UpdateColors()
+end
+function PANEL:GetHoveredColor()
+    return self.VisualSettings.Colors.Hovered
+end
+
+function PANEL:SetPressedColor( color )
+    if not color or not IsColor( color ) then return end
+
+    self.VisualSettings.Colors.Pressed = color
+    self:UpdateColors()
+end
+
+function PANEL:GetPressedColor()
+    return self.VisualSettings.Colors.Pressed
+end
+
+function PANEL:SetDraggedColor( color )
+    if not color or not IsColor( color ) then return end
+
+    self.VisualSettings.Colors.Dragged = color
+    self:UpdateColors()
+end
+
+function PANEL:GetDraggedColor()
+    return self.VisualSettings.Colors.Dragged
+end
+
+--#endregion Visual Settings - Colors
+
+--#region Interaction Data - State
+function PANEL:SetHovering( hovering )
+    self.InteractionData.IsBeingHovered = hovering
+    
+end
+
+function PANEL:IsBeingHovered()
+    return self.InteractionData.IsBeingHovered
+end
+--#endregion Interaction Data - State
+
+--#region Events and Callbacks
+
+function PANEL:OnDragged()
+end
+
+function PANEL:OnDragStarted()
+end
+
+function PANEL:OnDragStopped()
+end
+
+--#endregion Events and Callbacks
+
+--#region Panel Events
 
 function PANEL:OnMousePressed( mouseButton )
     local buttonData
@@ -176,6 +198,7 @@ function PANEL:OnMouseReleased( mouseButton )
 
     buttonData.ReleaseTime = CurTime()
     buttonData.IsPressed = false
+    self.InteractionData.IsBeingDragged = false
 
     self:UpdateColors()
 end
@@ -203,6 +226,8 @@ function PANEL:OnCursorEntered()
     self:UpdateColors()
 end
 
+--#endregion Panel Events
+
 function PANEL:Think()
     local left = self.InteractionData.LeftMouse
 
@@ -215,7 +240,9 @@ function PANEL:Think()
     if justReleasedLeft then
         left.IsPressed = false
         left.ReleaseTime = CurTime()
+        self.InteractionData.IsBeingDragged = false
         self:UpdateColors()
+        self:OnDragStopped()
         return
     end
 
@@ -228,19 +255,62 @@ function PANEL:Think()
         if mouseDelta:Length() >= self.InteractionSettings.DragDeadzoneSize then
             -- We've broken out of the deadzone and are officially being dragged
             self.InteractionData.IsBeingDragged = true
+            self:UpdateColors()
+            self:OnDragStarted()
         else
             return
         end
     end
 
+    -- Figure out where we're being dragged to
     local localPos = Vector( self:GetParent():ScreenToLocal( cursorPos.x, cursorPos.y ) )
-
     self:SetPos( localPos.x - self:GetRadius(), localPos.y - self:GetRadius() )
+    self:OnDragged()
 end
 
 function PANEL:Paint( width, height )
     draw.NoTexture()
     self.VisualSettings.Circle()
+end
+
+function PANEL:Init()
+    self.VisualSettings = {
+        Circle          = circles.New( CIRCLE_TYPE_FILLED, 10, 10, 10 ),
+        Radius          = 10,
+        VertexDistance  = 10,
+        Colors = {
+            Idle        = Color( 75, 75, 200, 255 ),
+            Hovered     = Color( 100, 100, 250, 255 ),
+            Pressed     = Color( 255, 255, 255, 255 ),
+            Dragged     = Color( 100, 100, 100, 100 )
+        }
+    }
+    self.InteractionSettings = {
+        DragDeadzoneSize = 7
+    }
+    self.InteractionData = {
+        IsBeingDragged = false,
+        IsBeingHovered  = false,
+        IsBeingPressed  = false,
+        LeftMouse = {
+            KeyCode     = MOUSE_LEFT,
+            PressTime   = 0,
+            ReleaseTime = 1,
+            ClickTime   = 0,
+            IsPressed   = false,
+            ClickPos    = Vector( 0, 0, 0 )
+        },
+        RightMouse = {
+            KeyCode     = MOUSE_RIGHT,
+            PressTime   = 0,
+            ReleaseTime = 1,
+            ClickTime   = 0,
+            IsPressed   = false,
+            ClickPos    = Vector( 0, 0, 0 )
+        }
+    }
+
+    self:UpdateColors()
 end
 
 vgui.Register( "CurveEditor.CurveDraggableBase", PANEL, "DPanel" )

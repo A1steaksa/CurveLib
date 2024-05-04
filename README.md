@@ -49,6 +49,10 @@ The Main Point controls the position of the Curve's end or start, while the Hand
 
 These rules ensure that there is a valid output `Y` value for all input `X` values.
 
+### 📈 The Curve Editor  
+
+Curves are viewed, created, and edited from the Curve Editor, which is a tool that "lives" in a `DFrame`.
+
 ## 🛠️ Implementation Details
 
 CurveLib has two halves:
@@ -82,7 +86,3 @@ These are the Control Points that dictate the shape and position of Curve Segmen
 
 Curve Segments are a useful way to think about Curves, but don't have a corresponding Class to represent them.  
 They're mentioned here only to preempt confusion about the term.
-
-### 📈 The Curve Editor  
-
-

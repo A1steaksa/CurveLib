@@ -1,6 +1,6 @@
 AddCSLuaFile()
 if SERVER then return end
-require( "vguihotload" )
+require( "lua.libraries.vguihotload.vguihotload-meta" )
 
 local DefaultLabels = {
     Horizontal = "Time",
@@ -88,7 +88,7 @@ function CurveEditorSettings()
         ---@field Line CurveEditor.HandleLineSettings
         Handles = {
             Color = DefaultColors.Handles,
-            Radius = 2.5,
+            Radius = 7,
             VertexDistance = 2,
             ---@class (exact) CurveEditor.HandleLineSettings
             ---@field Color Color The Color of the line that connects the Handle to the Point, in pixels.
@@ -100,8 +100,8 @@ function CurveEditorSettings()
         },
 
         ---@class (exact) CurveEditor.AxisSettings
-        ---@field Horizontal table
-        ---@field Vertical table
+        ---@field Horizontal CurveEditor.AxisSettings.Horizontal
+        ---@field Vertical CurveEditor.AxisSettings.Vertical
         Axis = {
             
             ---@class (exact) CurveEditor.AxisSettings.Horizontal
