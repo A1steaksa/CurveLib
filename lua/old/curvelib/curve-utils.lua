@@ -7,6 +7,7 @@ local multifloor_buffer = {}
 -- Rounds a variable set of numbers to their nearest integer and multi-returns them.
 -- Thanks to SneakySquid for the optimizations.
 ---@vararg number
+---@return number
 function utils.MultiFloor( ... )
     local arg_count = select( "#", ... )
 
