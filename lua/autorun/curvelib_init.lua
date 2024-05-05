@@ -1,23 +1,35 @@
 _G.CurveLib = _G.CurveLib or {}
 
--- Curves
-AddCSLuaFile( "libraries/curvelib/curves/curve-point.lua" )
-AddCSLuaFile( "libraries/curvelib/curves/curve-data.lua" )
+_G.CurveLib.IsDevelopment = true
 
-include( "libraries/curvelib/curves/curve-point.lua" )
-include( "libraries/curvelib/curves/curve-data.lua" )
-
--- Curve Editor
-if SERVER then
-    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
-    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
-    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-graph.lua" )
-    AddCSLuaFile( "libraries/curvelib/curve-editor/editor-frame.lua" )
+local function RunClient( path )
+    if SERVER then AddCSLuaFile( path ) end
+    if CLIENT then include( path ) end
 end
 
+local function RunShared( path )
+    AddCSLuaFile( path )
+    include( path )
+end
+
+-- Utils
+RunShared( "libraries/curvelib/utils.lua" )
+
+-- Curves
+RunShared( "libraries/curvelib/curves/curve-point.lua" )
+RunShared( "libraries/curvelib/curves/curve-data.lua" )
+
+-- Curve Editor
+RunClient( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
+RunClient( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
+RunClient( "libraries/curvelib/curve-editor/editor-graph/curve-draw.lua" )
+RunClient( "libraries/curvelib/curve-editor/editor-graph/editor-graph.lua" )
+RunClient( "libraries/curvelib/curve-editor/editor-frame.lua" )
+
 if CLIENT then
-    include( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
-    include( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
-    include( "libraries/curvelib/curve-editor/editor-graph.lua" )
-    include( "libraries/curvelib/curve-editor/editor-frame.lua" )
+    concommand.Add( "curvelib_openeditor", function()
+        vguihotload.Register( "CurveLib.EditorFrame", function()
+            return vgui.Create( "CurveEditor.EditorFrame" )
+        end )
+    end )
 end
