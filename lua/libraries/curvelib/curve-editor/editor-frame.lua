@@ -2,15 +2,20 @@ require( "vguihotload" )
 print( "Editor Frame Ran" )
 
 ---@class CurveEditor.EditorFrame.VGUI
----@field Toolbar CurveEditor.EditorToolbar\
----@field Sidebar CurveEditor.EditorSidebar
----@field Graph CurveEditor.EditorGraph
+---@field Toolbar CurveEditor.EditorToolbar?
+---@field Sidebar CurveEditor.EditorSidebar?
+---@field Graph CurveEditor.EditorGraph?
 
 ---@class CurveEditor.EditorFrame : DFrame
----@field derma CurveEditor.EditorFrame.VGUI
+---@field Derma CurveEditor.EditorFrame.VGUI
+---@field Curves table<integer, Curves.CurveData> # The list of Curves being displayed in the editor.
 local FRAME = {
-    Initialized = false,
-    Derma = {}
+    Derma = {
+        Toolbar = nil,
+        Sidebar = nil,
+        Graph = nil
+    },
+    Curves = {}
 }
 
 local Default = {
@@ -24,7 +29,34 @@ local Default = {
     ToolbarHeight = 100
 }
 
+
+-- Returns the curve at the given index.
+---@param index integer
+function FRAME:GetCurve( index )
+    return self.Curves[ index ]
+end
+
+-- Adds a Curve to the frame.
+---@param curveData Curves.CurveData
+---@return integer # The index of the Curve in the frame.
+function FRAME:AddCurve( curveData )
+    return table.insert( self.Curves, curveData ) --[[@as integer]]
+end
+
+-- Removes a curve from the frame.
+---@param index integer
+function FRAME:RemoveCurve( index )
+    table.remove( self.Curves, index )
+end
+
 function FRAME:Init()
+
+    -- Setup the default curve
+    self:AddCurve( CurveData(
+        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
+        CurvePoint( Vector( 1, 1 ), nil, Vector( 0.75, 0.75 ) )
+    ) )
+
     local derma = self.Derma
 
     derma.Toolbar = vgui.Create( "CurveEditor.EditorToolbar", self )
@@ -38,7 +70,6 @@ function FRAME:Init()
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinimumSize( Default.FrameSize.MinWidth, Default.FrameSize.MinHeight )
-    
 
     self:InvalidateLayout( true )
     self:SetSizable( true )
@@ -48,12 +79,4 @@ function FRAME:Init()
 end
 
 vgui.Register( "CurveEditor.EditorFrame", FRAME, "DFrame" )
-
 vguihotload.HandleHotload( "CurveLib.EditorFrame" )
----
-
-concommand.Add( "curvelib_openeditor", function()
-    vguihotload.Register( "CurveLib.EditorFrame", function()
-        return vgui.Create( "CurveEditor.EditorFrame" )
-    end )
-end )
