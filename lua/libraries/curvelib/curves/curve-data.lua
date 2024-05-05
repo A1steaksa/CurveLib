@@ -40,8 +40,15 @@ function metatable:Evaluate( time )
 end
 metatable.__call = metatable.Evaluate
 
-function CurveData()
+-- Creates a new Curve with an optional set of points
+---@vararg Curve.CurvePoint? # The points to add to the curve.
+function CurveData( ... )
     local curveData = {}
     setmetatable( curveData, metatable )
+
+    for i = 1, select( "#", ... ) do
+        curveData.Points[ #curveData.Points + 1 ] = select( i, ... )
+    end
+
     return curveData
 end
