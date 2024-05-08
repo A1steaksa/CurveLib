@@ -5,12 +5,6 @@
 		},
 		{
 			"path": "../../vgui-hotload"
-		},
-		{
-			"path": "../../class-testing"
-		},
-		{
-			"path": "../../hotload-testing"
 		}
 	],
 	"settings": {}
