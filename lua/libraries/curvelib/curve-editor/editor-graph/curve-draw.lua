@@ -9,38 +9,117 @@ elseif _G.CurveLib.CurveDraw then return _G.CurveLib.CurveDraw end
 local curveUtils = include( "libraries/curvelib/utils.lua" )
 
 ---@class CurveEditor.EditorGraph.CurveDraw
+---@field PanelStack Stack
 local Draw = {
     PanelStack = util.Stack()
 }
 
+--#region Config
+
+-- Config
+---@class (exact) CurveEditor.EditorGraph.Config : table
+---@field Fonts CurveEditor.EditorGraph.Config.Fonts
+
+-- Fonts
+---@class (exact) CurveEditor.EditorGraph.Config.Fonts : table
+---@field NumberLineLarge string
+---@field NumberLineSmall string
+
+---@type CurveEditor.EditorGraph.Config
+Draw.DefaultConfig = {
+    Fonts = {
+        NumberLineLarge = "HudHintTextLarge",
+        NumberLineSmall = "HudHintTextSmall"
+    }
+}
+
+Draw.ConfigMetatable = {}
+Draw.ConfigMetatable.__index = Draw.DefaultConfig
+
+-- Creates a new Curve Editor Graph Config table with the default settings
+function CurveEditorGraphConfig()
+    local config = {}
+    setmetatable( config, Draw.ConfigMetatable )
+    return config
+end
+--#endregionConfig
+
 --#region Editor Stack
 
--- Pushes a DPanel onto the stack
 ---@param panel DPanel
-function Draw.PushPanel( panel )
-    Draw.PanelStack:Push( panel )
+---@param config CurveEditor.EditorGraph.Config
+function Draw.StartPanel( panel, config )
+    Draw.PanelStack:Push( { Panel = panel, Config = config } )
 
     local matrix = Matrix()
     matrix:Translate( Vector( panel:LocalToScreen( 0, 0 ) ) )
     cam.PushModelMatrix( matrix )
 end
 
--- Pops a DPanel off the stack
----@return DPanel
-function Draw.PopPanel()
+---@return { Panel: DPanel, Config: CurveEditor.EditorGraph.Config }
+function Draw.EndPanel()
     cam.PopModelMatrix()
     local topElement = Draw.PanelStack:Top()
     Draw.PanelStack:Pop( 1 )
     return topElement
 end
 
--- Peeks (Returns) the top DPanel of the Panel Stack
 ---@return DPanel
 function Draw.PeekPanel()
-    return Draw.PanelStack:Top()
+    return Draw.PanelStack:Top().Panel
 end
 
+---@return CurveEditor.EditorGraph.Config
+function Draw.PeekConfig()
+    return Draw.PanelStack:Top().Config
+end
 --#endregion Editor Stack
+
+--#region Basic Drawing Functions
+
+-- Draws text with rotation and alignment
+---@param text any
+---@param textX number The text's center position's x coordinate
+---@param textY number The text's center position's y coordinate
+---@param rotation number? The text's rotation, in degrees. [Default: 0]
+---@param horizontalAlignment TEXT_ALIGN|integer? The text's horizontal alignment [Default: Centered]
+---@param verticalAlignment TEXT_ALIGN|integer? The text's vertical alignment. [Default: Centered]
+function Draw.Text( text, textX, textY, rotation, horizontalAlignment, verticalAlignment )
+    if not rotation then rotation = 0 end
+
+    local textWidth, textHeight = surface.GetTextSize( text )
+
+    local xAlignment = math.floor( textWidth / 2 )
+    local yAlignment = math.floor( textHeight / 2 )
+
+    if horizontalAlignment == TEXT_ALIGN_LEFT then
+        xAlignment = textWidth
+    elseif horizontalAlignment == TEXT_ALIGN_RIGHT then
+        -- No offset because of text's top-left origin
+        xAlignment = 0
+    end
+
+    if verticalAlignment == TEXT_ALIGN_TOP then
+        yAlignment = textHeight
+    elseif verticalAlignment == TEXT_ALIGN_BOTTOM then
+        -- No offset because of text's top-left origin
+        yAlignment = 0
+    end
+
+    local oldMatrix = cam.GetModelMatrix()
+
+    local newMatrix = Matrix()
+    newMatrix:Translate( Vector( textX, textY ) )            -- 5. Position the now-rotated text.
+    newMatrix:Translate( oldMatrix:GetTranslation() )        -- 4. Re-do the current matrix's translation so we're back where we started
+    newMatrix:Rotate( Angle( 0, rotation, 0 ) )              -- 3. Rotate around 0,0
+    newMatrix:Translate( -oldMatrix:GetTranslation() )       -- 2. Undo the current matrix's translation so we can rotate around 0,0
+    newMatrix:Translate( -Vector( xAlignment, yAlignment ) ) -- 1. Move based on the text alignment
+
+    cam.PushModelMatrix( newMatrix, false )
+        surface.SetTextPos( 0, 0 ) -- The Model Matrix handles positioning the text for us
+        surface.DrawText( text )
+    cam.PopModelMatrix()
+end
 
 -- Draws a rectangle with a given color
 ---@param startX integer
@@ -110,7 +189,6 @@ function Draw.SimpleLine( startX, startY, endX, endY, lineWidth, color )
     end
 
     render.SetColorMaterial()
-    
     local r, g, b, a = color:Unpack()
     mesh.Begin( MATERIAL_QUADS, 1 )
         mesh.Color( r, g, b, a )
@@ -130,17 +208,24 @@ function Draw.SimpleLine( startX, startY, endX, endY, lineWidth, color )
         mesh.AdvanceVertex()
     mesh.End()
 end
+--#endregion Basic Drawing Functions
+
+--#region Compound Drawing Functions
 
 -- Draws the currently pushed Editor Frame's Editor Graph
+---@param x integer The x position of the graph
+---@param y integer The y position of the graph
 ---@param width integer The width of the graph
 ---@param height integer The height of the graph
-function Draw.Graph( width, height )
-    Draw.SimpleRect( 0, 0, width, height, Color( 75, 100, 135, 255 ) )
+function Draw.Graph( x, y, width, height )
+    local config = Draw.PeekConfig()
+
+    Draw.SimpleRect( x, y, width, height, Color( 75, 100, 135, 255 ) )
 
     local cos = math.cos( CurTime() )
     local sin = math.sin( CurTime() )
 
-    local center = Vector( math.floor( width / 2 ), math.floor( height / 2 ) )
+    local center = Vector( x, y ) + Vector( math.floor( width / 2 ), math.floor( height / 2 ) )
 
     local xSize = width / 3
     local ySize = height / 8
@@ -149,7 +234,14 @@ function Draw.Graph( width, height )
     local endPos = center + Vector( cos * -xSize, sin * -ySize )
 
     Draw.SimpleLine( startPos.x, startPos.y, endPos.x, endPos.y, 5, Color( 255, 255, 0, 255 ) )
+
+    surface.SetFont( config.Fonts.NumberLineLarge )
+    Draw.Text( "Big Text!", endPos.x, endPos.y, 0, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
+
+    surface.SetFont( config.Fonts.NumberLineSmall )
+    Draw.Text( "Small Text!", startPos.x, startPos.y, 0, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP )
 end
+--#endregion Compound Drawing Functions
 
 _G.CurveLib.CurveDraw = Draw
 return _G.CurveLib.CurveDraw
