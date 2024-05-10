@@ -1,6 +1,6 @@
 require( "vguihotload" )
----@type CurveEditor.EditorGraph.CurveDraw
-local curveDraw = include( "libraries/curvelib/curve-editor/editor-graph/curve-draw.lua" )
+---@type CurveEditor.EditorGraph.DrawGraph
+local drawGraph = include( "libraries/curvelib/curve-editor/editor-graph/draw-graph.lua" )
 
 surface.CreateFont( "CurveLib_Graph_Small", {
 	font = "Roboto",
@@ -27,29 +27,28 @@ local metatable = {
 }
 
 ---@class CurveEditor.EditorGraph : DPanel
+---@field Config CurveEditor.EditorConfig.GraphConfig
 local PANEL = {}
 setmetatable( PANEL, metatable )
 
--- Returns the editor frame that this graph is a part of.
+---@param config CurveEditor.EditorConfig.GraphConfig
+function PANEL:SetConfig( config )
+    self.Config = config
+end
+
 ---@return CurveEditor.EditorFrame
-function PANEL:GetEditor()
+function PANEL:GetEditorFrame()
     return self:GetParent() --[[@as CurveEditor.EditorFrame]]
 end
 
-function PANEL:Init()
-    self.Config = CurveEditorGraphConfig()
-    self.Config.Fonts.NumberLineLarge = "CurveLib_Graph_Large"
-    self.Config.Fonts.NumberLineSmall = "CurveLib_Graph_Small"
-end
-
 function PANEL:Paint( width, height )
-    curveDraw = _G.CurveLib.CurveDraw or curveDraw
+    drawGraph = _G.CurveLib.DrawGraph or drawGraph
 
-    curveDraw.StartPanel( self, self.Config )
+    drawGraph.StartPanel( self, self.Config )
 
-    curveDraw.Graph( 0, 0, width, height )
+    drawGraph.Graph( 0, 0, width, height )
 
-    curveDraw.EndPanel()
+    drawGraph.EndPanel()
 end
 
 vgui.Register( "CurveEditor.EditorGraph", PANEL, "DPanel" )
