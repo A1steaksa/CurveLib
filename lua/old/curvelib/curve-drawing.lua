@@ -1,7 +1,7 @@
 AddCSLuaFile()
 if SERVER then return end
 require( "lua.libraries.vguihotload.vguihotload-meta" )
-local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveUtils]]
+local utils = include( "includes/curvelib/curve-utils.lua" ) --[[@as CurveEditor.CurveUtils]]
 
 ---@class CurveDraw
 
@@ -163,12 +163,6 @@ function drawing.DrawNumberLine( startX, startY, endX, endY, startNumber, endNum
 
         drawing.DrawText( formattedNumber, pos.x, pos.y, 0, horizontalAlignment, verticalAlignment )
     end
-
-end
-
-function drawing.DrawGrid()
-    local panel = drawing.PanelStack:Top() --[[@as CurveEditor]]
-
 end
 
 function drawing.DrawAxis()

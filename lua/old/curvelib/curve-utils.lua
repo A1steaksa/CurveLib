@@ -1,4 +1,4 @@
----@class CurveUtils
+---@class CurveEditor.CurveUtils
 local utils = {}
 
 -- Created here to avoid creating the table every time MultiFloor is called

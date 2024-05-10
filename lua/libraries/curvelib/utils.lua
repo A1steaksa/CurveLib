@@ -5,7 +5,7 @@ elseif _G.CurveLib.IsDevelopment then
     vguihotload.HandleHotload( "CurveLib.EditorFrame" )
 elseif _G.CurveLib.Utils then return _G.CurveLib.Utils end
 
----@class CurveUtils
+---@class CurveEditor.CurveUtils
 
 local utils = {}
 

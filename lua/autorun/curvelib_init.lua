@@ -14,15 +14,17 @@ end
 
 -- Utils
 RunShared( "libraries/curvelib/utils.lua" )
+RunShared( "libraries/curvelib/draw-basic.lua" )
 
 -- Curves
 RunShared( "libraries/curvelib/curves/curve-point.lua" )
 RunShared( "libraries/curvelib/curves/curve-data.lua" )
 
 -- Curve Editor
+RunClient( "libraries/curvelib/curve-editor/editor-config.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-graph/curve-draw.lua" )
+RunClient( "libraries/curvelib/curve-editor/editor-graph/draw-graph.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-graph/editor-graph.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-frame.lua" )
 
