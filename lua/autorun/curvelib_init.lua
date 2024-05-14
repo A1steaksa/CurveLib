@@ -16,6 +16,9 @@ end
 RunShared( "libraries/curvelib/utils.lua" )
 RunShared( "libraries/curvelib/draw-basic.lua" )
 
+-- Better Frames
+RunClient( "libraries/better-frame/bframe.lua" )
+
 -- Curves
 RunShared( "libraries/curvelib/curves/curve-point.lua" )
 RunShared( "libraries/curvelib/curves/curve-data.lua" )
@@ -28,10 +31,18 @@ RunClient( "libraries/curvelib/curve-editor/editor-graph/draw-graph.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-graph/editor-graph.lua" )
 RunClient( "libraries/curvelib/curve-editor/editor-frame.lua" )
 
-if CLIENT then
-    concommand.Add( "curvelib_openeditor", function()
-        vguihotload.Register( "CurveLib.EditorFrame", function()
-            return vgui.Create( "CurveEditor.EditorFrame" )
-        end )
+if not CLIENT then return end
+
+concommand.Add( "curvelib_openeditor", function()
+    vguihotload.Register( "CurveLib.EditorFrame", function()
+        return vgui.Create( "CurveEditor.EditorFrame" )
     end )
-end
+end )
+
+hook.Add( "OnLuaError", "A1_CurveLib_CrashPrevention", function( error, realm, stack, name, id  )
+    if _G.CurveLib and _G.CurveLib.IsDrawingMesh then
+        print( error )
+        mesh.End()
+        _G.CurveLib.IsDrawingMesh = false
+    end
+end )

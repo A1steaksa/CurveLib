@@ -79,7 +79,8 @@ function FRAME:Init()
     derma.Graph:Dock( FILL )
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
-    self:SetMinimumSize( Default.FrameSize.MinWidth, Default.FrameSize.MinHeight )
+    self:SetMinWidth( Default.FrameSize.MinWidth )
+    self:SetMinHeight(  Default.FrameSize.MinHeight  )
 
     self:InvalidateLayout( true )
     self:SetSizable( true )
@@ -88,5 +89,5 @@ function FRAME:Init()
     self:MakePopup()
 end
 
-vgui.Register( "CurveEditor.EditorFrame", FRAME, "DFrame" )
+vgui.Register( "CurveEditor.EditorFrame", FRAME, "BFrame" )
 vguihotload.HandleHotload( "CurveLib.EditorFrame" )
