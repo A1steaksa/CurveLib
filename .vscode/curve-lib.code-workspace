@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../vgui-hotload"
+		},
+		{
+			"path": "../../performance-testing"
 		}
 	],
 	"settings": {}

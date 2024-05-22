@@ -13,29 +13,46 @@ local function RunShared( path )
 end
 
 -- Utils
-RunShared( "libraries/curvelib/utils.lua" )
-RunShared( "libraries/curvelib/draw-basic.lua" )
+RunShared( "libraries/curvelib/editor/utils.lua" )
+RunShared( "libraries/curvelib/editor/draw-base.lua" )
+
+-- Curves
+RunShared( "libraries/curvelib/curve/point.lua" )
+RunShared( "libraries/curvelib/curve/data.lua" )
 
 -- Better Frames
 RunClient( "libraries/better-frame/bframe.lua" )
 
--- Curves
-RunShared( "libraries/curvelib/curves/curve-point.lua" )
-RunShared( "libraries/curvelib/curves/curve-data.lua" )
+-- Curve Editor Panel Base
+RunClient( "libraries/curvelib/editor/panel-base.lua" )
 
--- Curve Editor
-RunClient( "libraries/curvelib/curve-editor/editor-config.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-toolbar.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-sidebar.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-graph/draw-graph.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-graph/editor-graph.lua" )
-RunClient( "libraries/curvelib/curve-editor/editor-frame.lua" )
+-- Editor Sidebar
+RunClient( "libraries/curvelib/editor/sidebar/draw.lua" )
+RunClient( "libraries/curvelib/editor/sidebar/panel.lua" )
+
+-- Editor Toolbar
+RunClient( "libraries/curvelib/editor/toolbar/draw.lua" )
+RunClient( "libraries/curvelib/editor/toolbar/panel.lua" )
+
+-- Editor Graph Draggables
+RunClient( "libraries/curvelib/editor/graph/draggable/draw.lua" )
+RunClient( "libraries/curvelib/editor/graph/draggable/base.lua" )
+RunClient( "libraries/curvelib/editor/graph/draggable/main-point.lua" )
+RunClient( "libraries/curvelib/editor/graph/draggable/handle-point.lua" )
+
+-- Editor Graph
+RunClient( "libraries/curvelib/editor/graph/draw.lua" )
+RunClient( "libraries/curvelib/editor/graph/panel.lua" )
+
+-- Curve Editor Frame
+RunClient( "libraries/curvelib/editor/config.lua" )
+RunClient( "libraries/curvelib/editor/frame.lua" )
 
 if not CLIENT then return end
 
 concommand.Add( "curvelib_openeditor", function()
-    vguihotload.Register( "CurveLib.EditorFrame", function()
-        return vgui.Create( "CurveEditor.EditorFrame" )
+    vguihotload.Register( "CurveLib.Editor.Frame", function()
+        return vgui.Create( "CurveLib.Editor.Frame" )
     end )
 end )
 

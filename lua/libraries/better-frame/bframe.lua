@@ -237,6 +237,11 @@ function PANEL:GetResizeHandle( localPos )
 end
 
 function PANEL:Think()
+    if not system.HasFocus() and self:IsHovered() then
+        self:SetCursor( "arrow" )
+        return
+    end
+
     local panelScreenPos = Vector( self:LocalToScreen( 0, 0 ) )
 
     local cursorScreenPos = Vector(
@@ -380,4 +385,4 @@ function PANEL:OnMouseReleased()
 end
 
 vgui.Register( "BFrame", PANEL, "DFrame" )
-vguihotload.HandleHotload( "CurveLib.EditorFrame" )
+vguihotload.HandleHotload( "CurveLib.Editor.Frame" )

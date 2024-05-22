@@ -19,7 +19,7 @@ The Contextual Tools are a set of `DButton`s that changes depending on the curre
 
 ### The Curve List
 
-The Curve List is an ordered set of the Curves 
+The Curve List is an ordered set of the Curves
 
 ## The Toolbar
 

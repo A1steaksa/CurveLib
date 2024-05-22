@@ -1,10 +1,7 @@
-print( "Curve Data Loaded" )
-
----@class Curve.CurveData : table
----@field Points table<Curve.CurvePoint>
-local metatable = {
-    Points = {}
-}
+---@class CurveLib.Curve.Data
+---@field Points table<CurveLib.Curve.Point>
+local metatable = {}
+metatable.IsCurve = true
 metatable.__index = metatable
 
 -- Evaluate the curve at a given time
@@ -41,9 +38,9 @@ end
 metatable.__call = metatable.Evaluate
 
 -- Creates a new Curve with an optional set of points
----@vararg Curve.CurvePoint? # The points to add to the curve.
+---@vararg CurveLib.Curve.Point? # The points to add to the curve.
 function CurveData( ... )
-    local curveData = {}
+    local curveData = { Points = {} }
     setmetatable( curveData, metatable )
 
     for i = 1, select( "#", ... ) do

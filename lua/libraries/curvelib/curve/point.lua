@@ -1,6 +1,6 @@
 print( "Curve Point Loaded" )
 
----@class Curve.CurvePoint : table
+---@class CurveLib.Curve.Point
 ---@field MainPoint Vector
 ---@field LeftHandle Vector?
 ---@field RightHandle Vector?
@@ -23,7 +23,7 @@ end
 ---@param mainPointPos Vector The position of the main point. Must be in the range [0-1].
 ---@param leftHandlePos Vector? The position of the left handle. X coordinate be in the range [0-1].
 ---@param rightHandlePos Vector? The position of the right handle. X coordinate be in the range [0-1].
----@return Curve.CurvePoint
+---@return CurveLib.Curve.Point
 function CurvePoint( mainPointPos, leftHandlePos, rightHandlePos )
     local curvePoint = {}
     setmetatable( curvePoint, metatable )
