@@ -4,34 +4,37 @@ elseif _G.CurveLib.DraggableDraw and not _G.CurveLib.IsDevelopment then
     return _G.CurveLib.DraggableDraw
 end
 
+---@type CurveLib.Editor.DrawBase
+local drawBasic
+
 ---@type CurveLib.Editor.Utils
 local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 
----@class CurveLib.Editor.Graph.Draggable.Draw
+---@class CurveLib.Editor.Graph.Handle.Draw
 ---@field GraphStack Stack
 local DRAW = {
     GraphStack = util.Stack()
 }
 
---#region Draggable Stack
+--#region Handle Stack
 
--- An entry in the Draggable Stack
----@class CurveLib.Editor.Graph.Draggable.Draw.StackEntry
+-- An entry in the Handle Stack
+---@class CurveLib.Editor.Graph.Handle.Draw.StackEntry
 ---@field Config CurveLib.Editor.Config
----@field Draggable CurveLib.Editor.Graph.Draggable.Base
+---@field Handle CurveLib.Editor.Graph.Handle.Base
 ---@field x integer
 ---@field y integer
 ---@field Width integer
 ---@field Height integer
 
----@return CurveLib.Editor.Graph.Draggable.Draw.StackEntry
+---@return CurveLib.Editor.Graph.Handle.Draw.StackEntry
 function DRAW.PeekEntry()
     return DRAW.GraphStack:Top()
 end
 
 function DRAW.UnpackEntry()
     local entry = DRAW.PeekEntry()
-    return entry.Config, entry.Draggable, entry.x, entry.y, entry.Width, entry.Height
+    return entry.Config, entry.Handle, entry.x, entry.y, entry.Width, entry.Height
 end
 
 ---@param config CurveLib.Editor.Config.Graph The configuration for the Graph
@@ -68,7 +71,7 @@ function DRAW.EndPanel()
     return topPanel, topEntry
 end
 
---#endregion Draggable Stack
+--#endregion Handle Stack
 
 _G.CurveLib.DraggableDraw = DRAW
 return _G.CurveLib.DraggableDraw

@@ -73,6 +73,123 @@ end
 
 --#endregion Graph Stack
 
+local function DrawAlignmentTest( text, x, y, width, height, rotation, scale, alignment )
+
+    local textColor = Color( 255, 255, 255 )
+    local backgroundRectColor = Color( 100, 100, 100 )
+
+    -- Background Rectangle
+    drawBase.Rect( x, y, width, height, rotation, alignment, backgroundRectColor )
+
+    -- Text 
+    drawBase.Text( text, x, y, rotation, scale, alignment, textColor )
+end
+
+function DRAW.AlignemntDebug()
+
+    local text = "Hello, World!"
+    local centerX, centerY = 500, 500
+    local padding = 150
+
+    local textScale = 3 --math.Remap( math.sin( CurTime() * 2 ), -1, 1, 1, 3.5 )
+
+    local textWidth, textHeight = surface.GetTextSize( text )
+    textWidth = textWidth * textScale
+    textHeight = textHeight * textScale
+
+    local testWidth, testHeight = 200, 150
+
+    local rotation = 45 --( CurTime() * 30 ) % 360
+
+    surface.SetFont( "DermaDefault" )
+
+    do -- Top Left
+        local x = centerX - testWidth - padding
+        local y = centerY - testHeight - padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.TopLeft )
+    end
+
+    do -- Top Center
+        local x = centerX
+        local y = centerY - testHeight - padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.TopCenter )
+    end
+
+    
+    do -- Top Right
+        local x = centerX + testWidth + padding
+        local y = centerY - testHeight - padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.TopRight )
+    end
+
+    do -- Center Left
+        local x = centerX - testWidth - padding
+        local y = centerY
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.CenterLeft )
+    end
+
+    do -- Center
+        local x = centerX
+        local y = centerY
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.Center )
+    end
+
+    do -- Center Right
+        local x = centerX + testWidth + padding
+        local y = centerY
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.CenterRight )
+    end
+
+    do -- Bottom Left
+        local x = centerX - testWidth - padding
+        local y = centerY + testHeight + padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.BottomLeft )
+    end
+
+    do -- Bottom Center
+        local x = centerX
+        local y = centerY + testHeight + padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.BottomCenter )
+    end
+
+    do -- Bottom Right
+        local x = centerX + testWidth + padding
+        local y = centerY + testHeight + padding
+
+        DrawAlignmentTest( text, x, y, textWidth, textHeight, rotation, textScale, Alignment.BottomRight )
+    end
+
+    -- Draw a red center line through every text's vertical and horizontal center
+    surface.SetDrawColor( 255, 0, 0 )
+
+    -- Top Row
+    drawBase.Line( centerX - testWidth - padding, centerY - testHeight - padding, centerX + testWidth + padding, centerY - testHeight - padding, 1 )
+
+    -- Center Row
+    drawBase.Line( centerX - testWidth - padding, centerY, centerX + testWidth + padding, centerY, 1 )
+
+    -- Bottom Row
+    drawBase.Line( centerX - testWidth - padding, centerY + testHeight + padding, centerX + testWidth + padding, centerY + testHeight + padding, 1 )
+
+    -- Left Column
+    drawBase.Line( centerX - testWidth- padding, centerY - testHeight - padding, centerX - testWidth - padding, centerY + testHeight + padding, 1 )
+
+    -- Center Column
+    drawBase.Line( centerX, centerY - testHeight - padding, centerX, centerY + testHeight + padding, 1 )
+
+    -- Right Column
+    drawBase.Line( centerX + testWidth + padding, centerY - testHeight - padding, centerX + testWidth + padding, centerY + testHeight + padding, 1 )
+
+end
+
 -- Takes a number range and draws it in a line
 -- Note: This will always draw at least 2 labels.  One for the start and one for the end.
 ---@param config CurveLib.Editor.Config.Graph.Axes.Axis.NumberLine
@@ -80,9 +197,8 @@ end
 ---@param startY integer
 ---@param endX integer
 ---@param endY integer
----@param horizontalAlignment TEXT_ALIGN|integer? The horizontal alignment of the numbers. [Default: Centered]
----@param verticalAlignment TEXT_ALIGN|integer? The vertical alignment of the numbers. [Default: Centered]
-function DRAW.NumberLine( config, startX, startY, endX, endY, horizontalAlignment, verticalAlignment )
+---@param alignment CurveLib.Alignment The alignment of the numbers. [Default: Top Left]
+function DRAW.NumberLine( config, startX, startY, endX, endY, alignment )
     startX, startY, endX, endY = curveUtils.MultiFloor( startX, startY, endX, endY )
 
     -- Start and end numbers
@@ -90,8 +206,8 @@ function DRAW.NumberLine( config, startX, startY, endX, endY, horizontalAlignmen
     surface.SetTextColor( config.LargeTextColor )
     local startingText = string.format( config.FormatString, config.StartingValue )
     local endingText = string.format( config.FormatString, config.EndingValue )
-    drawBase.Text( startingText, startX, startY, 0, 1, horizontalAlignment, verticalAlignment )
-    drawBase.Text( endingText, endX, endY, 0, 1, horizontalAlignment, verticalAlignment )
+    drawBase.Text( startingText, startX, startY, 0, 1, alignment )
+    drawBase.Text( endingText, endX, endY, 0, 1, alignment )
 
     local startPos  = Vector( startX, startY )
     local endPos    = Vector(   endX,   endY )
@@ -111,7 +227,7 @@ function DRAW.NumberLine( config, startX, startY, endX, endY, horizontalAlignmen
         local number = Lerp( i / ( config.MaxNumberCount + 1 ), config.StartingValue, config.EndingValue )
         local formattedNumber = string.format( "%.2f", number )
 
-        drawBase.Text( formattedNumber, pos.x, pos.y, 0, 1, horizontalAlignment, verticalAlignment )
+        drawBase.Text( formattedNumber, pos.x, pos.y, 0, 1, alignment )
     end
 end
 
@@ -123,11 +239,9 @@ function DRAW.Curve( curve )
 
     for i = 1, #curve.Points do
         local point = curve.Points[i] --[[@as CurveLib.Curve.Point]]
-        local mainPoint = point.MainPoint
+        local mainPoint = point.MainHandle
 
         local mainX, mainY = graph:NormalToInterior( mainPoint.x, mainPoint.y )
-
-        drawBase.Rect( mainX, mainY, 10, 10, 45, Color( 0, 0, 200 ) )
     end
 end
 
@@ -160,7 +274,7 @@ function DRAW.GraphExterior()
     local verticalLabelY = interiorY + math.floor( interiorHeight / 2 )
 
     -- Background
-    drawBase.Rect( x + halfWidth, y + halfHeight, width, height, 0, config.BackgroundColor )
+    drawBase.Rect( x + halfWidth, y + halfHeight, width, height, 0, Alignment.TopLeft,config.BackgroundColor )
 
     -- Horizontal Axis Line
     -- Note: The start X is offset to cover the corner between the Axes
@@ -168,8 +282,8 @@ function DRAW.GraphExterior()
         interiorX - vertical.Width, interiorY + interiorHeight,
         horizontalAxisEndX, interiorY + interiorHeight,
         horizontal.Width,
-        horizontal.Color,
-        LINE_ALIGN_LEFT
+        HorizontalAlignment.Left,
+        horizontal.Color
     )
 
     -- Horizontal Number Line
@@ -177,7 +291,7 @@ function DRAW.GraphExterior()
         horizontal.NumberLine,
         interiorX, horizontalNumberLineY,
         horizontalAxisEndX, horizontalNumberLineY,
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM
+        Alignment.BottomCenter
     )
 
     -- Horizontal Label
@@ -187,7 +301,7 @@ function DRAW.GraphExterior()
         horizontal.Label.Text,
         horizontalLabelX, horizontalLabelY,
         horizontal.Label.Rotation, 1,
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER
+        Alignment.Center
     )
 
     -- Vertical Axis Line
@@ -195,8 +309,8 @@ function DRAW.GraphExterior()
         interiorX, interiorY + interiorHeight,
         interiorX, interiorY,
         vertical.Width,
-        vertical.Color,
-        LINE_ALIGN_RIGHT
+        HorizontalAlignment.Right,
+        vertical.Color
     )
 
     -- Vertical Number Line
@@ -204,7 +318,7 @@ function DRAW.GraphExterior()
         vertical.NumberLine,
         verticalNumberLineX, interiorY + interiorHeight,
         verticalNumberLineX, interiorY,
-        TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER
+        Alignment.CenterLeft
     )
 
     -- Vertical Label
@@ -214,7 +328,7 @@ function DRAW.GraphExterior()
         vertical.Label.Text,
         verticalLabelX, verticalLabelY,
         vertical.Label.Rotation, 1,
-        TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER
+        Alignment.Center
     )
 end
 

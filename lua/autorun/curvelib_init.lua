@@ -35,10 +35,10 @@ RunClient( "libraries/curvelib/editor/toolbar/draw.lua" )
 RunClient( "libraries/curvelib/editor/toolbar/panel.lua" )
 
 -- Editor Graph Draggables
-RunClient( "libraries/curvelib/editor/graph/draggable/draw.lua" )
-RunClient( "libraries/curvelib/editor/graph/draggable/base.lua" )
-RunClient( "libraries/curvelib/editor/graph/draggable/main-point.lua" )
-RunClient( "libraries/curvelib/editor/graph/draggable/handle-point.lua" )
+RunClient( "libraries/curvelib/editor/graph/handle/draw.lua" )
+RunClient( "libraries/curvelib/editor/graph/handle/base.lua" )
+RunClient( "libraries/curvelib/editor/graph/handle/main-handle.lua" )
+RunClient( "libraries/curvelib/editor/graph/handle/side-handle.lua" )
 
 -- Editor Graph
 RunClient( "libraries/curvelib/editor/graph/draw.lua" )

@@ -59,15 +59,15 @@ end
 
 --#endregion Mesh Functions
 
--- Draws a rectangle with a given color
--- Rectangles are bottom-right aligned if no rotation is provided or if the rotation is 0
+-- Draws a rectangle with a given color and rotation.
 ---@param x integer
 ---@param y integer
 ---@param width integer
 ---@param height integer
 ---@param rotation number? The angle of the rectangle, in degrees [Default: 0]
+---@param alignment CurveLib.Alignment? The alignment of the rectangle [Default: Top left]
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
-function DRAW.Rect( x, y, width, height, rotation, color )
+function DRAW.Rect( x, y, width, height, rotation, alignment, color )
     render.SetColorMaterial()
 
     local r, g, b, a = 255, 255, 255, 255
@@ -80,9 +80,21 @@ function DRAW.Rect( x, y, width, height, rotation, color )
         end
     end
 
+    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
+    local center = Vector( x + halfWidth, y + halfHeight )
+
+    if alignment then
+        local offsetX, offsetY = curveUtils.GetAlignmentOffset( width, height, alignment )
+
+        center.x = center.x + offsetX
+        center.y = center.y + offsetY
+    end
+
     local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, rotation )
 
-    local center = Vector( x, y )
+    local currentTranslation = cam.GetModelMatrix():GetTranslation()
+
+    local newMatrix = Matrix()
 
     DRAW.StartMesh( MATERIAL_QUADS, 1 )
         mesh.Color( r, g, b, a )
@@ -104,49 +116,34 @@ function DRAW.Rect( x, y, width, height, rotation, color )
 end
 
 -- Draws text with rotation and alignment
----@param text any
----@param textX number The text's center position's x coordinate
----@param textY number The text's center position's y coordinate
+---@param text string
+---@param x integer
+---@param y integer
 ---@param rotation number? The text's rotation, in degrees. [Default: 0]
 ---@param scale number|Vector? The text's scale either as a number or as a Vector [Default: 1]
----@param horizontalAlignment TEXT_ALIGN|integer? The text's horizontal alignment [Default: Centered]
----@param verticalAlignment TEXT_ALIGN|integer? The text's vertical alignment. [Default: Centered]
+---@param alignment CurveLib.Alignment? The text's alignment [Default: Top left]
 ---@param color Color? The text's color.  [Default: Surface.GetDrawColor]
-function DRAW.Text( text, textX, textY, rotation, scale, horizontalAlignment, verticalAlignment, color )
+function DRAW.Text( text, x, y, rotation, scale, alignment, color )
     -- Scale must be a Vector for the Matrix scale
     if scale and not isvector( scale ) then
         scale = Vector( scale --[[@as number]], scale --[[@as number]] )
     end
 
-    local textWidth, textHeight = surface.GetTextSize( text )
-
-    local alignment = Vector( -math.floor( textWidth / 2 ), -math.floor( textHeight / 2 ) )
-
-    if horizontalAlignment == TEXT_ALIGN_LEFT then
-        alignment.x = -textWidth
-    elseif horizontalAlignment == TEXT_ALIGN_RIGHT then
-        -- No horizontal offset because text is bottom-right aligned by default
-        alignment.x = 0
-    end
-
-    if verticalAlignment == TEXT_ALIGN_TOP then
-        alignment.y = -textHeight
-    elseif verticalAlignment == TEXT_ALIGN_BOTTOM then
-        -- No vertical offset because text is bottom-right aligned by default
-        alignment.y = 0
-    end
-
     local currentTranslation = cam.GetModelMatrix():GetTranslation()
 
     local newMatrix = Matrix()
+
     -- 6. Position the finished text, relative to the current Matrix.
-    newMatrix:Translate( Vector( textX, textY ) )
+    newMatrix:Translate( Vector( x, y ) )
+
     -- 5. Re-do the current Matrix's translation so we're back where we started.
     newMatrix:Translate( currentTranslation )
+
     -- 4. Rotate the text.
     if rotation and isnumber( rotation ) then
         newMatrix:Rotate( Angle( 0, rotation, 0 ) )
     end
+
     -- 3. Scale the text.
     if scale then
         if isnumber( scale ) then
@@ -160,8 +157,14 @@ function DRAW.Text( text, textX, textY, rotation, scale, horizontalAlignment, ve
             newMatrix:Scale( scale --[[@as Vector]] )
         end
     end
+    
     -- 2. Move based on the text alignment.
-    newMatrix:Translate( alignment )
+    if alignment then
+        local textWidth, textHeight = surface.GetTextSize( text )
+        local offsetX, offsetY = curveUtils.GetAlignmentOffset( textWidth, textHeight, alignment )
+        newMatrix:Translate( Vector( offsetX, offsetY ) )
+    end
+
     -- 1. Undo the current Matrix's translation so we're back at 0,0.
     newMatrix:Translate( -currentTranslation )
     
@@ -175,13 +178,9 @@ function DRAW.Text( text, textX, textY, rotation, scale, horizontalAlignment, ve
     cam.PopModelMatrix()
 end
 
-LINE_ALIGN_LEFT = 0
-LINE_ALIGN_RIGHT = 1
-LINE_ALIGN_CENTER = 2
+local COLOR_WHITE = Color( 255, 255, 255, 255 )
 
-COLOR_WHITE = Color( 255, 255, 255, 255 )
-
-VECTOR_ZERO = Vector( 0, 0, 0 )
+local VECTOR_ZERO = Vector( 0, 0, 0 )
 
 -- Draws a line between two points.
 ---@param startX integer
@@ -189,9 +188,9 @@ VECTOR_ZERO = Vector( 0, 0, 0 )
 ---@param endX integer
 ---@param endY integer
 ---@param lineWidth number
+---@param alignment CurveLib.Alignment.Horizontal? Controls which side, facing from the start of the line to the end, the drawn line should be aligned to. Default: Centered
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
----@param alignment integer? Controls which side, facing from the start of the line to the end, the drawn line should be aligned to. One of the `LINE_ALIGN_*` enums.  Default: Centered
-function DRAW.Line( startX, startY, endX, endY, lineWidth, color, alignment )
+function DRAW.Line( startX, startY, endX, endY, lineWidth, alignment, color )
     startX, startY, endX, endY = curveUtils.MultiFloor( startX, startY, endX, endY )
 
     local r, g, b, a = 255, 255, 255, 255
@@ -224,19 +223,17 @@ function DRAW.Line( startX, startY, endX, endY, lineWidth, color, alignment )
 
     local leftOffset
     local rightOffset
-    if not alignment or alignment == LINE_ALIGN_CENTER then
+    if alignment == HorizontalAlignment.Left then
+        leftOffset = VECTOR_ZERO
+        rightOffset = rightOffsetDirection * lineWidth
+    elseif alignment == HorizontalAlignment.Right then
+        leftOffset = leftOffsetDirection * lineWidth
+        rightOffset = VECTOR_ZERO
+    else
         local halfWidth = lineWidth / 2.0
 
         leftOffset  = leftOffsetDirection * math.max( math.floor( halfWidth ), 0 )
         rightOffset = rightOffsetDirection * math.max( math.ceil( halfWidth ), 1 )
-    elseif alignment == LINE_ALIGN_LEFT then
-        leftOffset = VECTOR_ZERO
-        rightOffset = rightOffsetDirection * lineWidth
-    elseif alignment == LINE_ALIGN_RIGHT then
-        leftOffset = leftOffsetDirection * lineWidth
-        rightOffset = VECTOR_ZERO
-    else
-        error( "Invalid line alignment: " .. alignment )
     end
 
     render.SetColorMaterial()
@@ -263,7 +260,7 @@ end
 ---@param points table<Vector> A sequential, numerically-indexed table of the points the lines will be drawn between, in order.
 ---@param lineWidth integer The width of the line, in pixels
 ---@param color Color?
----@param alignment integer? Controls which side, facing from the start of the line to the end, the drawn line should be aligned to. One of the `LINE_ALIGN_*` enums.  Default: Centered
+---@param alignment CurveLib.Alignment.Horizontal? Controls which side, facing from the start of the line to the end, the drawn line should be aligned to. One of the `LINE_ALIGN_*` enums.  Default: Centered
 function DRAW.MultiLine( points, lineWidth, color, alignment )
     if not points or not istable( points ) or #points <= 1 or not isvector( points[1] ) then return end
 
@@ -321,6 +318,22 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
         local startRight = lineStart + lineStartOffset
         local endLeft = lineEnd - lineEndOffset
         local endRight = lineEnd + lineEndOffset
+
+        if alignment and alignment ~= HorizontalAlignment.Center then
+            local leftOffset, rightOffset
+            if alignment == HorizontalAlignment.Left then
+                leftOffset = VECTOR_ZERO
+                rightOffset = perpendicular * lineWidth
+            elseif alignment == HorizontalAlignment.Right then
+                leftOffset = perpendicular * -lineWidth
+                rightOffset = VECTOR_ZERO
+            end
+
+            startLeft = startLeft + leftOffset
+            startRight = startRight + rightOffset
+            endLeft = endLeft + leftOffset
+            endRight = endRight + rightOffset
+        end
 
         mesh.Color( r, g, b, a )
         mesh.Position( startLeft )

@@ -1,4 +1,5 @@
 require( "vguihotload" )
+
 ---@class CurveLib.Editor.Frame.Panels
 ---@field Toolbar CurveLib.Editor.Toolbar.Panel?
 ---@field Sidebar CurveLib.Editor.Sidebar.Panel?
@@ -70,27 +71,17 @@ function FRAME:Init()
 
     local derma = self.Panels
 
-    print( "Starting Frame Init..." )
-
-    print( derma )
-
     derma.Toolbar = vgui.Create( "CurveLib.Editor.Toolbar.Panel", self )
     derma.Toolbar:SetConfig( self.Config.ToolbarConfig )
     derma.Toolbar:Dock( TOP )
-
-    print( derma.Toolbar )
 
     derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
     derma.Sidebar:SetConfig( self.Config.SidebarConfig )
     derma.Sidebar:Dock( RIGHT )
 
-    print( derma.Sidebar )
-
     derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel",   self )
     derma.Graph:SetConfig( self.Config.GraphConfig )
     derma.Graph:Dock( FILL )
-
-    print( derma.Graph )
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
@@ -106,7 +97,7 @@ function FRAME:Init()
         CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
     )
     self:AddCurve( defaultCurve )
-    self:EditCurve( defaultCurve )
+    --self:EditCurve( defaultCurve )
 
     self:SetSizable( true )
     self:SetVisible( true )

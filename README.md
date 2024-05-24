@@ -24,7 +24,7 @@ Curve Points are a grouping of three (3) Control Points, which are themselves si
 
 Curve Points consist of three positions:
 
-1. 📍 The Main Control Point  (**Main Point**)  
+1. 📍 The Main Control Point  (**Main Handle**)  
     This is either the start or the end of the Curve Segment(s) that contain this Curve Point.
 2. ✋ The Left Handle Control Point (**Left Handle**)  
     This controls the ending tangent of the Curve Segment that ends at this Curve Point.  
@@ -39,7 +39,7 @@ Curve Points consist of three positions:
 
     **Note:** This will **not** be present on the last Curve Point in a Curve, as there is no Curve Segment after it.
 
-The Main Point controls the position of the Curve's end or start, while the Handles control the angle of the Curve as it approaches and leaves that position.
+The Main Handle controls the position of the Curve's end or start, while the Handles control the angle of the Curve as it approaches and leaves that position.
 
 #### Bounds and Limits
 
@@ -79,7 +79,7 @@ This is the sequence of Curve Points that define the Curve.
 Curve Points are represented by the `Curves.CurvePointData` Class available in `lua/includes/curvelib/curves/curve-point-data.lua`
 
 Each `Curves.CurvePointData` contains three (3) Vectors:
-`MainPoint`, `LeftHandle` and `RightHandle`.  
+`MainHandle`, `LeftHandle` and `RightHandle`.  
 These are the Control Points that dictate the shape and position of Curve Segments.
 
 #### Curve Segments

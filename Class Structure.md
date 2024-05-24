@@ -12,10 +12,10 @@ CurveLib/
             **Panel** : *CurveLib.Editor.PanelBase*
             **Draw** : *CurveLib.Editor.DrawBase*
 	            **StackEntry**
-            Draggable/
+            Handle/
                 **Base** : *DPanel*
-                **HandlePoint** : *CurveLib.Editor.Graph.Draggable.Base*
-                **MainPoint** : *CurveLib.Editor.Graph.Draggable.Base*
+                **SideHandle** : *CurveLib.Editor.Graph.Handle.Base*
+                **MainHandle** : *CurveLib.Editor.Graph.Handle.Base*
                 **Draw** : *CurveLib.Editor.DrawBase*
 	                **StackEntry**
 		**PanelBase** : *DPanel*

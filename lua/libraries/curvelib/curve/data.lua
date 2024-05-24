@@ -20,13 +20,13 @@ function metatable:Evaluate( time )
         -- Not the last index of the table
         if curveSegmentEnd then
             -- If this is the right Curve Segment for the given time value
-            if curveSegmentEnd.MainPoint.x < time then
+            if curveSegmentEnd.MainHandle.x < time then
                 return math.CubicBezier(
                     -- Making time relative to this segment
-                    time - curveSegmentStart.MainPoint.x,
-                    curveSegmentStart.MainPoint,
+                    time - curveSegmentStart.MainHandle.x,
+                    curveSegmentStart.MainHandle,
                     curveSegmentStart.RightHandle,
-                    curveSegmentEnd.MainPoint,
+                    curveSegmentEnd.MainHandle,
                     curveSegmentEnd.LeftHandle
                 ).y
             end
