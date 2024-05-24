@@ -1,10 +1,7 @@
 require( "vguihotload" )
 
----@type CurveLib.Editor.DrawBase
-local drawBasic
-
----@type CurveLib.Editor.Utils
-local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
+---@type CurveLib.Editor.Graph.Handle.Draw
+local handleDraw
 
 ---@class CurveLib.Editor.Graph.Handle.SideHandle : CurveLib.Editor.Graph.Handle.Base
 ---@field GraphPanel CurveLib.Editor.Graph.Panel -- The Graph Panel this Main Handle is parented to.  Cached here for autocomplete convenience and access speed.
@@ -13,29 +10,21 @@ local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 local PANEL = {}
 
 function PANEL:Init()
-    self:SetSize( 20, 20 )
+    self:SetSize( 14, 14 )
 end
 
 function PANEL:Paint( width, height )
-    drawBasic = _G.CurveLib.DrawBase or drawBasic or include( "libraries/curvelib/editor/draw-base.lua" )
+    handleDraw = _G.CurveLib.HandleDraw or handleDraw or include( "libraries/curvelib/editor/graph/handle/draw.lua" )
 
     if not self.GraphPanel then
         self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
     end
 
-    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
+    handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
 
-    local parent = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
+    handleDraw.SideHandle()
 
-    local graphX, graphY = parent:LocalToScreen( 0, 0 )
-
-    local interiorX, interiorY, interiorWidth, interiorHeight = parent:GetInteriorRect()
-
-    render.SetScissorRect( graphX + interiorX, graphY + interiorY, graphX + interiorX + interiorWidth, graphY + interiorY + interiorHeight, true )
-    drawBasic.StartPanel( self )
-    drawBasic.Rect( halfWidth, halfHeight, width, height, 45, Color( 85, 75, 210 )  )
-    drawBasic.EndPanel()
-    render.SetScissorRect( 0, 0, 0, 0, false )
+    handleDraw.EndPanel()
 end
 
 function PANEL:OnDragged( x, y )
