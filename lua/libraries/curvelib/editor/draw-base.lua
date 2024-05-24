@@ -8,6 +8,11 @@ elseif _G.CurveLib.DrawBase then return _G.CurveLib.DrawBase end
 ---@type CurveLib.Editor.Utils
 local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 
+local COLOR_WHITE = Color( 255, 255, 255, 255 )
+
+local VECTOR_ZERO = Vector( 0, 0, 0 )
+local VECTOR_ONE = Vector( 1, 1, 1 )
+
 ---@class CurveLib.Editor.DrawBase
 ---@field PanelStack Stack
 local DRAW = {
@@ -68,8 +73,6 @@ end
 ---@param alignment CurveLib.Alignment? The alignment of the rectangle [Default: Top left]
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
 function DRAW.Rect( x, y, width, height, rotation, alignment, color )
-    render.SetColorMaterial()
-
     local r, g, b, a = 255, 255, 255, 255
     if color then
         r, g, b, a = color:Unpack()
@@ -80,39 +83,41 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
         end
     end
 
+    local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, 0 )
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
     local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
-    local center = Vector( x + halfWidth, y + halfHeight )
-
-    if alignment then
-        local offsetX, offsetY = curveUtils.GetAlignmentOffset( width, height, alignment )
-
-        center.x = center.x + offsetX
-        center.y = center.y + offsetY
-    end
-
-    local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, rotation )
-
-    local currentTranslation = cam.GetModelMatrix():GetTranslation()
 
     local newMatrix = Matrix()
 
-    DRAW.StartMesh( MATERIAL_QUADS, 1 )
-        mesh.Color( r, g, b, a )
-        mesh.Position( center + topRight )
-        mesh.AdvanceVertex()
+    -- 3. Move to our draw position
+    newMatrix:Translate( Vector( x, y ) )
 
-        mesh.Color( r, g, b, a )
-        mesh.Position( center + bottomRight )
-        mesh.AdvanceVertex()
+    -- 2. Apply rotation around 0,0
+    newMatrix:Rotate( Angle( 0, rotation, 0 ) )
 
-        mesh.Color( r, g, b, a )
-        mesh.Position( center + bottomLeft )
-        mesh.AdvanceVertex()
+    -- 1. Offset alignment while we're at 0,0
+    newMatrix:Translate( Vector( alignOffsetX + halfWidth, alignOffsetY + halfHeight ) )
 
-        mesh.Color( r, g, b, a )
-        mesh.Position( center + topLeft )
-        mesh.AdvanceVertex()
-    DRAW.EndMesh()
+    cam.PushModelMatrix( newMatrix, true )
+        render.SetColorMaterial()
+        DRAW.StartMesh( MATERIAL_QUADS, 1 )
+            mesh.Color( r, g, b, a )
+            mesh.Position( topRight )
+            mesh.AdvanceVertex()
+
+            mesh.Color( r, g, b, a )
+            mesh.Position( bottomRight )
+            mesh.AdvanceVertex()
+
+            mesh.Color( r, g, b, a )
+            mesh.Position( bottomLeft )
+            mesh.AdvanceVertex()
+
+            mesh.Color( r, g, b, a )
+            mesh.Position( topLeft )
+            mesh.AdvanceVertex()
+        DRAW.EndMesh()
+    cam.PopModelMatrix()
 end
 
 -- Draws text with rotation and alignment
@@ -129,58 +134,83 @@ function DRAW.Text( text, x, y, rotation, scale, alignment, color )
         scale = Vector( scale --[[@as number]], scale --[[@as number]] )
     end
 
-    local currentTranslation = cam.GetModelMatrix():GetTranslation()
+    -- local newMatrix = Matrix()
+
+    -- -- 6. Position the finished text, relative to the current Matrix.
+    -- newMatrix:Translate( Vector( x, y ) )
+
+    -- -- 3. Scale the text.
+    -- if scale then
+    --     if isnumber( scale ) then
+    --         newMatrix:Scale(
+    --             Vector(
+    --                 scale --[[@as number]],
+    --                 scale --[[@as number]]
+    --             )
+    --         )
+    --     else
+    --         newMatrix:Scale( scale --[[@as Vector]] )
+    --     end
+    -- end
+
+    -- -- 4. Rotate the text.
+    -- if rotation and isnumber( rotation ) then
+    --     newMatrix:Rotate( Angle( 0, rotation, 0 ) )
+    -- end
+
+    -- -- 2. Move based on the text alignment.
+    -- if alignment then
+    --     local textWidth, textHeight = surface.GetTextSize( text )
+        
+    --     newMatrix:Translate( Vector( offsetX, offsetY ) )
+        -- end
+
+    if color and IsColor( color ) then
+        surface.SetTextColor( color )
+    end
+
+    local existingTranslation = cam.GetModelMatrix():GetTranslation()
+
+    local scaleVector = VECTOR_ONE
+    if scale then
+        if isnumber( scale ) then
+            scaleVector = Vector( scale --[[@as number]], scale --[[@as number]] )
+        elseif isvector( scale ) then
+            scaleVector = scale--[[@as Vector]]
+        end
+    end
 
     local newMatrix = Matrix()
 
-    -- 6. Position the finished text, relative to the current Matrix.
+    -- 6. Move to our draw position
     newMatrix:Translate( Vector( x, y ) )
 
-    -- 5. Re-do the current Matrix's translation so we're back where we started.
-    newMatrix:Translate( currentTranslation )
+    -- 5. Move back to the panel we're drawing on
+    newMatrix:Translate( existingTranslation )
 
-    -- 4. Rotate the text.
+    -- 4. Apply rotation around 0,0
     if rotation and isnumber( rotation ) then
         newMatrix:Rotate( Angle( 0, rotation, 0 ) )
     end
 
-    -- 3. Scale the text.
-    if scale then
-        if isnumber( scale ) then
-            newMatrix:Scale(
-                Vector(
-                    scale --[[@as number]],
-                    scale --[[@as number]]
-                )
-            )
-        else
-            newMatrix:Scale( scale --[[@as Vector]] )
-        end
-    end
-    
-    -- 2. Move based on the text alignment.
-    if alignment then
-        local textWidth, textHeight = surface.GetTextSize( text )
-        local offsetX, offsetY = curveUtils.GetAlignmentOffset( textWidth, textHeight, alignment )
-        newMatrix:Translate( Vector( offsetX, offsetY ) )
-    end
+    -- 3. Offset alignment
+    local textWidth, textHeight = surface.GetTextSize( text )
+    textWidth = textWidth * scaleVector.x
+    textHeight = textHeight * scaleVector.y
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( textWidth, textHeight, alignment or Alignment.TopLeft )
+    newMatrix:Translate( Vector( alignOffsetX, alignOffsetY ) )
 
-    -- 1. Undo the current Matrix's translation so we're back at 0,0.
-    newMatrix:Translate( -currentTranslation )
-    
-    if color and IsColor( color ) then
-        surface.SetTextColor( color )
-    end
+    -- 2. Scale the text.
+    newMatrix:Scale( scaleVector )
+
+    -- 1. Move to 0,0 
+    newMatrix:Translate( -existingTranslation )
 
     cam.PushModelMatrix( newMatrix, false )
         surface.SetTextPos( 0, 0 ) -- The Model Matrix handles positioning the text for us.
         surface.DrawText( text )
     cam.PopModelMatrix()
 end
-
-local COLOR_WHITE = Color( 255, 255, 255, 255 )
-
-local VECTOR_ZERO = Vector( 0, 0, 0 )
 
 -- Draws a line between two points.
 ---@param startX integer
@@ -207,6 +237,7 @@ function DRAW.Line( startX, startY, endX, endY, lineWidth, alignment, color )
     -- Thanks to Freya Holmér for the idea
     if lineWidth < 1 and lineWidth > 0 then
         a = a * lineWidth
+        lineWidth = 1
     end
 
     local startPos  = Vector( startX, startY )
@@ -217,7 +248,7 @@ function DRAW.Line( startX, startY, endX, endY, lineWidth, alignment, color )
     -- "Left" and "Right" are relative to that forward direction.
     local direction = ( endPos - startPos ):GetNormalized()
     -- Offset perpendicular (right facing) to the direction of the line
-    local offsetDirection = Vector( direction.y, direction.x ):GetNormalized()
+    local offsetDirection = Vector( direction.y, direction.x )--:GetNormalized()
     local leftOffsetDirection  = Vector( offsetDirection.x, -offsetDirection.y )
     local rightOffsetDirection = Vector( -offsetDirection.x, offsetDirection.y )
 
