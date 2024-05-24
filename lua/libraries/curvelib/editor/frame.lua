@@ -97,7 +97,7 @@ function FRAME:Init()
         CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
     )
     self:AddCurve( defaultCurve )
-    --self:EditCurve( defaultCurve )
+    self:EditCurve( defaultCurve )
 
     self:SetSizable( true )
     self:SetVisible( true )
