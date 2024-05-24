@@ -1,4 +1,5 @@
 require( "vguihotload" )
+
 ---@type CurveLib.Editor.Graph.Draw
 local drawGraph = include( "libraries/curvelib/editor/graph/draw.lua" )
 
@@ -106,9 +107,7 @@ function PANEL:Paint( width, height )
 
     drawGraph.StartPanel( self.Config, self, 0, 0, width, height )
 
-    --drawGraph.GraphExterior()
-
-    drawGraph.AlignemntDebug()
+    drawGraph.GraphExterior()
 
     drawGraph.EndPanel()
 end
@@ -176,7 +175,7 @@ end
 ---@param y number The Y coordinate, relative to the Graph Panel
 function PANEL:PanelToNormal( x, y )
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
-    return ( x - interiorX ) / interiorWidth, 1 - ( y - interiorY ) / interiorHeight
+    return ( x - interiorX ) / interiorWidth, 1 - ( Ay - interiorY ) / interiorHeight
 end
 
 --#endregion Coordinate Conversion

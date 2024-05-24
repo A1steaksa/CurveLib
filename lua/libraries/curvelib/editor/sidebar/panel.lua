@@ -22,10 +22,9 @@ end
 function PANEL:Paint( width, height )
     local drawBasic = _G.CurveLib.DrawBase or drawBasic or include( "libraries/curvelib/editor/draw-base.lua" )
 
-    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
     drawBasic.StartPanel( self )
 
-    drawBasic.Rect( halfWidth, halfHeight, width, height, 0, self.Config.BackgroundColor )
+    drawBasic.Rect( 0, 0, width, height, 0, Alignment.TopLeft, self.Config.BackgroundColor )
 
     drawBasic.EndPanel()
 end
