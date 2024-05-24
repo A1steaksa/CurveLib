@@ -15,6 +15,9 @@ end
 -- Utils
 RunShared( "libraries/curvelib/editor/utils.lua" )
 RunShared( "libraries/curvelib/editor/draw-base.lua" )
+if _G.CurveLib.IsDevelopment then
+    RunClient( "libraries/curvelib/editor/draw-base-tests.lua" )
+end
 
 -- Curves
 RunShared( "libraries/curvelib/curve/point.lua" )
