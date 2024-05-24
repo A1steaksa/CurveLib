@@ -90,15 +90,17 @@ local right = Vector( 0, 0 )
 ---@param rotation number? The rectangle's rotation, in degrees [Default: 0]
 ---@return Vector topRight, Vector bottomRight, Vector bottomLeft, Vector topLeft
 function utils.GetRectangleCornerOffsets( width, height, rotation )
-    local halfWidth = math.floor( width / 2 )
-    local halfHeight = math.floor( height / 2 )
+    local leftHalfWidth     = math.floor( width / 2 )
+    local rightHalfWidth    = math.ceil( width / 2 )
+    local topHalfHeight     = math.floor( height / 2 )
+    local bottomHalfHeight  = math.ceil( height / 2 )
 
     if not rotation or rotation == 0 then
         return
-            Vector(  halfWidth, -halfHeight ), -- Top Right
-            Vector(  halfWidth,  halfHeight ), -- Bottom Right
-            Vector( -halfWidth,  halfHeight ), -- Bottom Left
-            Vector( -halfWidth, -halfHeight )  -- Top Left
+            Vector(  rightHalfWidth, -topHalfHeight ),    -- Top Right
+            Vector(  rightHalfWidth,  bottomHalfHeight ), -- Bottom Right
+            Vector( -leftHalfWidth,   bottomHalfHeight ), -- Bottom Left
+            Vector( -leftHalfWidth,  -topHalfHeight )     -- Top Left
     else
         local rotationRad = math.rad( rotation )
         local sin = math.sin( rotationRad )
@@ -109,12 +111,12 @@ function utils.GetRectangleCornerOffsets( width, height, rotation )
 
         right.x = cos
         right.y = sin
-        
+
         return
-            up *  halfHeight + right *  halfWidth, -- Top Right
-            up * -halfHeight + right *  halfWidth, -- Bottom Right
-            up * -halfHeight + right * -halfWidth, -- Bottom Left
-            up *  halfHeight + right * -halfWidth  -- Top Left
+            up *  topHalfHeight     + right *  rightHalfWidth,  -- Top Right
+            up * -bottomHalfHeight  + right *  rightHalfWidth,  -- Bottom Right
+            up * -bottomHalfHeight  + right * -leftHalfWidth,   -- Bottom Left
+            up *  topHalfHeight     + right * -leftHalfWidth    -- Top Left
     end
 end
 
