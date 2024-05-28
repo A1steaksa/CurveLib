@@ -91,27 +91,6 @@ function DRAW.MainHandle()
     render.SetScissorRect( graphX + interiorX, graphY + interiorY, graphX + interiorX + interiorWidth, graphY + interiorY + interiorHeight, true )
     drawBase.StartPanel( handle )
 
-    -- Lines to handles
-    if handle.LeftHandle then
-        local leftX, leftY = handle.LeftHandle:GetPos()
-
-        -- Drawing positions are relative to our position and need to be corrected
-        leftX = leftX - handle.x + handle.LeftHandle.HalfWidth
-        leftY = leftY - handle.y + handle.LeftHandle.HalfHeight
-
-        drawBase.Line( handle.HalfWidth, handle.HalfHeight, leftX, leftY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
-    end
-
-    if handle.RightHandle then
-        local rightX, rightY = handle.RightHandle:GetPos()
-
-        -- Drawing positions are relative to our position and need to be corrected
-        rightX = rightX - handle.x + handle.RightHandle.HalfWidth
-        rightY = rightY - handle.y + handle.RightHandle.HalfHeight
-
-        drawBase.Line( handle.HalfWidth, handle.HalfHeight, rightX, rightY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
-    end
-
     drawBase.Rect( handle.HalfWidth, handle.HalfHeight, width, height, 45, Alignment.Center, Color( 100, 216, 75 )  )
 
     drawBase.EndPanel()
@@ -122,14 +101,15 @@ end
 function DRAW.SideHandle()
     drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
 
-    local config, handle --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], x, y, width, height = DRAW.UnpackEntry()
+    local _, handle --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], _, _, width, height = DRAW.UnpackEntry()
 
-    local graphX, graphY = handle.GraphPanel:LocalToScreen( 0, 0 )
-
-    local interiorX, interiorY, interiorWidth, interiorHeight = handle.GraphPanel:GetInteriorRect()
-
-    render.SetScissorRect( graphX + interiorX, graphY + interiorY, graphX + interiorX + interiorWidth, graphY + interiorY + interiorHeight, true )
     drawBase.StartPanel( handle )
+
+    local mainHandle = handle.MainHandle    
+    local mainHandleX, mainHandleY = mainHandle:GetPos()
+    local relativeX, relativeY = mainHandleX - handle.x + mainHandle.HalfWidth, mainHandleY - handle.y + mainHandle.HalfHeight
+
+    drawBase.Line( handle.HalfWidth, handle.HalfHeight, relativeX, relativeY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
 
     -- Lines to handles
     if handle.LeftHandle then
@@ -139,7 +119,7 @@ function DRAW.SideHandle()
         leftX = leftX - handle.x + handle.LeftHandle.HalfWidth
         leftY = leftY - handle.y + handle.LeftHandle.HalfHeight
 
-        drawBase.Line( handle.HalfWidth, handle.HalfHeight, leftX, leftY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
+        
     end
 
     if handle.RightHandle then
@@ -155,7 +135,6 @@ function DRAW.SideHandle()
     drawBase.Rect( handle.HalfWidth, handle.HalfHeight, width, height, 45, Alignment.Center, Color( 75, 100, 216 )  )
 
     drawBase.EndPanel()
-    render.SetScissorRect( 0, 0, 0, 0, false )
 end
 
 function DRAW.MainHandleLines()

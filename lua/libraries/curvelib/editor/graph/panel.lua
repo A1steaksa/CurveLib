@@ -173,7 +173,7 @@ end
 -- Converts coordinates from a range of 0-1 (As they are stored in Curves) to the panel-relative coordinates of the Graph's Interior.
 ---@param x number The X coordinate in the range 0-1
 ---@param y number The Y coordinate in the range 0-1
-function PANEL:NormalToInterior( x, y )
+function PANEL:NormalizedToInterior( x, y )
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
     return interiorX + ( x * interiorWidth ), interiorY + ( interiorHeight - y * interiorHeight )
 end
@@ -182,7 +182,7 @@ end
 -- Converts coordinates from the panel-relative coordinates of the Graph's Interior to a range of 0-1 (As they are stored in Curves)
 ---@param x number The X coordinate, relative to the Graph Panel
 ---@param y number The Y coordinate, relative to the Graph Panel
-function PANEL:PanelToNormal( x, y )
+function PANEL:PanelToNormalized( x, y )
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
     return ( x - interiorX ) / interiorWidth, 1 - ( y - interiorY ) / interiorHeight
 end
@@ -229,7 +229,6 @@ end
 ---@return integer correctedX
 ---@return integer correctedY
 function PANEL:CorrectSideHandlePos( index, isRightHandle, x, y )
-    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
 
     ---@type CurveLib.Editor.Graph.Handle.MainHandle
     local mainHandle = self.MainHandles[ index ]
@@ -241,8 +240,8 @@ function PANEL:CorrectSideHandlePos( index, isRightHandle, x, y )
     end
 
     -- Stay within the interior rect bounds
-    local correctedX = math.Clamp( x, interiorX - sideHandle.HalfWidth, interiorX + interiorWidth - sideHandle.HalfWidth )
-    local correctedY = math.Clamp( y, interiorY - sideHandle.HalfHeight, interiorY + interiorHeight - sideHandle.HalfHeight )
+    local correctedX = math.Clamp( x, -sideHandle.HalfWidth, self:GetWide() - sideHandle.HalfWidth )
+    local correctedY = math.Clamp( y, -sideHandle.HalfHeight, self:GetTall() - sideHandle.HalfHeight )
 
     return correctedX, correctedY
 end
@@ -276,6 +275,7 @@ function PANEL:PopulateHandles( count )
             leftHandle.GraphPanel = self
             leftHandle.IsRightHandle = false
             leftHandle.MainHandle = mainHandle
+            leftHandle:MoveToBefore( mainHandle )
             mainHandle.LeftHandle = leftHandle
         end
 
@@ -284,6 +284,7 @@ function PANEL:PopulateHandles( count )
             rightHandle.GraphPanel = self
             rightHandle.IsRightHandle = true
             rightHandle.MainHandle = mainHandle
+            rightHandle:MoveToBefore( mainHandle )
             mainHandle.RightHandle = rightHandle
         end
 
@@ -306,17 +307,17 @@ function PANEL:PositionHandles()
         local point = points[ index ] --[[@as CurveLib.Curve.Point]]
 
         if not mainHandle.IsBeingDragged then
-            local posX, posY = self:NormalToInterior( point.MainHandle.x, point.MainHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.MainHandle.x, point.MainHandle.y )
             mainHandle:SetCenterPos( posX, posY )
         end
 
         if leftHandle and not leftHandle.IsBeingDragged then
-            local posX, posY = self:NormalToInterior( point.LeftHandle.x, point.LeftHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.LeftHandle.x, point.LeftHandle.y )
             leftHandle:SetCenterPos( posX, posY )
         end
 
         if rightHandle and not rightHandle.IsBeingDragged then
-            local posX, posY = self:NormalToInterior( point.RightHandle.x, point.RightHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.RightHandle.x, point.RightHandle.y )
             rightHandle:SetCenterPos( posX, posY )
         end
     end
@@ -340,12 +341,43 @@ end
 ---@return integer x The X coordinate, with any adjustments made
 ---@return integer y The Y coordinate, with any adjustments made
 function PANEL:OnMainHandleDragged( mainHandle, x, y )
-    local correctedX, correctedY = self:CorrectMainHandlePos( mainHandle.Index, x, y )
-
-    local correctedNormalX, correctedNormalY = self:PanelToNormal( correctedX + mainHandle.HalfWidth, correctedY + mainHandle.HalfHeight )
-
     ---@type CurveLib.Curve.Point
     local point = self.CurrentCurve.Points[ mainHandle.Index ]
+    
+    local correctedX, correctedY = self:CorrectMainHandlePos( mainHandle.Index, x, y )
+    local correctedNormalX, correctedNormalY = self:PanelToNormalized( correctedX + mainHandle.HalfWidth, correctedY + mainHandle.HalfHeight )
+
+    local oldX, oldY = mainHandle:GetX(), mainHandle:GetY()
+
+    -- Move the Left Handle with the Main Handle
+    if point.LeftHandle then
+        local leftHandle = mainHandle.LeftHandle
+
+        local newPosX, newPosY = leftHandle.x + (correctedX - oldX), leftHandle.y + ( correctedY - oldY )
+        newPosX, newPosY = self:CorrectSideHandlePos( mainHandle.Index, false, newPosX, newPosY )
+
+        -- Move the vgui element
+        leftHandle.x = newPosX
+        leftHandle.y = newPosY
+
+        -- Update the Curve Data
+        point.LeftHandle.x, point.LeftHandle.y = self:PanelToNormalized( newPosX + leftHandle.HalfWidth, newPosY + leftHandle.HalfHeight )
+    end
+
+    -- Move the Right Handle with the Main Handle
+    if point.RightHandle then
+        local rightHandle = mainHandle.RightHandle
+
+        local newPosX, newPosY = rightHandle.x + (correctedX - oldX), rightHandle.y + ( correctedY - oldY )
+        newPosX, newPosY = self:CorrectSideHandlePos( mainHandle.Index, true, newPosX, newPosY )
+
+        -- Move the vgui element
+        rightHandle.x = newPosX
+        rightHandle.y = newPosY
+
+        -- Update the Curve Data
+        point.RightHandle.x, point.RightHandle.y = self:PanelToNormalized( newPosX + rightHandle.HalfWidth, newPosY + rightHandle.HalfHeight )
+    end
 
     point.MainHandle.x = correctedNormalX
     point.MainHandle.y = correctedNormalY
@@ -365,7 +397,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
 
     local correctedX, correctedY = self:CorrectSideHandlePos( mainHandleIndex, sideHandle.IsRightHandle, x, y )
 
-    local correctedNormalX, correctedNormalY = self:PanelToNormal( correctedX + sideHandle.HalfWidth, correctedY + sideHandle.HalfHeight )
+    local correctedNormalX, correctedNormalY = self:PanelToNormalized( correctedX + sideHandle.HalfWidth, correctedY + sideHandle.HalfHeight )
 
     ---@type CurveLib.Curve.Point
     local point = self.CurrentCurve.Points[ mainHandleIndex ]
