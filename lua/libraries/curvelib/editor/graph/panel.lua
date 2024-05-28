@@ -103,13 +103,20 @@ end
 function PANEL:Paint( width, height )
     drawGraph = _G.CurveLib.GraphDraw or drawGraph
 
+    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
+    local panelX, panelY = self:LocalToScreen( 0, 0 )
+    
+    local scissorX, scissorY = panelX + interiorX, panelY + interiorY
+
     self.Config:ClearAllCaches()
 
     drawGraph.StartPanel( self.Config, self, 0, 0, width, height )
 
     drawGraph.GraphExterior()
 
+    render.SetScissorRect( scissorX, scissorY, scissorX + interiorWidth, scissorY + interiorHeight, true )
     drawGraph.Curve( self.CurrentCurve )
+    render.SetScissorRect( 0, 0, 0, 0, false )
 
     drawGraph.EndPanel()
 end
