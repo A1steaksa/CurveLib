@@ -15,6 +15,7 @@ local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 local DRAW = {
     GraphStack = util.Stack()
 }
+_G.CurveLib.GraphDraw = DRAW
 
 --#region Graph Stack
 
@@ -117,15 +118,28 @@ end
 -- Draws a Curve
 ---@param curve CurveLib.Curve.Data
 function DRAW.Curve( curve )
-    local config, graph, x, y, width, height = DRAW.UnpackEntry()
+
+    local config, graph = DRAW.UnpackEntry()
     local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
 
-    for i = 1, #curve.Points do
-        local point = curve.Points[i] --[[@as CurveLib.Curve.Point]]
-        local mainPoint = point.MainHandle
+    local lineVertices = {}
+    local vertexCount = config.Curve.VertexCount
+    for vertexNumber = 1, vertexCount do
+        local percentage = ( vertexNumber / vertexCount )
 
-        local mainX, mainY = graph:NormalToInterior( mainPoint.x, mainPoint.y )
+        local evaluation = curve( percentage )
+
+        print( evaluation )
+        local x = interiorX + evaluation.x * interiorWidth
+        local y = interiorY + evaluation.y * interiorHeight
+
+        
+        lineVertices[ #lineVertices + 1 ] = Vector( x, y )
+
+        drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, config.Curve.Color )
     end
+
+    --drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
 end
 
 -- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines
@@ -216,5 +230,4 @@ function DRAW.GraphExterior()
     
 end
 
-_G.CurveLib.GraphDraw = DRAW
 return _G.CurveLib.GraphDraw

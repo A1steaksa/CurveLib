@@ -109,6 +109,8 @@ function PANEL:Paint( width, height )
 
     drawGraph.GraphExterior()
 
+    drawGraph.Curve( self.CurrentCurve )
+
     drawGraph.EndPanel()
 end
 

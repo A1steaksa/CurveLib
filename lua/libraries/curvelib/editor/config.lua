@@ -68,6 +68,12 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@field ToolbarConfig CurveLib.Editor.Config.Toolbar
 ---@field __index table
 
+-- Visual settings for the curve in the Curve Editor.
+---@class (exact) CurveLib.Editor.Config.Graph.Curve
+---@field Color Color The Color of the curve line.
+---@field Width integer The width, in pixels, of the curve line.
+---@field VertexCount integer The number of vertices to use when drawing the curve.
+
 ---@class (exact) CurveLib.Editor.Config.Graph.Axes
 ---@field Horizontal CurveLib.Editor.Config.Graph.Axes.Axis
 ---@field Vertical CurveLib.Editor.Config.Graph.Axes.Axis
@@ -114,10 +120,18 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 -- The visual settings for this Curve Editor's Graph.
 ---@class (exact) CurveLib.Editor.Config.Graph
 ---@field BackgroundColor Color
+---@field Curve CurveLib.Editor.Config.Graph.Curve
 ---@field Axes CurveLib.Editor.Config.Graph.Axes
 ---@field Caches table The cache of all data that is stored for the Graph.
 local CONFIG = {
     BackgroundColor = DefaultColors.GraphBackground,
+
+    Curve = {
+        Color = DefaultColors.Curve,
+        Width = 8,
+        VertexCount = 100
+    },
+
     Axes = {
         Horizontal = {
             Color = DefaultColors.AxisLine,
@@ -175,13 +189,16 @@ local CONFIG = {
     Caches = {}
 }
 
+
 function CONFIG:ClearAllCaches()
     self.Caches = {}
 end
 
+
 function CONFIG:ClearNumberLineTextSizeCache()
     self.Caches.NumberLineTextSize = nil
 end
+
 
 function CONFIG:ClearLabelSizeCache()
     self.Caches.LabelSize = nil
@@ -255,10 +272,12 @@ local DefaultConfig = {
     }
 }
 
+
 -- The metatable that provides default values to these config tables
 ---@class (exact) CurveLib.Editor.Config
 local ConfigMetatable = {}
 ConfigMetatable.__index = DefaultConfig
+
 
 -- Creates a new Curve Editor Graph Config table with the default settings
 ---@return CurveLib.Editor.Config
