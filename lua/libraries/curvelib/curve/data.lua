@@ -10,7 +10,7 @@ metatable.__index = metatable
 ---@param time number The time value to evaluate the curve at. Must be between 0 and 1.
 ---@return Vector # The position of the curve at the given time. May not be between 0 and 1.
 function metatable:Evaluate( time )
-    if not time then return end
+    if not time then error( "Cannot evaluate curve at nil time" ) end
     time = math.Clamp( time, 0, 1 )
     
     local points = self.Points
@@ -29,18 +29,15 @@ function metatable:Evaluate( time )
             return curveSegmentStart.MainHandle
         end
 
-        local time = time * ( #points - 1 ) - ( curveSegmentIndex - 1 )
-
         return math.CubicBezier(
-            time,
+            time * ( #points - 1 ) - ( curveSegmentIndex - 1 ),
             curveSegmentStart.MainHandle,
             curveSegmentStart.RightHandle,
             curveSegmentEnd.LeftHandle,
             curveSegmentEnd.MainHandle
         )
     else
-        print( "Invalid curve segment index", curveSegmentIndex )
-        return Vector( time, 0.5 )
+        error( "Invalid curve segment index" .. tostring( curveSegmentIndex ) )
     end
 end
 metatable.__call = metatable.Evaluate
