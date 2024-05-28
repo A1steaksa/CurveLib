@@ -98,8 +98,8 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
     -- 1. Offset alignment while we're at 0,0
     newMatrix:Translate( Vector( alignOffsetX + halfWidth, alignOffsetY + halfHeight ) )
 
+    render.SetColorMaterial()
     cam.PushModelMatrix( newMatrix, true )
-        render.SetColorMaterial()
         DRAW.StartMesh( MATERIAL_QUADS, 1 )
             mesh.Color( r, g, b, a )
             mesh.Position( topRight )
@@ -133,37 +133,6 @@ function DRAW.Text( text, x, y, rotation, scale, alignment, color )
     if scale and not isvector( scale ) then
         scale = Vector( scale --[[@as number]], scale --[[@as number]] )
     end
-
-    -- local newMatrix = Matrix()
-
-    -- -- 6. Position the finished text, relative to the current Matrix.
-    -- newMatrix:Translate( Vector( x, y ) )
-
-    -- -- 3. Scale the text.
-    -- if scale then
-    --     if isnumber( scale ) then
-    --         newMatrix:Scale(
-    --             Vector(
-    --                 scale --[[@as number]],
-    --                 scale --[[@as number]]
-    --             )
-    --         )
-    --     else
-    --         newMatrix:Scale( scale --[[@as Vector]] )
-    --     end
-    -- end
-
-    -- -- 4. Rotate the text.
-    -- if rotation and isnumber( rotation ) then
-    --     newMatrix:Rotate( Angle( 0, rotation, 0 ) )
-    -- end
-
-    -- -- 2. Move based on the text alignment.
-    -- if alignment then
-    --     local textWidth, textHeight = surface.GetTextSize( text )
-        
-    --     newMatrix:Translate( Vector( offsetX, offsetY ) )
-        -- end
 
     if color and IsColor( color ) then
         surface.SetTextColor( color )
@@ -310,6 +279,7 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
 
     local lastLineEndOffset
 
+    render.SetColorMaterial()
     DRAW.StartMesh( MATERIAL_QUADS, segmentCount )
     for segmentNumber = 1, segmentCount do
         local lineStart = points[ segmentNumber ]
@@ -317,7 +287,7 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
         local nextLineEnd = points[ segmentNumber + 2 ]
 
         local direction = ( lineEnd - lineStart ):GetNormalized() --[[@as Vector]]
-        local perpendicular = Vector( -direction.y, direction.x )
+        local perpendicular = Vector( -direction.y, direction.x )--:GetNormalized()
 
         local lineStartOffset
         if segmentNumber == 1 then
