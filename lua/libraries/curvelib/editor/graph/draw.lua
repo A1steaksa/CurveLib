@@ -133,8 +133,6 @@ function DRAW.Curve( curve )
         local y = interiorY + interiorHeight - ( evaluation.y * interiorHeight )
 
         lineVertices[ #lineVertices + 1 ] = Vector( x, y )
-
-        --drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, config.Curve.Color )
     end
 
     drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
