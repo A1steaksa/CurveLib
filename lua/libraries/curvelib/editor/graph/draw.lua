@@ -124,28 +124,25 @@ function DRAW.Curve( curve )
 
     local lineVertices = {}
     local vertexCount = config.Curve.VertexCount
-    for vertexNumber = 1, vertexCount do
+    for vertexNumber = 0, vertexCount do
         local percentage = ( vertexNumber / vertexCount )
 
         local evaluation = curve( percentage )
 
-        print( evaluation )
         local x = interiorX + evaluation.x * interiorWidth
-        local y = interiorY + evaluation.y * interiorHeight
+        local y = interiorY + interiorHeight - ( evaluation.y * interiorHeight )
 
-        
         lineVertices[ #lineVertices + 1 ] = Vector( x, y )
 
-        drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, config.Curve.Color )
+        --drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, config.Curve.Color )
     end
 
-    --drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
+    drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
 end
 
 -- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines
 function DRAW.GraphExterior()
     local config, graph, x, y, width, height = DRAW.UnpackEntry()
-    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
     local horizontal = config.Axes.Horizontal
     local vertical = config.Axes.Vertical
 
