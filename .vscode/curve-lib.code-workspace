@@ -7,7 +7,7 @@
 			"path": "../../vgui-hotload"
 		},
 		{
-			"path": "../../performance-testing"
+			"path": "../../curve-testing"
 		}
 	],
 	"settings": {}
