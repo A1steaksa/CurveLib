@@ -74,14 +74,17 @@ function FRAME:Init()
     derma.Toolbar = vgui.Create( "CurveLib.Editor.Toolbar.Panel", self )
     derma.Toolbar:SetConfig( self.Config.ToolbarConfig )
     derma.Toolbar:Dock( TOP )
+    derma.Toolbar:SetEditorFrame( self )
 
     derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
     derma.Sidebar:SetConfig( self.Config.SidebarConfig )
     derma.Sidebar:Dock( RIGHT )
+    derma.Sidebar:SetEditorFrame( self )
 
     derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel",   self )
     derma.Graph:SetConfig( self.Config.GraphConfig )
     derma.Graph:Dock( FILL )
+    derma.Graph:SetEditorFrame( self )
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
