@@ -40,14 +40,14 @@ local DefaultConfig = {
     DockPadding = {
         Top = 9,
         Bottom = 9,
-        Left = 11,
-        Right = 11
+        Left = 9,
+        Right = 9
     },
     ResizeHandleSizes = {
         Top = 5,
-        Bottom = 5,
-        Left = 5,
-        Right = 5,
+        Bottom = 7,
+        Left = 7,
+        Right = 7,
         ResizeCornerExtraWidth = 10,
         ResizeCornerExtraHeight = 10
     },
@@ -98,13 +98,6 @@ function PANEL:Init()
     local config = self.BFrame.Config
     local colors = self:GetColorTable()
 
-    self:DockPadding(
-        config.ResizeHandleSizes.Left + config.DockPadding.Left,
-        config.ResizeHandleSizes.Top + config.DockPadding.Top + config.TitleBar.Height,
-        config.ResizeHandleSizes.Right + config.DockPadding.Right,
-        config.ResizeHandleSizes.Bottom + config.DockPadding.Bottom
-    )
-
     self.lblTitle:SetTextColor( colors.TitleText )
 
 end
@@ -126,6 +119,25 @@ function PANEL:PerformLayout()
 		titlePush = 16
 
 	end
+
+    local leftDockPadding = config.DockPadding.Left
+    local topDockPadding = config.DockPadding.Top + config.TitleBar.Height
+    local rightDockPadding = config.DockPadding.Right
+    local bottomDockPadding = config.DockPadding.Bottom
+
+    if self:GetSizable() then
+        leftDockPadding = leftDockPadding + config.ResizeHandleSizes.Left
+        topDockPadding = topDockPadding + config.ResizeHandleSizes.Top
+        rightDockPadding = rightDockPadding + config.ResizeHandleSizes.Right
+        bottomDockPadding = bottomDockPadding + config.ResizeHandleSizes.Bottom
+    end
+
+    self:DockPadding(
+        leftDockPadding,
+        topDockPadding,
+        rightDockPadding,
+        bottomDockPadding
+    )
 
     local closeButtonX = panelWidth
         - titleBar.ButtonWidth
@@ -208,7 +220,7 @@ function PANEL:GetResizeHandle( localPos )
     local onTopEdge = localPos.y <= handles.Top
     local onBottomEdge = localPos.y >= panelHeight - handles.Bottom
     local onResizableCorner =
-    localPos.x >= panelWidth - handles.Right - handles.ResizeCornerExtraWidth
+            localPos.x >= panelWidth - handles.Right - handles.ResizeCornerExtraWidth
         and localPos.y >= panelHeight - handles.Bottom - handles.ResizeCornerExtraHeight
 
     if onResizableCorner then
