@@ -1,5 +1,3 @@
-print( "Curve Point Loaded" )
-
 ---@class CurveLib.Curve.Point
 ---@field MainHandle Vector
 ---@field LeftHandle Vector?
@@ -10,14 +8,6 @@ local metatable = {
     RightHandle = nil
 }
 metatable.__index = metatable
-
-function metatable:HasLeftHandle()
-    return self.LeftHandle and isvector( self.LeftHandle )
-end
-
-function metatable:HasRightHandle()
-    return self.RightHandle and isvector( self.RightHandle )
-end
 
 -- Creates a new Curve Point with an optional set of handles
 ---@param mainHandlePos Vector The position of the main handle. Must be in the range [0-1].
