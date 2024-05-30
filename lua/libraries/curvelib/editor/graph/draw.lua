@@ -127,7 +127,7 @@ function DRAW.Curve( curve )
     for vertexNumber = 0, vertexCount do
         local percentage = ( vertexNumber / vertexCount )
 
-        local evaluation = curve( percentage )
+        local evaluation = curve( percentage, true )
 
         local x = interiorX + evaluation.x * interiorWidth
         local y = interiorY + interiorHeight - ( evaluation.y * interiorHeight )
@@ -136,6 +136,22 @@ function DRAW.Curve( curve )
     end
 
     drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
+end
+
+-- Draws the most recently evaluated point of a Curve
+---@param curve CurveLib.Curve.Data
+function DRAW.RecentEvaluation( curve )
+    if not curve.lastInput or not curve.lastOutput then return end
+
+    local config, graph = DRAW.UnpackEntry()
+    local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
+
+    local x = interiorX + curve.lastOutput.x * interiorWidth
+    local y = interiorY + interiorHeight - ( curve.lastOutput.y * interiorHeight )
+
+    drawBase.Line( interiorX, y, interiorX + interiorWidth, y, 1, HorizontalAlignment.Center, Color( 255, 0, 0, 255 ) )
+    drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
+    drawBase.Rect( interiorX, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
 -- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines
@@ -223,6 +239,40 @@ function DRAW.GraphExterior()
         vertical.Label.Color
     )
     
+end
+
+
+-- Visualizes finding the distance between a point and a curve
+function DRAW.DistanceToCurve( curve, x, y )
+    local config, graph = DRAW.UnpackEntry()
+    local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
+
+    local sampleCount = 400
+
+    local testPoint = Vector( graph:ScreenToLocal( 0, 0 ) ) + Vector( x, y )
+
+    local lowestDistance = math.huge
+    local lowestDistanceSample
+
+    for i = 0, sampleCount do
+        local percentage = i / sampleCount
+        local evaluation = curve( percentage, true )
+
+        local evaluatedPos = Vector(
+            interiorX + evaluation.x * interiorWidth,
+            interiorY + interiorHeight - ( evaluation.y * interiorHeight )
+        )
+
+        local distance = testPoint:Distance( evaluatedPos )
+
+        if distance < lowestDistance then
+            lowestDistance = distance
+            lowestDistanceSample = evaluatedPos
+        end
+    end
+
+    drawBase.Line( testPoint.x, testPoint.y, lowestDistanceSample.x, lowestDistanceSample.y, 3, HorizontalAlignment.Center, Color( 0, 100, 0, 255 ) )
+
 end
 
 return _G.CurveLib.GraphDraw
