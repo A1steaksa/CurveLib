@@ -1,5 +1,8 @@
 ---@class CurveLib.Curve.Data
 ---@field Points table<CurveLib.Curve.Point>
+---@field IsCurve boolean
+---@field lastInput number
+---@field lastOutput Vector
 local metatable = {}
 metatable.IsCurve = true
 metatable.__index = metatable
@@ -8,11 +11,14 @@ metatable.__index = metatable
 -- This function is also aliased to the __call metamethod
 -- so that you can call the curve like a function.
 ---@param time number The time value to evaluate the curve at. Must be between 0 and 1.
+---@param shouldSuppressHistory? boolean Whether or not to suppress this evaluation from being stored as the curve's last input/output.
 ---@return Vector # The position of the curve at the given time. May not be between 0 and 1.
-function metatable:Evaluate( time )
-    if not time then error( "Cannot evaluate curve at nil time" ) end
+function metatable:Evaluate( time, shouldSuppressHistory )
+    if not time then
+        error( "Cannot evaluate curve at nil time" )
+    end
     time = math.Clamp( time, 0, 1 )
-    
+
     local points = self.Points
 
     local pointWidth = 1 / ( #points - 1 )
@@ -22,20 +28,30 @@ function metatable:Evaluate( time )
     local curveSegmentStart = points[ curveSegmentIndex ]
     local curveSegmentEnd = points[ curveSegmentIndex + 1 ]
 
-    -- Not the last index of the table
     if curveSegmentStart then
         -- If this is the end of the curve, return the last point
         if not curveSegmentEnd then
+            if not shouldSuppressHistory then
+                self.lastInput = time
+                self.lastOutput = curveSegmentStart.MainHandle
+            end
             return curveSegmentStart.MainHandle
         end
 
-        return math.CubicBezier(
+        local result = math.CubicBezier(
             time * ( #points - 1 ) - ( curveSegmentIndex - 1 ),
             curveSegmentStart.MainHandle,
             curveSegmentStart.RightHandle,
             curveSegmentEnd.LeftHandle,
             curveSegmentEnd.MainHandle
         )
+
+        if not shouldSuppressHistory then
+            self.lastInput = time
+            self.lastOutput = result
+        end
+
+        return result
     else
         error( "Invalid curve segment index" .. tostring( curveSegmentIndex ) )
     end
