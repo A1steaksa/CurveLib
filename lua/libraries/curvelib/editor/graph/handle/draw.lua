@@ -118,8 +118,6 @@ function DRAW.SideHandle()
         -- Drawing positions are relative to our position and need to be corrected
         leftX = leftX - handle.x + handle.LeftHandle.HalfWidth
         leftY = leftY - handle.y + handle.LeftHandle.HalfHeight
-
-        
     end
 
     if handle.RightHandle then
