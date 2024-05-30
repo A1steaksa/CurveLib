@@ -118,6 +118,11 @@ function PANEL:Paint( width, height )
     drawGraph.Curve( self.CurrentCurve )
     render.SetScissorRect( 0, 0, 0, 0, false )
 
+    drawGraph.RecentEvaluation( self.CurrentCurve )
+
+    local mouseX, mouseY = input.GetCursorPos()
+    drawGraph.DistanceToCurve( self.CurrentCurve, mouseX, mouseY )
+
     drawGraph.EndPanel()
 end
 
@@ -248,9 +253,16 @@ end
 
 -- Removes all Main Points on this Graph
 function PANEL:ClearPoints()
-    local points = self.MainHandles
-    for index = 1, #points do
-        points[ index ]:Remove()
+    local mainHandles = self.MainHandles
+    for index = 1, #mainHandles do
+        local mainHandle = mainHandles[ index ]
+        if mainHandle.LeftHandle then
+            mainHandle.LeftHandle:Remove()
+        end
+        if mainHandle.RightHandle then
+            mainHandle.RightHandle:Remove()
+        end
+        mainHandle:Remove()
     end
 
     self.MainHandles = {}
@@ -419,7 +431,6 @@ function PANEL:OnSizeChanged( width, height )
     self:ClearInteriorRectCache()
     self:PositionHandles()
 end
-
 
 vgui.Register( "CurveLib.Editor.Graph.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
