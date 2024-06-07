@@ -1,3 +1,5 @@
+if not CLIENT then return end
+
 require( "vguihotload" )
 if not _G.CurveLib or not istable( _G.CurveLib ) then
     error( "Curve Lib did not initialize correctly" )
@@ -13,10 +15,29 @@ local COLOR_WHITE = Color( 255, 255, 255, 255 )
 local VECTOR_ZERO = Vector( 0, 0, 0 )
 local VECTOR_ONE = Vector( 1, 1, 1 )
 
+local iMeshColorMaterial = CreateMaterial( "CurveLib_DrawBase_IMeshColor", "UnlitGeneric", {
+    ["$basetexture"] = "color/white",
+    ["$vertexcolor"] = 1,
+    ["$vertexalpha"] = 1,
+    ["$model"] = 1
+} )
+
+---@class CurveLib.Editor.DrawBase.Caches
+---@field Circles CurveLib.Editor.DrawBase.Caches.Circles
+
+---@class CurveLib.Editor.DrawBase.Caches.Circles
+---@field Meshes table<integer, IMesh> The Meshes for each generated circle vertex count
+
 ---@class CurveLib.Editor.DrawBase
 ---@field PanelStack Stack
+---@field Caches CurveLib.Editor.DrawBase.Caches
 local DRAW = {
-    PanelStack = util.Stack()
+    PanelStack = util.Stack(),
+    Caches = {
+        Circles = {
+            Meshes = {}
+        }
+    }
 }
 
 --#region Editor Stack
@@ -117,6 +138,98 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
             mesh.Position( topLeft )
             mesh.AdvanceVertex()
         DRAW.EndMesh()
+    cam.PopModelMatrix()
+end
+
+-- Draws a circle
+---@param x integer
+---@param y integer
+---@param radius integer|Vector The radius of the circle, in pixels. Can be a Vector to specify an ellipse.
+---@param rotation number? The angle of the circle, in degrees. Default: 0
+---@param vertexCount? integer The number of vertices the circle will have. The higher the number, the smoother the circle. Default: Calculated based on radius.
+---@param alignment CurveLib.Alignment? The text's alignment [Default: Top left]
+---@param color Color? Default: `surface.GetDrawColor` or white if not set.
+function DRAW.Circle( x, y, radius, rotation, vertexCount, alignment, color )
+    if not isnumber( x ) or not isnumber( y ) or ( not isnumber( radius ) and not isvector( radius ) ) or ( vertexCount and not isnumber( vertexCount ) ) then
+        error( "Invalid arguments to DRAW.Circle" )
+        return
+    end
+
+    local r, g, b, a = 255, 255, 255, 255
+    if color then
+        r, g, b, a = color:Unpack()
+    else
+        local drawColor = surface.GetDrawColor()
+        if drawColor then
+            r, g, b, a = drawColor.r, drawColor.g, drawColor.b, drawColor.a
+        end
+    end
+
+    local width, height = radius --[[@as number]], radius --[[@as number]]
+    if isvector( radius ) then
+        width, height = radius.x, radius.y
+    end
+
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
+    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
+
+    if not vertexCount or vertexCount < 10 then
+
+        local maxRadius = math.max( width, height ) / 2
+
+        -- Dividing by 10 gives us a good balance between performance and quality, but can be adjusted.
+        local calculatedVertexCount = math.floor( maxRadius / 2 )
+
+        -- 10 has been chosen as the minimum vertex count to prevent the circle from looking like a simple polygon.
+        vertexCount = math.max( 10, calculatedVertexCount )
+    end
+
+    local circleMesh = DRAW.Caches.Circles.Meshes[ vertexCount ]
+    if not circleMesh then
+        circleMesh = Mesh( iMeshColorMaterial )
+        DRAW.Caches.Circles.Meshes[ vertexCount ] = circleMesh
+
+        local radsPerVertex = math.rad( 360 / vertexCount )
+
+        DRAW.StartMesh( circleMesh, MATERIAL_POLYGON, vertexCount )
+            for vertexNumber = 1, vertexCount do
+                local angle = radsPerVertex * vertexNumber
+                local vertex = Vector( math.cos( angle ), math.sin( angle ) )
+
+                mesh.TexCoord( 0, vertex.x, vertex.y )
+                mesh.Color( 255, 255, 255, 255 )
+                mesh.Position( vertex )
+                mesh.AdvanceVertex()
+            end
+        DRAW.EndMesh()
+    end
+
+    local newMatrix = Matrix()
+
+    -- 5. Move to the draw position
+    newMatrix:Translate( Vector( x, y ) )
+
+    -- 4. Rotation
+    if rotation then
+        newMatrix:Rotate( Angle( 0, rotation, 0 ) )
+    end
+
+    -- 3. Offset alignment
+    newMatrix:Translate( Vector( alignOffsetX * 2, alignOffsetY * 2 ) )
+
+    -- 2. Offset the circle to be top-left aligned so the alignment offsets work correctly.
+    newMatrix:Translate( Vector( width, height ) )
+
+    -- 1. Scale
+    newMatrix:Scale( Vector( width, height ) )
+
+    -- Hacky color amd alpha via Material properties because IMeshes don't appear to receive color or blend settings from the render library.
+    iMeshColorMaterial:SetVector( "$color", Vector( r / 255, g / 255, b / 255 ) )
+    iMeshColorMaterial:SetFloat( "$alpha", a / 255 )
+    render.SetMaterial( iMeshColorMaterial )
+
+    cam.PushModelMatrix( newMatrix, true )
+        circleMesh:Draw()
     cam.PopModelMatrix()
 end
 
@@ -262,7 +375,10 @@ end
 ---@param color Color?
 ---@param alignment CurveLib.Alignment.Horizontal? Controls which side, facing from the start of the line to the end, the drawn line should be aligned to. One of the `LINE_ALIGN_*` enums.  Default: Centered
 function DRAW.MultiLine( points, lineWidth, color, alignment )
-    if not points or not istable( points ) or #points <= 1 or not isvector( points[1] ) then return end
+    if not points or not istable( points ) or #points <= 1 or not isvector( points[1] ) then
+        error( "Invalid arguments to DRAW.MultiLine" )
+        return
+    end
 
     local r, g, b, a = 255, 255, 255, 255
     if color then
