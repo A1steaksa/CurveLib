@@ -4,6 +4,8 @@ require( "vguihotload" )
 ---@field IsBeingDragged boolean? Whether or not the Handle is being dragged
 ---@field HalfWidth integer
 ---@field HalfHeight integer
+---@field HoverStartTime number
+---@field HoverEndTime number
 local PANEL = {}
 
 function PANEL:OnSizeChanged( width, height )
@@ -56,6 +58,14 @@ function PANEL:OnMouseReleased( mouseButton )
     if mouseButton ~= MOUSE_LEFT then return end
     self:MouseCapture( false )
     self.IsBeingDragged = nil
+end
+
+function PANEL:OnCursorEntered()
+    self.HoverStartTime = CurTime()
+end
+
+function PANEL:OnCursorExited()
+    self.HoverEndTime = CurTime()
 end
 
 vgui.Register( "CurveLib.Editor.Graph.Handle.Base", PANEL, "DPanel" )
