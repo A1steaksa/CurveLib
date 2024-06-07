@@ -33,9 +33,12 @@ local DefaultFonts = {
     NumberLineSmallText = "CurveLib_NumberLine_Small"
 }
 
---#endregion Default Values
+local DefaultFormatStrings = {
+    TwoDecimals = "%.2f"
+}
 
 --#region Fonts
+
 surface.CreateFont( DefaultFonts.AxisLabel, {
     font = "Roboto Regular",
     extended = false,
@@ -56,23 +59,65 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
     size = 16,
     weight = 500,
 } )
+
 --#endregion Fonts
+
+--#endregion Default Values
 
 --#region Class Definitions
 
 -- Editor Config  
--- The visual settings for this Curve Editor.
+-- The settings for this Curve Editor.
 ---@class (exact) CurveLib.Editor.Config
 ---@field GraphConfig   CurveLib.Editor.Config.Graph
 ---@field SidebarConfig CurveLib.Editor.Config.Sidebar
 ---@field ToolbarConfig CurveLib.Editor.Config.Toolbar
 ---@field __index table
 
--- Visual settings for the curve in the Curve Editor.
+--#region Graph Settings
+
+-- The settings for the Graph
+---@class (exact) CurveLib.Editor.Config.Graph
+---@field BackgroundColor Color
+---@field Borders CurveLib.Editor.Config.Graph.Borders
+---@field Handles CurveLib.Editor.Config.Graph.Handles
+---@field Curve CurveLib.Editor.Config.Graph.Curve
+---@field Axes CurveLib.Editor.Config.Graph.Axes
+---@field Caches table The cache of all data that is stored for the Graph.
+
+-- The edges of the Graph that do not have Axes on them.
+---@class (exact) CurveLib.Editor.Config.Graph.Borders
+---@field Right CurveLib.Editor.Config.Graph.Border
+---@field Top CurveLib.Editor.Config.Graph.Border
+
+-- A single, non-Axis edge of the Graph
+---@class (exact) CurveLib.Editor.Config.Graph.Border
+---@field Enabled boolean
+---@field Thickness integer The width, in pixels, of the border.
+---@field Color Color 
+
+-- The Handles of the Graph
+---@class (exact) CurveLib.Editor.Config.Graph.Handles
+---@field Main CurveLib.Editor.Config.Graph.Handle
+---@field Side CurveLib.Editor.Config.Graph.Handle
+---@field Line CurveLib.Editor.Config.Graph.HandleLine
+
+-- A single Handle on the Graph
+---@class (exact) CurveLib.Editor.Config.Graph.Handle
+---@field Color Color The Color of the Handle.
+---@field Radius integer The radius, in pixels, of the Handle.
+
+-- The line that connects two Handles on the Graph
+---@class (exact) CurveLib.Editor.Config.Graph.HandleLine
+---@field Color Color The Color of the Handle Line.
+---@field Thickness integer The width, in pixels, of the Handle Line.
+
+-- Settings for the curve of the Graph.
 ---@class (exact) CurveLib.Editor.Config.Graph.Curve
 ---@field Color Color The Color of the curve line.
----@field Width integer The width, in pixels, of the curve line.
+---@field Thickness integer The width, in pixels, of the curve line.
 ---@field VertexCount integer The number of vertices to use when drawing the curve.
+---@field HoverSize integer The size, in pixels, of the area around the curve that should be considered "hovering" on it.
 
 ---@class (exact) CurveLib.Editor.Config.Graph.Axes
 ---@field Horizontal CurveLib.Editor.Config.Graph.Axes.Axis
@@ -81,7 +126,7 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 -- A single Axis on the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph.Axes.Axis
 ---@field Color Color The Color of the Axis line.
----@field Width integer The width, in pixels, of the Axis' line.
+---@field Thickness integer The width, in pixels, of the Axis' line.
 ---@field EndMargin integer The amount of padding, in pixels, between the end of the Axis and the edge of the Panel that the Axis points towards.
 ---@field Label CurveLib.Editor.Config.Graph.Axes.Axis.Label
 ---@field NumberLine CurveLib.Editor.Config.Graph.Axes.Axis.NumberLine
@@ -107,35 +152,73 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@field AxisMargin integer The distance, in pixels, between the edge of the Axis line and the numbers of the Number Line.
 ---@field LabelMargin integer How far, in pixels, the Number Line's numbers should be from the Axis' Label
 
+--#endregion Graph Settings
+
+--#region Sidebar Config
+
 -- Sidebar Config
 ---@class (exact) CurveLib.Editor.Config.Sidebar
 ---@field BackgroundColor Color
+
+--#endregion Sidebar Config
+
+--#region Toolbar Config
 
 -- Toolbar Config
 ---@class (exact) CurveLib.Editor.Config.Toolbar
 ---@field BackgroundColor Color
 
+--#endregion Toolbar Config
+
 --#endregion Class Definitions
 
--- The visual settings for this Curve Editor's Graph.
----@class (exact) CurveLib.Editor.Config.Graph
----@field BackgroundColor Color
----@field Curve CurveLib.Editor.Config.Graph.Curve
----@field Axes CurveLib.Editor.Config.Graph.Axes
----@field Caches table The cache of all data that is stored for the Graph.
-local CONFIG = {
+--#region Implementations
+
+--#region Graph Config
+
+---@class CurveLib.Editor.Config.Graph
+local GRAPH = {
     BackgroundColor = DefaultColors.GraphBackground,
+
+    Borders = {
+        Right = {
+            Enabled = true,
+            Thickness = 3,
+            Color = DefaultColors.AxisLine
+        },
+        Top = {
+            Enabled = true,
+            Thickness = 3,
+            Color = DefaultColors.AxisLine
+        }
+    },
+
+    Handles = {
+        Main = {
+            Color = DefaultColors.Handle,
+            Radius = 10
+        },
+        Side = {
+            Color = DefaultColors.Handle,
+            Radius = 10
+        },
+        Line = {
+            Color = DefaultColors.HandleLine,
+            Thickness = 3
+        }
+    },
 
     Curve = {
         Color = DefaultColors.Curve,
-        Width = 8,
-        VertexCount = 100
+        Thickness = 8,
+        VertexCount = 100,
+        HoverSize = 10
     },
 
     Axes = {
         Horizontal = {
             Color = DefaultColors.AxisLine,
-            Width = 3,
+            Thickness = 3,
             EndMargin = 30,
             Label = {
                 Text = DefaultLabels.Horizontal,
@@ -147,7 +230,7 @@ local CONFIG = {
             NumberLine = {
                 StartingValue = 0,
                 EndingValue = 100,
-                FormatString = "%.2f",
+                FormatString = DefaultFormatStrings.TwoDecimals,
                 MaxNumberCount = 3,
                 LargeTextFont   = DefaultFonts.NumberLineLargeText,
                 LargeTextColor  = DefaultColors.NumberLineLargeText,
@@ -159,7 +242,7 @@ local CONFIG = {
         },
         Vertical = {
             Color = DefaultColors.AxisLine,
-            Width = 3,
+            Thickness = 3,
             EndMargin = 20,
             Label = {
                 Text = DefaultLabels.Vertical,
@@ -171,7 +254,7 @@ local CONFIG = {
             NumberLine = {
                 StartingValue = 0,
                 EndingValue = 100,
-                FormatString = "%.2f",
+                FormatString = DefaultFormatStrings.TwoDecimals,
                 MaxNumberCount = 3,
                 LargeTextFont   = DefaultFonts.NumberLineLargeText,
                 LargeTextColor  = DefaultColors.NumberLineLargeText,
@@ -189,21 +272,23 @@ local CONFIG = {
     Caches = {}
 }
 
+--#region Cache Functions
 
-function CONFIG:ClearAllCaches()
+function GRAPH:ClearAllCaches()
     self.Caches = {}
 end
 
 
-function CONFIG:ClearNumberLineTextSizeCache()
+function GRAPH:ClearNumberLineTextSizeCache()
     self.Caches.NumberLineTextSize = nil
 end
 
 
-function CONFIG:ClearLabelSizeCache()
+function GRAPH:ClearLabelSizeCache()
     self.Caches.LabelSize = nil
 end
 
+--#endregion Cache Functions
 
 -- Returns the size of the text used for the Number Line on a given Axis
 ---@param numberLine CurveLib.Editor.Config.Graph.Axes.Axis.NumberLine
@@ -211,7 +296,7 @@ end
 ---@return integer largeTextHeight
 ---@return integer smallTextWidth
 ---@return integer smallTextHeight
-function CONFIG:GetNumberLineTextSize( numberLine )
+function GRAPH:GetNumberLineTextSize( numberLine )
     if not self.Caches.NumberLineTextSize then self.Caches.NumberLineTextSize = {} end
 
     if not self.Caches.NumberLineTextSize[numberLine] then
@@ -236,7 +321,7 @@ end
 -- Returns the size of a given Axis' label text
 ---@param self CurveLib.Editor.Config.Graph
 ---@param axis CurveLib.Editor.Config.Graph.Axes.Axis
-function CONFIG:GetLabelSize( axis )
+function GRAPH:GetLabelSize( axis )
     if not self.Caches.LabelSize then self.Caches.LabelSize = {} end
     
     if not self.Caches.LabelSize[axis] then
@@ -259,17 +344,35 @@ function CONFIG:GetLabelSize( axis )
     return size.Width, size.Height
 end
 
+--#endregion Graph Config
+
+--#region Sidebar Config
+
+---@class CurveLib.Editor.Config.Sidebar
+local SIDEBAR = {
+    BackgroundColor = DefaultColors.SidebarBackground
+}
+
+--#endregion Sidebar Config
+
+--#region Toolbar Config
+
+---@class CurveLib.Editor.Config.Toolbar
+local TOOLBAR = {
+    BackgroundColor = DefaultColors.ToolbarBackground
+}
+
+--#endregion Toolbar Config
+
+--#endregion Implementations
+
+--#region Metatables
+
 ---@type CurveLib.Editor.Config
 local DefaultConfig = {
-    GraphConfig = CONFIG,
-
-    SidebarConfig = {
-        BackgroundColor = DefaultColors.SidebarBackground
-    },
-
-    ToolbarConfig = {
-        BackgroundColor = DefaultColors.ToolbarBackground
-    }
+    GraphConfig = GRAPH,
+    SidebarConfig = SIDEBAR,
+    ToolbarConfig = TOOLBAR
 }
 
 
@@ -278,6 +381,7 @@ local DefaultConfig = {
 local ConfigMetatable = {}
 ConfigMetatable.__index = DefaultConfig
 
+--#endregion Metatables
 
 -- Creates a new Curve Editor Graph Config table with the default settings
 ---@return CurveLib.Editor.Config
