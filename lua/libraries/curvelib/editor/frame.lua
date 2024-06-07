@@ -88,7 +88,7 @@ function FRAME:Init()
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
-    self:SetMinHeight(  Default.FrameSize.MinHeight  )
+    self:SetMinHeight( Default.FrameSize.MinHeight )
     self:InvalidateLayout( true )
 
     -- Setup the default curve
