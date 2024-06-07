@@ -10,6 +10,7 @@ local colors = {
     NumberLineSmall = Color( 0, 0, 0 ),
     NumberLineLarge = Color( 0, 0, 0 ),
     Label           = Color( 0, 0, 0 ),
+    Borders         = Color( 100, 100, 100 ),
 }
 
 --#region Fonts
@@ -36,8 +37,8 @@ surface.CreateFont( fonts.NumberLineLarge, {
 surface.CreateFont( fonts.Label, {
 	font = "Roboto",
 	extended = false,
-	size = 32,
-	weight = 700
+	size = 45,
+	weight = 800
 } )
 --#endregion Fonts
 
@@ -66,37 +67,67 @@ setmetatable( PANEL, metatable )
 function PANEL:SetConfig( config )
     self.Config = config
 
-    -- Horizontal Axis
-    local horizontal = self.Config.Axes.Horizontal
-    horizontal.EndMargin = 50
+    
+    do -- Curve
+        local curve = self.Config.Curve
+        curve.Color = Color( 0, 0, 0 )
+        curve.Thickness = 2
+        curve.HoverSize = 10
+        curve.VertexCount = 80
+    end
 
-    horizontal.Label.Text = "Time"
-    horizontal.Label.Rotation = 0
-    horizontal.Label.Font = fonts.Label
-    horizontal.Label.Color = colors.Label
+    
+    do -- Right Border
+        self.Config.RightBorderEnabled = true
+        self.Config.RightBorderColor = colors.Borders
+        self.Config.RightBorderThickness = 2
+    end
 
-    horizontal.NumberLine.LabelMargin    = 3
-    horizontal.NumberLine.MaxNumberCount = 3
-    horizontal.NumberLine.LargeTextFont  = fonts.NumberLineLarge
-    horizontal.NumberLine.LargeTextColor = colors.NumberLineLarge
-    horizontal.NumberLine.SmallTextFont  = fonts.NumberLineSmall
-    horizontal.NumberLine.SmallTextColor = colors.NumberLineSmall
+    do -- Top Border
+        self.Config.TopBorderEnabled = true
+        self.Config.TopBorderColor = colors.Borders
+        self.Config.TopBorderThickness = 2
+    end
 
-    -- Vertical Axis
-    local vertical = self.Config.Axes.Vertical
-    vertical.EndMargin = 50
+    do -- Horizontal Axis
+        local axis = self.Config.Axes.Horizontal
+        axis.EndMargin = 50
 
-    vertical.Label.Text = "Position"
-    vertical.Label.Rotation = -30
-    vertical.Label.Font = fonts.Label
-    vertical.Label.Color = colors.Label
+        axis.Label.Text = "X"
+        axis.Label.Rotation = 0
+        axis.Label.Font = fonts.Label
+        axis.Label.Color = colors.Label
+        axis.Label.EdgeMargin = 10
 
-    vertical.NumberLine.LabelMargin    = 3
-    vertical.NumberLine.MaxNumberCount = 3
-    vertical.NumberLine.LargeTextFont  = fonts.NumberLineLarge
-    vertical.NumberLine.LargeTextColor = colors.NumberLineLarge
-    vertical.NumberLine.SmallTextFont  = fonts.NumberLineSmall
-    vertical.NumberLine.SmallTextColor = colors.NumberLineSmall
+        axis.NumberLine.LabelMargin    = 3
+        axis.NumberLine.MaxNumberCount = 3
+        axis.NumberLine.StartingValue  = 0
+        axis.NumberLine.EndingValue    = 1
+        axis.NumberLine.LargeTextFont  = fonts.NumberLineLarge
+        axis.NumberLine.LargeTextColor = colors.NumberLineLarge
+        axis.NumberLine.SmallTextFont  = fonts.NumberLineSmall
+        axis.NumberLine.SmallTextColor = colors.NumberLineSmall
+    end
+    
+    do -- Vertical Axis
+        local axis = self.Config.Axes.Vertical
+        axis.EndMargin = 50
+
+        axis.Label.Text = "Y"
+        axis.Label.Rotation = 0
+        axis.Label.Font = fonts.Label
+        axis.Label.Color = colors.Label
+        axis.Label.EdgeMargin = 30
+
+        axis.NumberLine.LabelMargin    = 25
+        axis.NumberLine.MaxNumberCount = 3
+        axis.NumberLine.StartingValue  = 0
+        axis.NumberLine.EndingValue    = 1
+        axis.NumberLine.LargeTextFont  = fonts.NumberLineLarge
+        axis.NumberLine.LargeTextColor = colors.NumberLineLarge
+        axis.NumberLine.SmallTextFont  = fonts.NumberLineSmall
+        axis.NumberLine.SmallTextColor = colors.NumberLineSmall
+    end
 end
 
 
@@ -105,30 +136,40 @@ function PANEL:Paint( width, height )
 
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
     local panelX, panelY = self:LocalToScreen( 0, 0 )
-    
+
     local scissorX, scissorY = panelX + interiorX, panelY + interiorY
 
     self.Config:ClearAllCaches()
 
     drawGraph.StartPanel( self.Config, self, 0, 0, width, height )
 
+    -- The axes and labels
     drawGraph.GraphExterior()
 
+    -- The curve
     render.SetScissorRect( scissorX, scissorY, scissorX + interiorWidth, scissorY + interiorHeight, true )
     drawGraph.Curve( self.CurrentCurve )
     render.SetScissorRect( 0, 0, 0, 0, false )
 
+    -- Most recently evaluated point
     drawGraph.RecentEvaluation( self.CurrentCurve )
 
-    local mouseX, mouseY = input.GetCursorPos()
-    drawGraph.DistanceToCurve( self.CurrentCurve, mouseX, mouseY )
+    -- Hovering on the curve
+    drawGraph.CurveHovering()
 
     drawGraph.EndPanel()
 end
 
+
 function PANEL:ClearInteriorRectCache()
     self.Caches.InteriorRect = nil
 end
+
+
+function PANEL:ClearMousePosOnCurveCache()
+    self.Config.Caches.MousePosOnCurve = nil
+end
+
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
 ---@return integer x 
@@ -148,7 +189,7 @@ function PANEL:GetInteriorRect()
         local verticalNumberLineWidth, _ = config:GetNumberLineTextSize( vertical.NumberLine )
 
         local interiorRect = {}
-        interiorRect.x = vertical.Width
+        interiorRect.x = vertical.Thickness
             + vertical.NumberLine.AxisMargin
             + verticalNumberLineWidth
             + vertical.NumberLine.LabelMargin
@@ -158,7 +199,7 @@ function PANEL:GetInteriorRect()
 
         interiorRect.Width = self:GetWide() - interiorRect.x - horizontal.EndMargin
         interiorRect.Height = self:GetTall()
-            - horizontal.Width
+            - horizontal.Thickness
             - horizontal.NumberLine.AxisMargin
             - horizontalNumberLineHeight
             - horizontal.NumberLine.LabelMargin
@@ -171,6 +212,73 @@ function PANEL:GetInteriorRect()
 
     local rect = self.Caches.InteriorRect
     return rect.x, rect.y, rect.Width, rect.Height
+end
+
+
+-- Finds where on the active curve curve is closest to a given point.  Results are cached each frame.
+-- **Note:** This function will always return the closest point on the curve, even if it is not within the bounds of the curve.
+---@param x integer The X coordinate, in panel-relative coordinates
+---@param y integer The Y coordinate, in panel-relative coordinates
+---@param checkCount? integer The number of points to check on the curve [Default: 400]
+---@return number time The time value of the closest point on the curve
+---@return number distance The distance between the point and the closest point on the curve
+---@return integer x The X coordinate of the closest point on the curve, in panel-relative coordinates
+---@return integer y The Y coordinate of the closest point on the curve, in panel-relative coordinates
+function PANEL:GetClosestPointOnCurve( x, y, checkCount )
+    local curve = self.CurrentCurve
+    local lowestDistanceSquared = math.huge
+    local closestTime = 0
+    local closestX, closestY = 0, 0
+
+    for i = 1, ( checkCount or 400 ) do
+        local time = i / 400
+
+        local point = curve:Evaluate( time, true )
+
+        local pointX, pointY = self:NormalizedToInterior( point.x, point.y )
+
+        local distanceSquared = math.pow( x - pointX, 2 ) + math.pow( y - pointY, 2 )
+
+        if distanceSquared < lowestDistanceSquared then
+            lowestDistanceSquared = distanceSquared
+            closestTime = time
+            closestX = pointX
+            closestY = pointY
+        end
+    end
+
+    return closestTime, math.sqrt( lowestDistanceSquared ), closestX, closestY
+end
+
+
+-- Returns whether the mouse is hovering over the active curve
+---@return boolean isHovered Whether the mouse is hovering over the active curve
+function PANEL:IsCurveHovered()
+    local mouseX, mouseY = self:CursorPos()
+    local _, distance = self:GetClosestPointOnCurve( mouseX, mouseY )
+
+    return distance <= self.Config.Curve.HoverSize
+end
+
+
+-- Returns the position of the mouse on the active curve
+---@return number time The time value of the closest point on the curve
+---@return number distance The distance between the point and the closest point on the curve
+---@return integer x The X coordinate of the closest point on the curve, in panel-relative coordinates
+---@return integer y The Y coordinate of the closest point on the curve, in panel-relative coordinates
+function PANEL:GetMousePosOnCurve()
+    if not self.Config.Caches.MousePosOnCurve then
+        local time, distance, x, y = self:GetClosestPointOnCurve( self:CursorPos() )
+        self.Config.Caches.MousePosOnCurve = {
+            Time = time,
+            Distance = distance,
+            X = x,
+            Y = y
+        }
+    end
+
+    local cache = self.Config.Caches.MousePosOnCurve
+    return cache.Time, cache.Distance, cache.X, cache.Y
 end
 
 --#region Coordinate Conversion

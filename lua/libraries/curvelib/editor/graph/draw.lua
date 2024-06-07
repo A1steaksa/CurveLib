@@ -1,8 +1,9 @@
+require( "vguihotload" )
 if not _G.CurveLib or not istable( _G.CurveLib ) then
-    error( "Curve Lib did not initialize correctly" ) 
-elseif _G.CurveLib.GraphDraw and not _G.CurveLib.IsDevelopment then
-    return _G.CurveLib.GraphDraw
-end
+    error( "Curve Lib did not initialize correctly" )
+elseif _G.CurveLib.IsDevelopment then
+    vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
+elseif _G.CurveLib.GraphDraw then return _G.CurveLib.GraphDraw end
 
 ---@type CurveLib.Editor.DrawBase
 local drawBase
@@ -135,7 +136,7 @@ function DRAW.Curve( curve )
         lineVertices[ #lineVertices + 1 ] = Vector( x, y )
     end
 
-    drawBase.MultiLine( lineVertices, config.Curve.Width, config.Curve.Color, HorizontalAlignment.Center )
+    drawBase.MultiLine( lineVertices, config.Curve.Thickness, config.Curve.Color, HorizontalAlignment.Center )
 end
 
 -- Draws the most recently evaluated point of a Curve
@@ -154,11 +155,17 @@ function DRAW.RecentEvaluation( curve )
     drawBase.Rect( interiorX, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
--- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines
+-- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines but not the curve itself
 function DRAW.GraphExterior()
     local config, graph, x, y, width, height = DRAW.UnpackEntry()
     local horizontal = config.Axes.Horizontal
     local vertical = config.Axes.Vertical
+    local rightBorder = config.Borders.Right
+    local topBorder = config.Borders.Top
+
+    -- The thickness of the Axes, in pixels.  Calculated here because lines with a thickness lower than 1 are drawn as semi-transparent single width lines.
+    -- For positioning, line thickness is always at least 1 pixel.
+    local verticalAxisPixelThickness = math.max( vertical.Thickness, 1 )
 
     local _, horizontalLabelHeight = config:GetLabelSize( horizontal )
     local _, horizontalNumberLineHeight = config:GetNumberLineTextSize( horizontal.NumberLine )
@@ -171,28 +178,31 @@ function DRAW.GraphExterior()
     interiorY = y + interiorY
 
     local horizontalAxisEndX = interiorX + interiorWidth
-    local horizontalNumberLineY = interiorY + interiorHeight + horizontal.Width + horizontal.NumberLine.AxisMargin
-    
+    local horizontalNumberLineY = interiorY + interiorHeight + math.max( horizontal.Thickness, 1 ) + horizontal.NumberLine.AxisMargin
+
     local horizontalLabelY = horizontalNumberLineY + horizontalNumberLineHeight + math.floor( horizontalLabelHeight / 2 ) + horizontal.NumberLine.LabelMargin
     local horizontalLabelX = interiorX + math.floor( ( horizontalAxisEndX - interiorX ) / 2 )
 
-    local verticalNumberLineX = interiorX - vertical.Width - vertical.NumberLine.AxisMargin
-    
+    local verticalNumberLineX = interiorX - verticalAxisPixelThickness - vertical.NumberLine.AxisMargin
+
     local verticalLabelX = verticalNumberLineX - verticalNumberLineWidth - math.floor( verticalLabelWidth / 2 ) - vertical.NumberLine.LabelMargin
     local verticalLabelY = interiorY + math.floor( interiorHeight / 2 )
 
     -- Background
     drawBase.Rect( x, y, width, height, 0, Alignment.TopLeft,config.BackgroundColor )
 
-    -- Horizontal Axis Line
-    -- Note: The start X is offset to cover the corner between the Axes
-    drawBase.Line(
-        interiorX - vertical.Width, interiorY + interiorHeight,
-        horizontalAxisEndX, interiorY + interiorHeight,
-        horizontal.Width,
-        HorizontalAlignment.Left,
-        horizontal.Color
-    )
+    do -- Horizontal Axis Line
+        local rightBorderOffset = config.RightBorderEnabled and math.max( config.RightBorderThickness, 1 ) or 0
+
+        -- Note: The start X is offset to cover the corner between the Axes
+        drawBase.Line(
+            interiorX - verticalAxisPixelThickness, interiorY + interiorHeight,
+            horizontalAxisEndX + rightBorderOffset, interiorY + interiorHeight,
+            horizontal.Thickness,
+            HorizontalAlignment.Left,
+            horizontal.Color
+        )
+    end
 
     -- Horizontal Number Line
     DRAW.NumberLine(
@@ -212,14 +222,17 @@ function DRAW.GraphExterior()
         Alignment.Center
     )
 
-    -- Vertical Axis Line
-    drawBase.Line(
-        interiorX, interiorY + interiorHeight,
-        interiorX, interiorY,
-        vertical.Width,
-        HorizontalAlignment.Right,
-        vertical.Color
-    )
+    do -- Vertical Axis Line
+        local topBorderOffset = topBorder.Enabled and math.max( topBorder.Thickness, 1 ) or 0
+
+        drawBase.Line(
+            interiorX, interiorY + interiorHeight,
+            interiorX, interiorY - topBorderOffset,
+            vertical.Thickness,
+            HorizontalAlignment.Right,
+            vertical.Color
+        )
+    end
 
     -- Vertical Number Line
     DRAW.NumberLine(
@@ -238,41 +251,39 @@ function DRAW.GraphExterior()
         Alignment.Center,
         vertical.Label.Color
     )
-    
-end
 
-
--- Visualizes finding the distance between a point and a curve
-function DRAW.DistanceToCurve( curve, x, y )
-    local config, graph = DRAW.UnpackEntry()
-    local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
-
-    local sampleCount = 400
-
-    local testPoint = Vector( graph:ScreenToLocal( 0, 0 ) ) + Vector( x, y )
-
-    local lowestDistance = math.huge
-    local lowestDistanceSample
-
-    for i = 0, sampleCount do
-        local percentage = i / sampleCount
-        local evaluation = curve( percentage, true )
-
-        local evaluatedPos = Vector(
-            interiorX + evaluation.x * interiorWidth,
-            interiorY + interiorHeight - ( evaluation.y * interiorHeight )
+    -- Right Border
+    if rightBorder.Enabled then
+        drawBase.Line(
+            interiorX + interiorWidth, interiorY + interiorHeight,
+            interiorX + interiorWidth, interiorY,
+            rightBorder.Thickness,
+            HorizontalAlignment.Left,
+            rightBorder.Color
         )
-
-        local distance = testPoint:Distance( evaluatedPos )
-
-        if distance < lowestDistance then
-            lowestDistance = distance
-            lowestDistanceSample = evaluatedPos
-        end
     end
 
-    drawBase.Line( testPoint.x, testPoint.y, lowestDistanceSample.x, lowestDistanceSample.y, 3, HorizontalAlignment.Center, Color( 0, 100, 0, 255 ) )
+    -- Top Border
+    if topBorder.Enabled then
+        local rightBorderOffset = rightBorder.Enabled and math.max( rightBorder.Thickness, 1 ) or 0
 
+        drawBase.Line(
+            interiorX, interiorY,
+            interiorX + interiorWidth + rightBorderOffset, interiorY,
+            topBorder.Thickness,
+            HorizontalAlignment.Right,
+            topBorder.Color
+        )
+    end
+end
+
+function DRAW.CurveHovering()
+    local config, graph = DRAW.UnpackEntry()
+
+    if graph:IsCurveHovered() then
+        local time, distance, x, y = graph:GetMousePosOnCurve()
+        drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
+    end
 end
 
 return _G.CurveLib.GraphDraw
