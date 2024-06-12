@@ -4,7 +4,6 @@ require( "vguihotload" )
 local handleDraw
 
 ---@class CurveLib.Editor.Graph.Handle.MainHandle : CurveLib.Editor.Graph.Handle.Base
----@field GraphPanel CurveLib.Editor.Graph.Panel -- The Graph Panel this Main Handle is parented to.  Cached here for autocomplete convenience and access speed.
 ---@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle -- The Left Handle that this Main Handle is paired with
 ---@field RightHandle CurveLib.Editor.Graph.Handle.SideHandle -- The Right Handle that this Main Handle is paired with
 ---@field Index integer The index of the Curve Point that this Main Handle represents

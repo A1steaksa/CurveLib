@@ -98,14 +98,22 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 
 -- The Handles of the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph.Handles
----@field Main CurveLib.Editor.Config.Graph.Handle
----@field Side CurveLib.Editor.Config.Graph.Handle
+---@field Main CurveLib.Editor.Config.Graph.Handles.Handle
+---@field Side CurveLib.Editor.Config.Graph.Handles.Handle
 ---@field Line CurveLib.Editor.Config.Graph.HandleLine
 
 -- A single Handle on the Graph
----@class (exact) CurveLib.Editor.Config.Graph.Handle
----@field Color Color The Color of the Handle.
+---@class (exact) CurveLib.Editor.Config.Graph.Handles.Handle
+---@field Idle CurveLib.Editor.Config.Graph.Handles.Handle.State The configuration of the Handle when it is not being hovered over or dragged.
+---@field Hovered CurveLib.Editor.Config.Graph.Handles.Handle.State The configuration of the Handle when it is being hovered over.
+---@field Dragged CurveLib.Editor.Config.Graph.Handles.Handle.State The configuration of the Handle when it is being dragged.
+
+-- A Handle's configuration for a given state.
+---@class (exact) CurveLib.Editor.Config.Graph.Handles.Handle.State
 ---@field Radius integer The radius, in pixels, of the Handle.
+---@field RadiusChangeRate number The speed at which the Handle's radius changes when to this state.
+---@field Color Color The Color of the Handle.
+---@field ColorChangeRate number The speed at which the Handle's color changes when transitioning to this state.
 
 -- The line that connects two Handles on the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph.HandleLine
@@ -118,6 +126,13 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@field Thickness integer The width, in pixels, of the curve line.
 ---@field VertexCount integer The number of vertices to use when drawing the curve.
 ---@field HoverSize integer The size, in pixels, of the area around the curve that should be considered "hovering" on it.
+---@field Hover CurveLib.Editor.Config.Graph.Curve.Hover
+
+-- Settings for the Curve hover indicator
+---@class (exact) CurveLib.Editor.Config.Graph.Curve.Hover
+---@field Color Color The Color of the hover indicator.
+---@field Thickness integer The width, in pixels, of the hover indicator.
+---@field Length integer The length, in pixels, of the hover indicator.
 
 ---@class (exact) CurveLib.Editor.Config.Graph.Axes
 ---@field Horizontal CurveLib.Editor.Config.Graph.Axes.Axis
@@ -195,12 +210,44 @@ local GRAPH = {
 
     Handles = {
         Main = {
-            Color = DefaultColors.Handle,
-            Radius = 10
+            Idle = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 10,
+                RadiusChangeRate = 100
+            },
+            Hovered = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 15,
+                RadiusChangeRate = 100
+            },
+            Dragged = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 17,
+                RadiusChangeRate = 100
+            }
         },
         Side = {
-            Color = DefaultColors.Handle,
-            Radius = 10
+            Idle = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 7,
+                RadiusChangeRate = 100
+            },
+            Hovered = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 10,
+                RadiusChangeRate = 100
+            },
+            Dragged = {
+                Color = DefaultColors.Handle,
+                ColorChangeRate = 100,
+                Radius = 12,
+                RadiusChangeRate = 100
+            }
         },
         Line = {
             Color = DefaultColors.HandleLine,

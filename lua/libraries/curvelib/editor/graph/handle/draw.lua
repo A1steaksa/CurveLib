@@ -44,7 +44,7 @@ function DRAW.UnpackEntry()
 end
 
 ---@param config CurveLib.Editor.Config.Graph The configuration for the Graph
----@param handle CurveLib.Editor.Graph.Handle.MainHandle|CurveLib.Editor.Graph.Handle.SideHandle The Graph being drawn
+---@param handle CurveLib.Editor.Graph.Handle.MainHandle|CurveLib.Editor.Graph.Handle.SideHandle|CurveLib.Editor.Graph.Handle.Base The Graph being drawn
 ---@param x integer The x position of the Graph within the panel
 ---@param y integer The y position of the Graph within the panel
 ---@param width integer The width of the Graph, in pixels
@@ -79,37 +79,51 @@ end
 
 --#endregion Handle Stack
 
-function DRAW.MainHandle()
-    drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
 
-    local config, handle --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], x, y, width, height = DRAW.UnpackEntry()
+---@param handleConfig CurveLib.Editor.Config.Graph.Handles.Handle
+function DRAW.Handle( handleConfig )
+    local handle = DRAW.PeekEntry().Handle
+
+    handle:UpdateVisuals( handleConfig )
 
     local graphX, graphY = handle.GraphPanel:LocalToScreen( 0, 0 )
-
     local interiorX, interiorY, interiorWidth, interiorHeight = handle.GraphPanel:GetInteriorRect()
 
     render.SetScissorRect( graphX + interiorX, graphY + interiorY, graphX + interiorX + interiorWidth, graphY + interiorY + interiorHeight, true )
     drawBase.StartPanel( handle )
 
-    drawBase.Rect( handle.HalfWidth, handle.HalfHeight, width, height, 45, Alignment.Center, Color( 100, 216, 75 )  )
+    drawBase.Circle( handle.HalfWidth, handle.HalfHeight, handle.CurrentRadius, 45, 25, Alignment.Center, handle.CurrentColor )
 
     drawBase.EndPanel()
     render.SetScissorRect( 0, 0, 0, 0, false )
-
 end
+
+
+function DRAW.MainHandle()
+    DRAW.Handle( DRAW.PeekEntry().Config.Handles.Main )
+end
+
 
 function DRAW.SideHandle()
     drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
 
-    local _, handle --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], _, _, width, height = DRAW.UnpackEntry()
+    local config, handle --[[@as CurveLib.Editor.Graph.Handle.SideHandle]], _, _, width, height = DRAW.UnpackEntry()
 
     drawBase.StartPanel( handle )
 
-    local mainHandle = handle.MainHandle    
-    local mainHandleX, mainHandleY = mainHandle:GetPos()
-    local relativeX, relativeY = mainHandleX - handle.x + mainHandle.HalfWidth, mainHandleY - handle.y + mainHandle.HalfHeight
+    DRAW.Handle( DRAW.PeekEntry().Config.Handles.Side )
 
-    drawBase.Line( handle.HalfWidth, handle.HalfHeight, relativeX, relativeY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
+    drawBase.EndPanel()
+end
+
+
+function DRAW.MainHandleLines()
+    drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
+
+    local config, handle --[[@as CurveLib.Editor.Graph.Handle.MainHandle]] = DRAW.UnpackEntry()
+
+    local lineColor = config.Handles.Line.Color
+    local lineThickness = config.Handles.Line.Thickness
 
     -- Lines to handles
     if handle.LeftHandle then
@@ -118,6 +132,8 @@ function DRAW.SideHandle()
         -- Drawing positions are relative to our position and need to be corrected
         leftX = leftX - handle.x + handle.LeftHandle.HalfWidth
         leftY = leftY - handle.y + handle.LeftHandle.HalfHeight
+
+        drawBase.Line( handle.HalfWidth, handle.HalfHeight, leftX, leftY, lineThickness, HorizontalAlignment.Center, lineColor )
     end
 
     if handle.RightHandle then
@@ -127,20 +143,9 @@ function DRAW.SideHandle()
         rightX = rightX - handle.x + handle.RightHandle.HalfWidth
         rightY = rightY - handle.y + handle.RightHandle.HalfHeight
 
-        drawBase.Line( handle.HalfWidth, handle.HalfHeight, rightX, rightY, 2, HorizontalAlignment.Center, Color( 0, 0, 0 ) )
+        drawBase.Line( handle.HalfWidth, handle.HalfHeight, rightX, rightY, lineThickness, HorizontalAlignment.Center, lineColor )
     end
-
-    drawBase.Rect( handle.HalfWidth, handle.HalfHeight, width, height, 45, Alignment.Center, Color( 75, 100, 216 )  )
-
-    drawBase.EndPanel()
 end
-
-function DRAW.MainHandleLines()
-    drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
-
-    
-end
-
 
 _G.CurveLib.HandleDraw = DRAW
 return _G.CurveLib.HandleDraw

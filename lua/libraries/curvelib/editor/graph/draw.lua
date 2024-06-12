@@ -281,7 +281,10 @@ function DRAW.CurveHovering()
     local config, graph = DRAW.UnpackEntry()
 
     if graph:IsCurveHovered() then
-        local time, distance, x, y = graph:GetMousePosOnCurve()
+        local _, _, x, y = graph:GetMousePosOnCurve()
+
+        
+
         drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
     end
 end

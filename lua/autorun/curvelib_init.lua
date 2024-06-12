@@ -51,6 +51,9 @@ RunClient( "libraries/curvelib/editor/graph/panel.lua" )
 RunClient( "libraries/curvelib/editor/config.lua" )
 RunClient( "libraries/curvelib/editor/frame.lua" )
 
+-- Editor Testing Panel
+RunClient( "libraries/curvelib/editor/testing-panel.lua" )
+
 if not CLIENT then return end
 
 concommand.Add( "curvelib_openeditor", function()

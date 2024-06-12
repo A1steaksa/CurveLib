@@ -4,7 +4,6 @@ require( "vguihotload" )
 local handleDraw
 
 ---@class CurveLib.Editor.Graph.Handle.SideHandle : CurveLib.Editor.Graph.Handle.Base
----@field GraphPanel CurveLib.Editor.Graph.Panel -- The Graph Panel this Main Handle is parented to.  Cached here for autocomplete convenience and access speed.
 ---@field MainHandle CurveLib.Editor.Graph.Handle.MainHandle
 ---@field IsRightHandle boolean
 local PANEL = {}

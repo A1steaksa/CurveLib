@@ -3,16 +3,6 @@ require( "vguihotload" )
 ---@type CurveLib.Editor.Graph.Draw
 local drawGraph = include( "libraries/curvelib/editor/graph/draw.lua" )
 
----@type CurveLib.Editor.Utils
-local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
-
-local colors = {
-    NumberLineSmall = Color( 0, 0, 0 ),
-    NumberLineLarge = Color( 0, 0, 0 ),
-    Label           = Color( 0, 0, 0 ),
-    Borders         = Color( 100, 100, 100 ),
-}
-
 --#region Fonts
 local fonts = {
     NumberLineSmall = "CurveLib_Graph_Small",
@@ -43,50 +33,96 @@ surface.CreateFont( fonts.Label, {
 --#endregion Fonts
 
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
-local metatable = {
-    Defaults = {
-        Size = {
-            Width = 450,
-            Height = 450
-        }
-    }
-}
-
----@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
 ---@field Caches table
 ---@field MainHandles table<CurveLib.Editor.Graph.Handle.MainHandle>
 ---@field CurrentCurve CurveLib.Curve.Data
 local PANEL = {
     MainHandles = {}
 }
-PANEL.__index = metatable
-setmetatable( PANEL, metatable )
 
+-- For Colors used multiple times within the Graph
+local colors = {
+    Text = Color( 22, 66, 91 ),
+    Borders = Color( 22, 66, 91 ),
+    Axes = Color( 22, 66, 91 )
+}
 
 ---@param config CurveLib.Editor.Config.Graph
 function PANEL:SetConfig( config )
     self.Config = config
 
-    
+    config.BackgroundColor = Color( 217, 220, 214 )
+
+    do -- Main Handles
+        local handle = config.Handles.Main
+
+        local idle = handle.Idle
+        idle.Color = Color( 129, 195, 215, 255 )
+        idle.ColorChangeRate = 500
+        idle.Radius = 11
+        idle.RadiusChangeRate = 50
+
+        local hovered = handle.Hovered
+        hovered.Color = Color( 129, 195, 215, 230 )
+        hovered.ColorChangeRate = 500
+        hovered.Radius = 10
+        hovered.RadiusChangeRate = 50
+
+        local dragged = handle.Dragged
+        dragged.Color = Color( 129, 195, 215, 200 )
+        dragged.ColorChangeRate = 500
+        dragged.Radius = 9
+        dragged.RadiusChangeRate = 50
+    end
+
+    do -- Side Handles
+        local handle = config.Handles.Side
+
+        local idle = handle.Idle
+        idle.Color = Color( 6, 196, 239, 255 )
+        idle.ColorChangeRate = 500
+        idle.Radius = 8
+        idle.RadiusChangeRate = 100
+
+        local hovered = handle.Hovered
+        hovered.Color = Color( 6, 196, 239, 230 )
+        hovered.ColorChangeRate = 500
+        hovered.Radius = 8
+        hovered.RadiusChangeRate = 100
+
+        local dragged = handle.Dragged
+        dragged.Color = Color( 6, 196, 239, 200)
+        dragged.ColorChangeRate = 1000
+        dragged.Radius = 8
+        dragged.RadiusChangeRate = 100
+    end
+
+    do -- Handle Lines
+        local line = config.Handles.Line
+        line.Color = Color( 22, 66, 91 )
+        line.Thickness = 3
+    end
+
     do -- Curve
         local curve = self.Config.Curve
-        curve.Color = Color( 0, 0, 0 )
-        curve.Thickness = 2
+        curve.Color = Color( 47, 102, 144 )
+        curve.Thickness = 7
         curve.HoverSize = 10
         curve.VertexCount = 80
     end
 
-    
     do -- Right Border
-        self.Config.RightBorderEnabled = true
-        self.Config.RightBorderColor = colors.Borders
-        self.Config.RightBorderThickness = 2
+        local border = self.Config.Borders.Right
+        border.Enabled = true
+        border.Color = colors.Borders
+        border.Thickness = 2
     end
 
     do -- Top Border
-        self.Config.TopBorderEnabled = true
-        self.Config.TopBorderColor = colors.Borders
-        self.Config.TopBorderThickness = 2
+        local border = self.Config.Borders.Top
+        border.Enabled = true
+        border.Color = colors.Borders
+        border.Thickness = 2
     end
 
     do -- Horizontal Axis
@@ -96,7 +132,7 @@ function PANEL:SetConfig( config )
         axis.Label.Text = "X"
         axis.Label.Rotation = 0
         axis.Label.Font = fonts.Label
-        axis.Label.Color = colors.Label
+        axis.Label.Color = colors.Axes
         axis.Label.EdgeMargin = 10
 
         axis.NumberLine.LabelMargin    = 3
@@ -104,11 +140,11 @@ function PANEL:SetConfig( config )
         axis.NumberLine.StartingValue  = 0
         axis.NumberLine.EndingValue    = 1
         axis.NumberLine.LargeTextFont  = fonts.NumberLineLarge
-        axis.NumberLine.LargeTextColor = colors.NumberLineLarge
+        axis.NumberLine.LargeTextColor = colors.Text
         axis.NumberLine.SmallTextFont  = fonts.NumberLineSmall
-        axis.NumberLine.SmallTextColor = colors.NumberLineSmall
+        axis.NumberLine.SmallTextColor = colors.Text
     end
-    
+
     do -- Vertical Axis
         local axis = self.Config.Axes.Vertical
         axis.EndMargin = 50
@@ -116,7 +152,7 @@ function PANEL:SetConfig( config )
         axis.Label.Text = "Y"
         axis.Label.Rotation = 0
         axis.Label.Font = fonts.Label
-        axis.Label.Color = colors.Label
+        axis.Label.Color = colors.Axes
         axis.Label.EdgeMargin = 30
 
         axis.NumberLine.LabelMargin    = 25
@@ -124,9 +160,9 @@ function PANEL:SetConfig( config )
         axis.NumberLine.StartingValue  = 0
         axis.NumberLine.EndingValue    = 1
         axis.NumberLine.LargeTextFont  = fonts.NumberLineLarge
-        axis.NumberLine.LargeTextColor = colors.NumberLineLarge
+        axis.NumberLine.LargeTextColor = colors.Text
         axis.NumberLine.SmallTextFont  = fonts.NumberLineSmall
-        axis.NumberLine.SmallTextColor = colors.NumberLineSmall
+        axis.NumberLine.SmallTextColor = colors.Text
     end
 end
 
@@ -395,7 +431,7 @@ function PANEL:PopulateHandles( count )
             leftHandle.GraphPanel = self
             leftHandle.IsRightHandle = false
             leftHandle.MainHandle = mainHandle
-            leftHandle:MoveToBefore( mainHandle )
+            leftHandle:MoveToAfter( mainHandle )
             mainHandle.LeftHandle = leftHandle
         end
 
@@ -404,7 +440,7 @@ function PANEL:PopulateHandles( count )
             rightHandle.GraphPanel = self
             rightHandle.IsRightHandle = true
             rightHandle.MainHandle = mainHandle
-            rightHandle:MoveToBefore( mainHandle )
+            rightHandle:MoveToAfter( mainHandle )
             mainHandle.RightHandle = rightHandle
         end
 

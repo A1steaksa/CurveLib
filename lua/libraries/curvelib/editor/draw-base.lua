@@ -104,9 +104,9 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
         end
     end
 
+    local x, y, width, height, halfWidth, halfHeight = curveUtils.MultiFloor( x, y, width, height, width / 2, height / 2 )
     local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, 0 )
     local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
-    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
 
     local newMatrix = Matrix()
 
@@ -144,13 +144,13 @@ end
 -- Draws a circle
 ---@param x integer
 ---@param y integer
----@param radius integer|Vector The radius of the circle, in pixels. Can be a Vector to specify an ellipse.
+---@param diameter integer|Vector The diameter of the circle, in pixels. Can be a Vector to specify an ellipse.
 ---@param rotation number? The angle of the circle, in degrees. Default: 0
----@param vertexCount? integer The number of vertices the circle will have. The higher the number, the smoother the circle. Default: Calculated based on radius.
+---@param vertexCount? integer The number of vertices the circle will have. The higher the number, the smoother the circle. Default: Calculated based on diameter.
 ---@param alignment CurveLib.Alignment? The text's alignment [Default: Top left]
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
-function DRAW.Circle( x, y, radius, rotation, vertexCount, alignment, color )
-    if not isnumber( x ) or not isnumber( y ) or ( not isnumber( radius ) and not isvector( radius ) ) or ( vertexCount and not isnumber( vertexCount ) ) then
+function DRAW.Circle( x, y, diameter, rotation, vertexCount, alignment, color )
+    if not isnumber( x ) or not isnumber( y ) or ( not isnumber( diameter ) and not isvector( diameter ) ) or ( vertexCount and not isnumber( vertexCount ) ) then
         error( "Invalid arguments to DRAW.Circle" )
         return
     end
@@ -165,20 +165,19 @@ function DRAW.Circle( x, y, radius, rotation, vertexCount, alignment, color )
         end
     end
 
-    local width, height = radius --[[@as number]], radius --[[@as number]]
-    if isvector( radius ) then
-        width, height = radius.x, radius.y
+    local width, height = diameter --[[@as number]], diameter --[[@as number]]
+    if isvector( diameter ) then
+        width, height = curveUtils.MultiFloor( diameter.x, diameter.y )
     end
 
     local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
-    local halfWidth, halfHeight = curveUtils.MultiFloor( width / 2, height / 2 )
 
     if not vertexCount or vertexCount < 10 then
 
-        local maxRadius = math.max( width, height ) / 2
+        local maxRadius = math.max( width, height ) / 4
 
         -- Dividing by 10 gives us a good balance between performance and quality, but can be adjusted.
-        local calculatedVertexCount = math.floor( maxRadius / 2 )
+        local calculatedVertexCount = math.floor( maxRadius / 4 )
 
         -- 10 has been chosen as the minimum vertex count to prevent the circle from looking like a simple polygon.
         vertexCount = math.max( 10, calculatedVertexCount )
