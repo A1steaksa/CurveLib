@@ -159,7 +159,9 @@ end
 function DRAW.GraphExterior()
     local config, graph, x, y, width, height = DRAW.UnpackEntry()
     local horizontal = config.Axes.Horizontal
+    local horizontalNumberLine = horizontal.NumberLine
     local vertical = config.Axes.Vertical
+    local verticalNumberLine = vertical.NumberLine
     local rightBorder = config.Borders.Right
     local topBorder = config.Borders.Top
 
@@ -168,31 +170,31 @@ function DRAW.GraphExterior()
     local verticalAxisPixelThickness = math.max( vertical.Thickness, 1 )
 
     local _, horizontalLabelHeight = config:GetLabelSize( horizontal )
-    local _, horizontalNumberLineHeight = config:GetNumberLineTextSize( horizontal.NumberLine )
+    local _, horizontalNumberLineHeight = config:GetNumberLineTextSize( horizontalNumberLine )
 
     local verticalLabelWidth, _ = config:GetLabelSize( vertical )
-    local verticalNumberLineWidth, _ = config:GetNumberLineTextSize( vertical.NumberLine )
+    local verticalNumberLineWidth, _ = config:GetNumberLineTextSize( verticalNumberLine )
 
     local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
     interiorX = x + interiorX
     interiorY = y + interiorY
 
     local horizontalAxisEndX = interiorX + interiorWidth
-    local horizontalNumberLineY = interiorY + interiorHeight + math.max( horizontal.Thickness, 1 ) + horizontal.NumberLine.AxisMargin
+    local horizontalNumberLineY = interiorY + interiorHeight + math.max( horizontal.Thickness, 1 ) + horizontalNumberLine.AxisMargin
 
-    local horizontalLabelY = horizontalNumberLineY + horizontalNumberLineHeight + math.floor( horizontalLabelHeight / 2 ) + horizontal.NumberLine.LabelMargin
+    local horizontalLabelY = horizontalNumberLineY + horizontalNumberLineHeight + math.floor( horizontalLabelHeight / 2 ) + horizontalNumberLine.LabelMargin
     local horizontalLabelX = interiorX + math.floor( ( horizontalAxisEndX - interiorX ) / 2 )
 
-    local verticalNumberLineX = interiorX - verticalAxisPixelThickness - vertical.NumberLine.AxisMargin
+    local verticalNumberLineX = interiorX - verticalAxisPixelThickness - verticalNumberLine.AxisMargin
 
-    local verticalLabelX = verticalNumberLineX - verticalNumberLineWidth - math.floor( verticalLabelWidth / 2 ) - vertical.NumberLine.LabelMargin
+    local verticalLabelX = verticalNumberLineX - verticalNumberLineWidth - math.floor( verticalLabelWidth / 2 ) - verticalNumberLine.LabelMargin
     local verticalLabelY = interiorY + math.floor( interiorHeight / 2 )
 
     -- Background
     drawBase.Rect( x, y, width, height, 0, Alignment.TopLeft,config.BackgroundColor )
 
     do -- Horizontal Axis Line
-        local rightBorderOffset = config.RightBorderEnabled and math.max( config.RightBorderThickness, 1 ) or 0
+        local rightBorderOffset = rightBorder.Enabled and math.max( rightBorder.Thickness, 1 ) or 0
 
         -- Note: The start X is offset to cover the corner between the Axes
         drawBase.Line(
@@ -280,13 +282,9 @@ end
 function DRAW.CurveHovering()
     local config, graph = DRAW.UnpackEntry()
 
-    if graph:IsCurveHovered() then
-        local _, _, x, y = graph:GetMousePosOnCurve()
+    local _, _, x, y = graph:GetMousePosOnCurve()
 
-        
-
-        drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
-    end
+    drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
 return _G.CurveLib.GraphDraw
