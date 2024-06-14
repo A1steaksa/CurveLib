@@ -53,6 +53,8 @@ function PANEL:OnMousePressed( mouseButton )
     self:MouseCapture( true )
     self.IsBeingDragged = true
 
+    self.GraphPanel:OnDragStarted( self )
+
     local draggableX, draggableY = self:LocalToScreen( 0, 0 )
     local mouseX, mouseY = gui.MouseX(), gui.MouseY()
     self.LocalMouseX = draggableX - mouseX
@@ -62,7 +64,11 @@ end
 function PANEL:OnMouseReleased( mouseButton )
     if mouseButton ~= MOUSE_LEFT then return end
     self:MouseCapture( false )
-    self.IsBeingDragged = nil
+
+    if self.IsBeingDragged then
+        self.IsBeingDragged = nil
+        self.GraphPanel:OnDragEnded( self )
+    end
 end
 
 function PANEL:OnCursorEntered()
