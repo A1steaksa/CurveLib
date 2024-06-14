@@ -61,18 +61,27 @@ end
 ---@param width integer
 ---@param height integer
 ---@param alignment CurveLib.Alignment
+---@param floorValues boolean? Whether to floor the values or not [Default: false]
 ---@return integer offsetX, integer offsetY
-function utils.GetAlignmentOffset( width, height, alignment )
+function utils.GetAlignmentOffset( width, height, alignment , floorValues )
     local x, y = 0, 0
 
     if alignment == Alignment.TopCenter or alignment == Alignment.Center or alignment == Alignment.BottomCenter then
-        x = -math.floor( width / 2 )
+        if floorValues then
+            x = utils.MultiFloor( -width / 2 )
+        else
+            x = -width / 2
+        end
     elseif alignment == Alignment.TopRight or alignment == Alignment.CenterRight or alignment == Alignment.BottomRight then
         x = -width
     end
 
     if alignment == Alignment.CenterLeft or alignment == Alignment.Center or alignment == Alignment.CenterRight then
-        y = -math.floor( height / 2 )
+        if floorValues then
+            y = utils.MultiFloor( -height / 2 )
+        else
+            y = -height / 2
+        end
     elseif alignment == Alignment.BottomLeft or alignment == Alignment.BottomCenter or alignment == Alignment.BottomRight then
         y = -height
     end

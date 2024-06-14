@@ -106,7 +106,7 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
 
     local x, y, width, height, halfWidth, halfHeight = curveUtils.MultiFloor( x, y, width, height, width / 2, height / 2 )
     local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, 0 )
-    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft, true )
 
     local newMatrix = Matrix()
 
@@ -165,12 +165,24 @@ function DRAW.Circle( x, y, diameter, rotation, vertexCount, alignment, color )
         end
     end
 
-    local width, height = diameter --[[@as number]], diameter --[[@as number]]
+    local width, height
+    local size
     if isvector( diameter ) then
-        width, height = curveUtils.MultiFloor( diameter.x, diameter.y )
+        width, height = diameter.x, diameter.y
+        size = diameter --[[@as Vector]]
+    elseif isnumber( diameter ) then
+        width, height = diameter --[[@as number]],
+            diameter --[[@as number]]
+        size = Vector(
+            diameter --[[@as number]],
+            diameter --[[@as number]]
+        )
+    else
+        error( "Invalid diameter argument to DRAW.Circle" )
+        return
     end
 
-    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft )
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, alignment or Alignment.TopLeft, false )
 
     if not vertexCount or vertexCount < 10 then
 
@@ -217,10 +229,10 @@ function DRAW.Circle( x, y, diameter, rotation, vertexCount, alignment, color )
     newMatrix:Translate( Vector( alignOffsetX * 2, alignOffsetY * 2 ) )
 
     -- 2. Offset the circle to be top-left aligned so the alignment offsets work correctly.
-    newMatrix:Translate( Vector( width, height ) )
+    newMatrix:Translate( size )
 
     -- 1. Scale
-    newMatrix:Scale( Vector( width, height ) )
+    newMatrix:Scale( size )
 
     -- Hacky color amd alpha via Material properties because IMeshes don't appear to receive color or blend settings from the render library.
     iMeshColorMaterial:SetVector( "$color", Vector( r / 255, g / 255, b / 255 ) )
