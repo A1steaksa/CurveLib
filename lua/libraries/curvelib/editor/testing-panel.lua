@@ -17,7 +17,7 @@ local COLOR_BLUE = Color( 0, 0, 255, 255 )
 
 PANEL.MinRadius = 3
 PANEL.MaxRadius = 25
-PANEL.Radius = PANEL.MaxRadius
+PANEL.Diameter = PANEL.MaxRadius
 
 PANEL.MinVertexCount = 10
 PANEL.MaxVertexCount = 100
@@ -46,7 +46,7 @@ function PANEL:Init()
         label:SetSize( labelWidth + buttonWidth * 2 + padding * 2, labelHeight )
         label:SetText( "Radius" )
         label:SetFont( "DermaLarge" )
-        label:SetTextColor( COLOR_BLACK )
+        label:SetTextColor( COLOR_WHITE )
         label:SetContentAlignment( 5 )
 
         -- Decrease Button
@@ -57,8 +57,8 @@ function PANEL:Init()
             buttonStartY
         )
         decreaseButton.DoClick = function()
-            self.Radius = math.max( self.Radius - 1, self.MinRadius )
-            valueLabel:SetText(tostring( self.Radius ) )
+            self.Diameter = math.max( self.Diameter - 1, self.MinRadius )
+            valueLabel:SetText(tostring( self.Diameter ) )
         end
 
         -- Radius Label
@@ -67,9 +67,9 @@ function PANEL:Init()
             buttonStartY
         )
         valueLabel:SetSize( labelWidth, labelHeight )
-        valueLabel:SetText( tostring( self.Radius ) )
+        valueLabel:SetText( tostring( self.Diameter ) )
         valueLabel:SetFont( "DermaLarge" )
-        valueLabel:SetTextColor( COLOR_BLACK )
+        valueLabel:SetTextColor( COLOR_WHITE )
         valueLabel:SetContentAlignment( 5 )
 
         -- Increase Button
@@ -80,8 +80,8 @@ function PANEL:Init()
             buttonStartY
         )
         increaseButton.DoClick = function()
-            self.Radius = math.min( self.Radius + 1, self.MaxRadius )
-            valueLabel:SetText(tostring( self.Radius ) )
+            self.Diameter = math.min( self.Diameter + 1, self.MaxRadius )
+            valueLabel:SetText(tostring( self.Diameter ) )
         end
     end
 
@@ -96,7 +96,7 @@ function PANEL:Init()
         label:SetSize( labelWidth + buttonWidth * 2 + padding * 2, labelHeight )
         label:SetText( "Vertex Count" )
         label:SetFont( "DermaLarge" )
-        label:SetTextColor( COLOR_BLACK )
+        label:SetTextColor( COLOR_WHITE )
         label:SetContentAlignment( 5 )
 
         -- Decrease Button
@@ -119,7 +119,7 @@ function PANEL:Init()
         valueLabel:SetSize( labelWidth, labelHeight )
         valueLabel:SetText( tostring( self.VertexCount ) )
         valueLabel:SetFont( "DermaLarge" )
-        valueLabel:SetTextColor( COLOR_BLACK )
+        valueLabel:SetTextColor( COLOR_WHITE )
         valueLabel:SetContentAlignment( 5 )
 
         -- Increase Button
@@ -144,16 +144,18 @@ function PANEL:Paint( width, height )
     drawBase.StartPanel( self )
 
     -- Background
-    drawBase.Rect( 0, 0, width, height, 0, Alignment.TopLeft, COLOR_WHITE )
+    drawBase.Rect( 0, 0, width, height, 0, Alignment.TopLeft, COLOR_BLACK )
+
+    local alignment = Alignment.Center
 
     -- Draw a circle
-    drawBase.Circle( drawStartX, drawStartY, self.Radius + 0.5, 0, self.VertexCount, Alignment.Center, Color( 0, 255, 0, 255 ) )
-    drawBase.Circle( drawStartX, drawStartY, self.Radius, 0, self.VertexCount, Alignment.Center, Color( 0, 0, 255, 255 ) )
+    drawBase.Circle( drawStartX, drawStartY, self.Diameter + 0.5, 0, self.VertexCount, alignment, Color( 255, 0, 255, 255 ) )
+    drawBase.Circle( drawStartX, drawStartY, self.Diameter, 0, self.VertexCount, alignment, Color( 0, 0, 255, 255 ) )
     --drawBase.Circle( drawStartX, drawStartY, self.Radius, 0, self.VertexCount, Alignment.Center, COLOR_BLUE )
 
     -- Draw Center Lines
-    drawBase.Line( drawStartX - self.MaxRadius * 2, drawStartY, drawStartX + self.MaxRadius * 2, drawStartY, 1, Alignment.Center, COLOR_RED )
-    drawBase.Line( drawStartX, drawStartY - self.MaxRadius * 2, drawStartX, drawStartY + self.MaxRadius * 2, 1, Alignment.Center, COLOR_RED )
+    --drawBase.Line( drawStartX - self.MaxRadius * 2, drawStartY, drawStartX + self.MaxRadius * 2, drawStartY, 1, Alignment.Center, COLOR_RED )
+    --drawBase.Line( drawStartX, drawStartY - self.MaxRadius * 2, drawStartX, drawStartY + self.MaxRadius * 2, 1, Alignment.Center, COLOR_RED )
 
     drawBase.EndPanel()
 end
