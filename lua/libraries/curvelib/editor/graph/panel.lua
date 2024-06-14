@@ -32,12 +32,25 @@ surface.CreateFont( fonts.Label, {
 } )
 --#endregion Fonts
 
+-- The current state of the Graph's editor
+---@class CurveLib.Editor.Graph.State
+---@field IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+---@field IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+---@field IsDragging boolean Whether the user is currently dragging a Handle
+
+
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
 ---@field Caches table
+---@field State CurveLib.Editor.Graph.State
 ---@field MainHandles table<CurveLib.Editor.Graph.Handle.MainHandle>
 ---@field CurrentCurve CurveLib.Curve.Data
 local PANEL = {
-    MainHandles = {}
+    MainHandles = {},
+    State = {
+        IsRotationMirrored = false,
+        IsDistanceMirrored = false,
+        IsDragging = false
+    },
 }
 
 -- For Colors used multiple times within the Graph
@@ -170,14 +183,17 @@ end
 function PANEL:Paint( width, height )
     drawGraph = _G.CurveLib.GraphDraw or drawGraph
 
+    local config = self.Config
+    local state = self.State
+
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
     local panelX, panelY = self:LocalToScreen( 0, 0 )
 
     local scissorX, scissorY = panelX + interiorX, panelY + interiorY
 
-    self.Config:ClearAllCaches()
+    config:ClearAllCaches()
 
-    drawGraph.StartPanel( self.Config, self, 0, 0, width, height )
+    drawGraph.StartPanel( config, self, 0, 0, width, height )
 
     -- The axes and labels
     drawGraph.GraphExterior()
@@ -190,22 +206,16 @@ function PANEL:Paint( width, height )
     -- Most recently evaluated point
     drawGraph.RecentEvaluation( self.CurrentCurve )
 
-    -- Hovering on the curve
-    drawGraph.CurveHovering()
+    -- Curve Hovering
+    if not state.IsDragging and self:IsCurveHovered() then
+        local isHandleHovered = self:IsChildHovered( true )
+        if not isHandleHovered then
+            drawGraph.CurveHovering()
+        end
+    end
 
     drawGraph.EndPanel()
 end
-
-
-function PANEL:ClearInteriorRectCache()
-    self.Caches.InteriorRect = nil
-end
-
-
-function PANEL:ClearMousePosOnCurveCache()
-    self.Config.Caches.MousePosOnCurve = nil
-end
-
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
 ---@return integer x 
@@ -250,6 +260,16 @@ function PANEL:GetInteriorRect()
     return rect.x, rect.y, rect.Width, rect.Height
 end
 
+--#region Curve Hovering
+
+-- Returns whether the mouse is hovering over the active curve
+---@return boolean isHovered Whether the mouse is hovering over the active curve
+function PANEL:IsCurveHovered()
+    local mouseX, mouseY = self:CursorPos()
+    local _, distance = self:GetClosestPointOnCurve( mouseX, mouseY )
+
+    return distance <= self.Config.Curve.HoverSize
+end
 
 -- Finds where on the active curve curve is closest to a given point.  Results are cached each frame.
 -- **Note:** This function will always return the closest point on the curve, even if it is not within the bounds of the curve.
@@ -287,16 +307,6 @@ function PANEL:GetClosestPointOnCurve( x, y, checkCount )
 end
 
 
--- Returns whether the mouse is hovering over the active curve
----@return boolean isHovered Whether the mouse is hovering over the active curve
-function PANEL:IsCurveHovered()
-    local mouseX, mouseY = self:CursorPos()
-    local _, distance = self:GetClosestPointOnCurve( mouseX, mouseY )
-
-    return distance <= self.Config.Curve.HoverSize
-end
-
-
 -- Returns the position of the mouse on the active curve
 ---@return number time The time value of the closest point on the curve
 ---@return number distance The distance between the point and the closest point on the curve
@@ -316,6 +326,8 @@ function PANEL:GetMousePosOnCurve()
     local cache = self.Config.Caches.MousePosOnCurve
     return cache.Time, cache.Distance, cache.X, cache.Y
 end
+
+--#endregion Curve Hovering
 
 --#region Coordinate Conversion
 
@@ -352,20 +364,19 @@ function PANEL:CorrectMainHandlePos( index, x, y )
     ---@type CurveLib.Editor.Graph.Handle.MainHandle
     local mainHandle = self.MainHandles[ index ]
 
+    -- First and last Main Handles need to stay at the horizontal extremes
     local correctedX
-    local correctedY
-
-    -- First Main Handle stays on the left side
     if index == 1 then
+        -- First Main Handle needs to stay at x = 0 (normalized)
         correctedX = interiorX - mainHandle.HalfWidth
-    -- Last Main Handle stays on the right side
     elseif index == #self.MainHandles then
+        -- Last Main Handle needs to stay at x = 1 (normalized)
         correctedX = interiorX + interiorWidth - mainHandle.HalfWidth
     end
 
     -- All Main Points stay within the interior bounds
     correctedX = correctedX or math.Clamp( x, interiorX - mainHandle.HalfWidth, interiorX + interiorWidth - mainHandle.HalfWidth )
-    correctedY = correctedY or math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
+    local correctedY = math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
 
     return correctedX, correctedY
 end
@@ -490,6 +501,22 @@ function PANEL:EditCurve( curve )
     self:PositionHandles()
 end
 
+--#region Handle Events
+
+-- Called when a Handle starts being dragged
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnDragStarted( handle )
+    self.State.IsDragging = true
+end
+
+
+-- Called when a Handle stops being dragged
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnDragEnded( handle )
+    self.State.IsDragging = false
+end
+
+
 -- Called when a Main Handle is moved
 ---@param mainHandle CurveLib.Editor.Graph.Handle.MainHandle
 ---@param x integer The proposed new position's X coordinate
@@ -541,6 +568,7 @@ function PANEL:OnMainHandleDragged( mainHandle, x, y )
     return correctedX, correctedY
 end
 
+
 -- Called when a Handle Point is moved
 ---@param sideHandle CurveLib.Editor.Graph.Handle.SideHandle
 ---@param x integer The proposed new position's X coordinate
@@ -550,6 +578,8 @@ end
 function PANEL:OnSideHandleDragged( sideHandle, x, y )
 
     local mainHandleIndex = sideHandle.MainHandle.Index
+
+    local siblingHandle = sideHandle.IsRightHandle and sideHandle.MainHandle.LeftHandle or sideHandle.MainHandle.RightHandle
 
     local correctedX, correctedY = self:CorrectSideHandlePos( mainHandleIndex, sideHandle.IsRightHandle, x, y )
 
@@ -569,10 +599,12 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     return correctedX, correctedY
 end
 
+--#endregion Handle Events
+
 --#endregion Curve Management
 
 function PANEL:OnSizeChanged( width, height )
-    self:ClearInteriorRectCache()
+    self.Caches.InteriorRect = nil
     self:PositionHandles()
 end
 
