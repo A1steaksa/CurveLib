@@ -23,8 +23,10 @@ end
 RunShared( "libraries/curvelib/curve/point.lua" )
 RunShared( "libraries/curvelib/curve/data.lua" )
 
--- Better Frames
-RunClient( "libraries/better-frame/bframe.lua" )
+-- Better Derma
+RunClient( "libraries/better-derma/blabel.lua" )
+RunClient( "libraries/better-derma/bframe.lua" )
+RunClient( "libraries/better-derma/bbutton.lua" )
 
 -- Curve Editor Panel Base
 RunClient( "libraries/curvelib/editor/panel-base.lua" )

@@ -83,7 +83,7 @@ local PANEL = {}
 -- Returns the Colors table for the current frame
 ---@return BFrame.Config.Colors
 function PANEL:GetColorTable()
-    if self:HasFocus() then
+    if self:HasHierarchicalFocus() then
         return self.BFrame.Config.Colors.Focused
     else
         return self.BFrame.Config.Colors.Unfocused
@@ -113,11 +113,9 @@ function PANEL:PerformLayout()
 	local titlePush = 0
 
 	if ( IsValid( self.imgIcon ) ) then
-
 		self.imgIcon:SetPos( 5, 5 )
 		self.imgIcon:SetSize( 16, 16 )
 		titlePush = 16
-
 	end
 
     local leftDockPadding = config.DockPadding.Left
