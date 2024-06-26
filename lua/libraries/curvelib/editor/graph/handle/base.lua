@@ -40,16 +40,24 @@ end
 ---@param y integer The Handle's propoxed new Y coordinate
 ---@return integer? correctedX The actual X coordinate to use
 ---@return integer? correctedY The actual Y coordinate to use
-function PANEL:OnDragged( x, y ) end
+function PANEL:OnDragged( x, y )
+    if not self.GraphPanel then
+        self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
+    end
+
+    if self.IsMainHandle then
+        return self.GraphPanel:OnMainHandleDragged( self --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], x, y )
+    else
+        return self.GraphPanel:OnSideHandleDragged( self --[[@as CurveLib.Editor.Graph.Handle.SideHandle]], x, y )
+    end
+end
 
 function PANEL:Think()
     if self.IsBeingDragged then
-        local screenX, screenY = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]:LocalToScreen( 0, 0 )
 
-        local mouseX = gui.MouseX() - screenX + self.LocalMouseX
-        local mouseY = gui.MouseY() - screenY + self.LocalMouseY
+        local graphMouseX, graphMouseY = self:GetParent():ScreenToLocal( gui.MouseX(), gui.MouseY() )
 
-        local correctedX, correctedY = self:OnDragged(mouseX, mouseY )
+        local correctedX, correctedY = self:OnDragged( graphMouseX + self.LocalMouseX, graphMouseY + self.LocalMouseY )
 
         if correctedX and correctedY then
             self:SetPos( correctedX, correctedY )
