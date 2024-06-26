@@ -366,7 +366,7 @@ function PANEL:CorrectMainHandlePos( index, x, y )
     local mainHandle = self.MainHandles[ index ]
 
     -- First and last Main Handles need to stay at the horizontal extremes
-    local correctedX
+    local correctedX, correctedY
     if index == 1 then
         -- First Main Handle needs to stay at x = 0 (normalized)
         correctedX = interiorX - mainHandle.HalfWidth
@@ -377,7 +377,7 @@ function PANEL:CorrectMainHandlePos( index, x, y )
 
     -- All Main Points stay within the interior bounds
     correctedX = correctedX or math.Clamp( x, interiorX - mainHandle.HalfWidth, interiorX + interiorWidth - mainHandle.HalfWidth )
-    local correctedY = math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
+    correctedY = math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
 
     return correctedX, correctedY
 end
@@ -514,7 +514,7 @@ end
 --#region Handle Events
 
 -- Called when a Handle starts being dragged
----@param handle CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
+---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
 function PANEL:OnDragStarted( handle )
     self.State.IsDragging = true
 
@@ -536,7 +536,7 @@ end
 
 
 -- Called when a Handle stops being dragged
----@param handle CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
+---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
 function PANEL:OnDragEnded( handle )
     self.State.IsDragging = false
     self.State.SiblingDistance = 0
@@ -545,11 +545,9 @@ end
 
 -- Called when a Main Handle is moved
 ---@param mainHandle CurveLib.Editor.Graph.Handle.MainHandle
----@param x integer The proposed new position's X coordinate
----@param y integer The proposed new position's Y coordinate
 ---@return integer x The X coordinate, with any adjustments made
 ---@return integer y The Y coordinate, with any adjustments made
-function PANEL:OnMainHandleDragged( mainHandle, x, y )
+function PANEL:OnMainHandleDragged( mainHandle, x, y)
     ---@type CurveLib.Curve.Point
     local point = self.CurrentCurve.Points[ mainHandle.Index ]
 
@@ -597,9 +595,9 @@ end
 
 -- Called when a Handle Point is moved
 ---@param sideHandle CurveLib.Editor.Graph.Handle.SideHandle
----@param x integer The proposed new position's X coordinate
----@param y integer The proposed new position's Y coordinate
-function PANEL:OnSideHandleDragged( sideHandle )
+---@return integer x The X coordinate, with any adjustments made
+---@return integer y The Y coordinate, with any adjustments made
+function PANEL:OnSideHandleDragged( sideHandle, x, y)
     local mainHandle = sideHandle.MainHandle
     local siblingHandle = sideHandle.SiblingHandle
 
@@ -607,7 +605,7 @@ function PANEL:OnSideHandleDragged( sideHandle )
     local isRotationMirrored = self.State.IsRotationMirrored
 
     -- Correct the side handle's proposed position
-    local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, sideHandle:GetCenterPos() )
+    local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, x, y )
 
     -- From here on, all calculations are done in normalized coordinates
     local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX, correctedSideHandleY )
@@ -652,6 +650,8 @@ function PANEL:OnSideHandleDragged( sideHandle )
     end
 
     self:PositionHandles()
+
+    return correctedSideHandleX, correctedSideHandleY
 end
 
 function PANEL:OnSizeChanged( width, height )
