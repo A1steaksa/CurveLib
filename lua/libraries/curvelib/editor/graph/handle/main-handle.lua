@@ -11,6 +11,7 @@ local PANEL = {}
 
 function PANEL:Init()
     self:SetSize( 20, 20 )
+    self.IsMainHandle = true
 end
 
 function PANEL:Paint( width, height )
@@ -27,16 +28,6 @@ function PANEL:Paint( width, height )
     handleDraw.MainHandle()
 
     handleDraw.EndPanel()
-end
-
-function PANEL:OnDragged( x, y )
-    if not self.GraphPanel then
-        self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
-    end
-
-    local correctedX, correctedY = self.GraphPanel:OnMainHandleDragged( self, x, y )
-    
-    return correctedX, correctedY
 end
 
 vgui.Register( "CurveLib.Editor.Graph.Handle.MainHandle", PANEL, "CurveLib.Editor.Graph.Handle.Base" )

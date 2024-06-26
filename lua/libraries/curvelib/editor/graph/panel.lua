@@ -37,6 +37,7 @@ surface.CreateFont( fonts.Label, {
 ---@field IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
 ---@field IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
 ---@field IsDragging boolean Whether the user is currently dragging a Handle
+---@field SiblingDistance number The distance between the dragged Handle's sibling Handle and their Main Handle
 
 
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
@@ -49,7 +50,8 @@ local PANEL = {
     State = {
         IsRotationMirrored = false,
         IsDistanceMirrored = false,
-        IsDragging = false
+        IsDragging = false,
+        SiblingDistance = 0
     },
 }
 
@@ -350,7 +352,6 @@ end
 
 --#endregion Coordinate Conversion
 
---#region Curve Management
 
 -- Modifies and corrects the position of a Main Handle so that it is within bounds and has its first and last points at the graph's horizontal extremes
 ---@param index integer The index of the Main Handle being modified
@@ -437,8 +438,9 @@ function PANEL:PopulateHandles( count )
         local needsLeftHandle = index ~= 1
         local needsRightHandle = index ~= count
 
+        local leftHandle, rightHandle
         if needsLeftHandle then
-            local leftHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
+            leftHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
             leftHandle.GraphPanel = self
             leftHandle.IsRightHandle = false
             leftHandle.MainHandle = mainHandle
@@ -447,12 +449,20 @@ function PANEL:PopulateHandles( count )
         end
 
         if needsRightHandle then
-            local rightHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
+            rightHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
             rightHandle.GraphPanel = self
             rightHandle.IsRightHandle = true
             rightHandle.MainHandle = mainHandle
             rightHandle:MoveToAfter( mainHandle )
             mainHandle.RightHandle = rightHandle
+        end
+
+        if leftHandle then
+            leftHandle.SiblingHandle = rightHandle
+        end
+
+        if rightHandle then
+            rightHandle.SiblingHandle = leftHandle
         end
 
         mainHandle.Index = index
@@ -474,17 +484,17 @@ function PANEL:PositionHandles()
         local point = points[ index ] --[[@as CurveLib.Curve.Point]]
 
         if not mainHandle.IsBeingDragged then
-            local posX, posY = self:NormalizedToInterior( point.MainHandle.x, point.MainHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.MainPoint.x, point.MainPoint.y )
             mainHandle:SetCenterPos( posX, posY )
         end
 
         if leftHandle and not leftHandle.IsBeingDragged then
-            local posX, posY = self:NormalizedToInterior( point.LeftHandle.x, point.LeftHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.LeftPoint.x, point.LeftPoint.y )
             leftHandle:SetCenterPos( posX, posY )
         end
 
         if rightHandle and not rightHandle.IsBeingDragged then
-            local posX, posY = self:NormalizedToInterior( point.RightHandle.x, point.RightHandle.y )
+            local posX, posY = self:NormalizedToInterior( point.RightPoint.x, point.RightPoint.y )
             rightHandle:SetCenterPos( posX, posY )
         end
     end
@@ -504,16 +514,32 @@ end
 --#region Handle Events
 
 -- Called when a Handle starts being dragged
----@param handle CurveLib.Editor.Graph.Handle.Base
+---@param handle CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
 function PANEL:OnDragStarted( handle )
     self.State.IsDragging = true
+
+    if handle.IsSideHandle then
+        local mainHandle = handle.MainHandle
+        local siblingHandle = handle.SiblingHandle
+
+        if siblingHandle then
+            local mainHandleX, mainHandleY = self:PanelToNormalized( mainHandle:GetCenterPos() )
+            local siblingHandleX, siblingHandleY = self:PanelToNormalized( siblingHandle:GetCenterPos() )
+    
+            self.State.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
+        else
+            self.State.SiblingDistance = 0
+        end
+    end
+
 end
 
 
 -- Called when a Handle stops being dragged
----@param handle CurveLib.Editor.Graph.Handle.Base
+---@param handle CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
 function PANEL:OnDragEnded( handle )
     self.State.IsDragging = false
+    self.State.SiblingDistance = 0
 end
 
 
@@ -526,14 +552,14 @@ end
 function PANEL:OnMainHandleDragged( mainHandle, x, y )
     ---@type CurveLib.Curve.Point
     local point = self.CurrentCurve.Points[ mainHandle.Index ]
-    
+
     local correctedX, correctedY = self:CorrectMainHandlePos( mainHandle.Index, x, y )
     local correctedNormalX, correctedNormalY = self:PanelToNormalized( correctedX + mainHandle.HalfWidth, correctedY + mainHandle.HalfHeight )
 
     local oldX, oldY = mainHandle:GetX(), mainHandle:GetY()
 
     -- Move the Left Handle with the Main Handle
-    if point.LeftHandle then
+    if point.LeftPoint then
         local leftHandle = mainHandle.LeftHandle
 
         local newPosX, newPosY = leftHandle.x + (correctedX - oldX), leftHandle.y + ( correctedY - oldY )
@@ -544,11 +570,11 @@ function PANEL:OnMainHandleDragged( mainHandle, x, y )
         leftHandle.y = newPosY
 
         -- Update the Curve Data
-        point.LeftHandle.x, point.LeftHandle.y = self:PanelToNormalized( newPosX + leftHandle.HalfWidth, newPosY + leftHandle.HalfHeight )
+        point.LeftPoint.x, point.LeftPoint.y = self:PanelToNormalized( newPosX + leftHandle.HalfWidth, newPosY + leftHandle.HalfHeight )
     end
 
     -- Move the Right Handle with the Main Handle
-    if point.RightHandle then
+    if point.RightPoint then
         local rightHandle = mainHandle.RightHandle
 
         local newPosX, newPosY = rightHandle.x + (correctedX - oldX), rightHandle.y + ( correctedY - oldY )
@@ -559,11 +585,11 @@ function PANEL:OnMainHandleDragged( mainHandle, x, y )
         rightHandle.y = newPosY
 
         -- Update the Curve Data
-        point.RightHandle.x, point.RightHandle.y = self:PanelToNormalized( newPosX + rightHandle.HalfWidth, newPosY + rightHandle.HalfHeight )
+        point.RightPoint.x, point.RightPoint.y = self:PanelToNormalized( newPosX + rightHandle.HalfWidth, newPosY + rightHandle.HalfHeight )
     end
 
-    point.MainHandle.x = correctedNormalX
-    point.MainHandle.y = correctedNormalY
+    point.MainPoint.x = correctedNormalX
+    point.MainPoint.y = correctedNormalY
 
     return correctedX, correctedY
 end
@@ -573,35 +599,60 @@ end
 ---@param sideHandle CurveLib.Editor.Graph.Handle.SideHandle
 ---@param x integer The proposed new position's X coordinate
 ---@param y integer The proposed new position's Y coordinate
----@return integer x The X coordinate, with any adjustments made
----@return integer y The Y coordinate, with any adjustments made
-function PANEL:OnSideHandleDragged( sideHandle, x, y )
+function PANEL:OnSideHandleDragged( sideHandle )
+    local mainHandle = sideHandle.MainHandle
+    local siblingHandle = sideHandle.SiblingHandle
 
-    local mainHandleIndex = sideHandle.MainHandle.Index
+    local isDistanceMirrored = self.State.IsDistanceMirrored
+    local isRotationMirrored = self.State.IsRotationMirrored
 
-    local siblingHandle = sideHandle.IsRightHandle and sideHandle.MainHandle.LeftHandle or sideHandle.MainHandle.RightHandle
+    -- Correct the side handle's proposed position
+    local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, sideHandle:GetCenterPos() )
 
-    local correctedX, correctedY = self:CorrectSideHandlePos( mainHandleIndex, sideHandle.IsRightHandle, x, y )
+    -- From here on, all calculations are done in normalized coordinates
+    local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX, correctedSideHandleY )
 
-    local correctedNormalX, correctedNormalY = self:PanelToNormalized( correctedX + sideHandle.HalfWidth, correctedY + sideHandle.HalfHeight )
+    -- Update the Curve Data with the side handle's new normalized coordinates    
+    local point = self.CurrentCurve.Points[ mainHandle.Index ]
+    local sidePoint = sideHandle.IsRightHandle and point.RightPoint or point.LeftPoint
+    sidePoint.x = sideHandleX
+    sidePoint.y = sideHandleY
 
-    ---@type CurveLib.Curve.Point
-    local point = self.CurrentCurve.Points[ mainHandleIndex ]
+    -- If there is a sibling that needs to be mirrored
+    if siblingHandle and ( isDistanceMirrored or isRotationMirrored ) then
+        local mainHandleX, mainHandleY = self:PanelToNormalized( mainHandle:GetCenterPos() )
+        local siblingHandleX, siblingHandleY = self:PanelToNormalized( siblingHandle:GetCenterPos() )
 
-    if sideHandle.IsRightHandle then
-        point.RightHandle.x = correctedNormalX
-        point.RightHandle.y = correctedNormalY
-    else
-        point.LeftHandle.x = correctedNormalX
-        point.LeftHandle.y = correctedNormalY
+        local mainToSideX = sideHandleX - mainHandleX
+        local mainToSideY = sideHandleY - mainHandleY
+
+        -- The sibling's position is created from an angle and distance from the main handle
+
+        local newSiblingAngle
+        if isRotationMirrored then
+            newSiblingAngle = math.atan2( mainToSideY, mainToSideX ) + math.pi
+        else
+            newSiblingAngle = math.atan2( siblingHandleY - mainHandleY, siblingHandleX - mainHandleX )
+        end
+
+        local newSiblingDistance
+        if isDistanceMirrored then
+            newSiblingDistance = math.sqrt( math.pow( mainToSideX, 2 ) + math.pow( mainToSideY, 2 ) )
+        else
+            newSiblingDistance = self.State.SiblingDistance
+        end
+
+        local newSiblingX = mainHandleX + math.cos( newSiblingAngle ) * newSiblingDistance
+        local newSiblingY = mainHandleY + math.sin( newSiblingAngle ) * newSiblingDistance
+
+        -- Update the Curve Data with the sibling handle's new normalized coordinates
+        local siblingPoint = sideHandle.IsRightHandle and point.LeftPoint or point.RightPoint
+        siblingPoint.x = newSiblingX
+        siblingPoint.y = newSiblingY
     end
 
-    return correctedX, correctedY
+    self:PositionHandles()
 end
-
---#endregion Handle Events
-
---#endregion Curve Management
 
 function PANEL:OnSizeChanged( width, height )
     self.Caches.InteriorRect = nil

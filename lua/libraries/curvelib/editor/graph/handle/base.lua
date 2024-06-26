@@ -11,6 +11,8 @@ require( "vguihotload" )
 ---@field HoverEndTime number
 ---@field CurrentRadius number The current radius of the Handle, as a float pixel value which will be made into an integer for rendering.
 ---@field CurrentColor Color The current color of the Handle
+---@field IsMainHandle boolean? Whether or not this Handle is the main Handle
+---@field IsSideHandle boolean? Whether or not this Handle is a side Handle
 local PANEL = {}
 
 function PANEL:OnSizeChanged( width, height )
@@ -24,6 +26,13 @@ end
 function PANEL:SetCenterPos( x, y )
     self:SetX( x - self.HalfWidth )
     self:SetY( y - self.HalfHeight )
+end
+
+-- Like GetPos, but returns the center of the Panel.
+---@return integer x
+---@return integer y
+function PANEL:GetCenterPos()
+    return self.x + self.HalfWidth, self.y + self.HalfHeight
 end
 
 -- Called when the Handle is dragged.  Don't return anything to prevent the movement.

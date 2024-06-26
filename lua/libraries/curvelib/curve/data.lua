@@ -1,5 +1,5 @@
 ---@class CurveLib.Curve.Data
----@field Points table<CurveLib.Curve.Point>
+---@field Points CurveLib.Curve.Point[]
 ---@field IsCurve boolean
 ---@field lastInput number
 ---@field lastOutput Vector
@@ -33,17 +33,17 @@ function metatable:Evaluate( time, shouldSuppressHistory )
         if not curveSegmentEnd then
             if not shouldSuppressHistory then
                 self.lastInput = time
-                self.lastOutput = curveSegmentStart.MainHandle
+                self.lastOutput = curveSegmentStart.MainPoint
             end
-            return curveSegmentStart.MainHandle
+            return curveSegmentStart.MainPoint
         end
 
         local result = math.CubicBezier(
             time * ( #points - 1 ) - ( curveSegmentIndex - 1 ),
-            curveSegmentStart.MainHandle,
-            curveSegmentStart.RightHandle,
-            curveSegmentEnd.LeftHandle,
-            curveSegmentEnd.MainHandle
+            curveSegmentStart.MainPoint,
+            curveSegmentStart.RightPoint,
+            curveSegmentEnd.LeftPoint,
+            curveSegmentEnd.MainPoint
         )
 
         if not shouldSuppressHistory then

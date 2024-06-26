@@ -1,26 +1,26 @@
 ---@class CurveLib.Curve.Point
----@field MainHandle Vector
----@field LeftHandle Vector?
----@field RightHandle Vector?
+---@field MainPoint Vector
+---@field LeftPoint Vector?
+---@field RightPoint Vector?
 local metatable = {
-    MainHandle   = Vector( 0, 0, 0 ),
-    LeftHandle  = nil,
-    RightHandle = nil
+    MainPoint   = Vector( 0, 0, 0 ),
+    LeftPoint  = nil,
+    RightPoint = nil
 }
 metatable.__index = metatable
 
 -- Creates a new Curve Point with an optional set of handles
----@param mainHandlePos Vector The position of the main handle. Must be in the range [0-1].
----@param leftHandlePos Vector? The position of the left handle. X coordinate be in the range [0-1].
----@param rightHandlePos Vector? The position of the right handle. X coordinate be in the range [0-1].
+---@param mainPointPos Vector The position of the main point. Must be in the range [0-1].
+---@param leftPointPos Vector? The position of the left point. X coordinate be in the range [0-1].
+---@param rightPointPos Vector? The position of the right point. X coordinate be in the range [0-1].
 ---@return CurveLib.Curve.Point
-function CurvePoint( mainHandlePos, leftHandlePos, rightHandlePos )
+function CurvePoint( mainPointPos, leftPointPos, rightPointPos )
     local curvePoint = {}
     setmetatable( curvePoint, metatable )
 
-    curvePoint.MainHandle = mainHandlePos
-    if leftHandlePos then curvePoint.LeftHandle = leftHandlePos end
-    if rightHandlePos then curvePoint.RightHandle = rightHandlePos end
+    curvePoint.MainPoint = mainPointPos
+    if leftPointPos then curvePoint.LeftPoint = leftPointPos end
+    if rightPointPos then curvePoint.RightPoint = rightPointPos end
 
     return curvePoint
 end

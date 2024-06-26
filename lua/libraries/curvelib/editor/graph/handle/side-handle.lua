@@ -5,11 +5,13 @@ local handleDraw
 
 ---@class CurveLib.Editor.Graph.Handle.SideHandle : CurveLib.Editor.Graph.Handle.Base
 ---@field MainHandle CurveLib.Editor.Graph.Handle.MainHandle
+---@field SiblingHandle CurveLib.Editor.Graph.Handle.SideHandle?
 ---@field IsRightHandle boolean
 local PANEL = {}
 
 function PANEL:Init()
     self:SetSize( 14, 14 )
+    self.IsSideHandle = true
 end
 
 function PANEL:Paint( width, height )
@@ -24,16 +26,6 @@ function PANEL:Paint( width, height )
     handleDraw.SideHandle()
 
     handleDraw.EndPanel()
-end
-
-function PANEL:OnDragged( x, y )
-    if not self.GraphPanel then
-        self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
-    end
-
-    local correctedX, correctedY = self.GraphPanel:OnSideHandleDragged( self, x, y )
-
-    return correctedX, correctedY
 end
 
 vgui.Register( "CurveLib.Editor.Graph.Handle.SideHandle", PANEL, "CurveLib.Editor.Graph.Handle.Base" )
