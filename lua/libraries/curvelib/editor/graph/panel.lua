@@ -608,7 +608,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y)
     local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, x, y )
 
     -- From here on, all calculations are done in normalized coordinates
-    local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX, correctedSideHandleY )
+    local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX + sideHandle.HalfWidth, correctedSideHandleY + sideHandle.HalfHeight )
 
     -- Update the Curve Data with the side handle's new normalized coordinates    
     local point = self.CurrentCurve.Points[ mainHandle.Index ]

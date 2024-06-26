@@ -54,9 +54,7 @@ end
 
 function PANEL:Think()
     if self.IsBeingDragged then
-
         local graphMouseX, graphMouseY = self:GetParent():ScreenToLocal( gui.MouseX(), gui.MouseY() )
-
         local correctedX, correctedY = self:OnDragged( graphMouseX + self.LocalMouseX, graphMouseY + self.LocalMouseY )
 
         if correctedX and correctedY then
