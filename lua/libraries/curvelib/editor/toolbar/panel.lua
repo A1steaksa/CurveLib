@@ -18,10 +18,19 @@ local PANEL = {}
 function PANEL:Init()
     self:SetWide( Defaults.Size.Width )
 
-    local editButton = vgui.Create( "DButton", self )
+    local newButton = vgui.Create( "BButton", self )
+    newButton:SetText( "New" )
+    newButton:Dock( LEFT )
+    newButton:DockMargin( 0, 0, 8, 0 )
+    newButton.DoClick = function()
+        local editorFrame = self:GetEditorFrame()
+        editorFrame:EditNewCurve()
+    end
+
+    local editButton = vgui.Create( "BButton", self )
     editButton:SetText( "Edit" )
     editButton:Dock( LEFT )
-    editButton:DockMargin( 0, 0, 5, 0 )
+    editButton:DockMargin( 0, 0, 8, 0 )
     editButton.DoClick = function()
         local traceEntity = LocalPlayer():GetEyeTrace().Entity
         
@@ -36,7 +45,7 @@ function PANEL:Init()
         else
             print( "No entity found" )
         end
-    end
+    end    
 
 end
 

@@ -32,6 +32,14 @@ local Default = {
     ToolbarHeight = 100
 }
 
+function FRAME:EditNewCurve()
+    self:EditCurve( CurveData(
+        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
+        CurvePoint( Vector( 0.5, 0.5 ), Vector( 0.25, 0.75 ), Vector( 0.75, 0.25 ) ),
+        CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
+    ) )
+end
+
 -- Opens a given Curve for editing
 ---@param curveOrIndex CurveLib.Curve.Data|integer # The Curve to open for editing.  Either the Curve Data table or the index of the Curve in the Editor Frame.
 function FRAME:EditCurve( curveOrIndex )
@@ -99,13 +107,7 @@ function FRAME:Init()
     -- Setup the default curve
     self.Curves = {}
 
-    local defaultCurve = CurveData(
-        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
-        CurvePoint( Vector( 0.5, 0.5 ), Vector( 0.25, 0.75 ), Vector( 0.75, 0.25 ) ),
-        CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
-    )
-    self:AddCurve( defaultCurve )
-    self:EditCurve( defaultCurve )
+    self:EditNewCurve()
 
     self:SetSizable( true )
     self:SetVisible( true )

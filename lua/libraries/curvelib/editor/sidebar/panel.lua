@@ -16,7 +16,27 @@ local Defaults = {
 local PANEL = {}
 
 function PANEL:Init()
+    local panel = self
+
     self:SetWide( Defaults.Size.Width )
+
+    local settingsPanel = vgui.Create( "DPanel", self )
+    settingsPanel:Dock( TOP )
+    settingsPanel:SetTall( 200 )
+
+    local mirrorRotationCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
+    mirrorRotationCheckbox:SetText( "Mirror Handle Rotation" )
+    mirrorRotationCheckbox:Dock( TOP )
+    function mirrorRotationCheckbox:OnChange( value )
+        panel:GetGraph().State.IsRotationMirrored = value
+    end
+
+    local mirrorDistanceCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
+    mirrorDistanceCheckbox:SetText( "Mirror Handle Distance" )
+    mirrorDistanceCheckbox:Dock( TOP )
+    function mirrorDistanceCheckbox:OnChange( value )
+        panel:GetGraph().State.IsDistanceMirrored = value
+    end
 end
 
 function PANEL:Paint( width, height )
