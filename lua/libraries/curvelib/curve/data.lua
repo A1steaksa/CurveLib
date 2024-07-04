@@ -7,6 +7,59 @@ local metatable = {}
 metatable.IsCurve = true
 metatable.__index = metatable
 
+local lerpVector = LerpVector
+
+-- Adds a point to the curve
+---@param time number The time value of the point. Must be between 0 and 1.
+function metatable:AddPoint( time )
+    if not time then
+        error( "Cannot add point with nil time" )
+    end
+
+    time = math.Clamp( time, 0, 1 )
+
+    local points = self.Points
+
+    -- Find the index where the new point should be inserted
+    local pointWidth = 1 / ( #points - 1 )
+    local pointIndex = 1 + math.floor( time / pointWidth ) + 1
+
+    local previousPoint = points[ pointIndex - 1 ]
+    local nextPoint = points[ pointIndex ]
+
+    -- Get the time as a percentage of the segment between the previous and next points
+    local previousPointTime = ( pointIndex - 2 ) * pointWidth
+    local nextPointTime = ( pointIndex - 1 ) * pointWidth
+    local timeBetweenPoints = time - previousPointTime
+    local timePercent = timeBetweenPoints / pointWidth
+
+    -- Adjust the previous and next points' control points to accomodate the new point
+    -- Credit to Gabi (@enxaneta) on Codepen for this method of calculating control points
+    -- https://codepen.io/enxaneta/post/how-to-add-a-point-to-an-svg-path
+
+    local newPointPos = self:Evaluate( time, true )
+
+    -- The neighboring points' side point lengths get halved
+    local previousPointRightPos = lerpVector( timePercent, previousPoint.MainPoint, previousPoint.RightPoint )
+    local nextPointLeftPos = lerpVector( 1 - timePercent, nextPoint.MainPoint, nextPoint.LeftPoint )
+
+    -- The new point's side points are halfway between the neighbor side points' new positions and the middle of their previous positions
+    local neighborSidePointCenter = lerpVector( timePercent, previousPoint.RightPoint, nextPoint.LeftPoint )
+    local newPointLeftPos = lerpVector( timePercent, previousPointRightPos, neighborSidePointCenter )
+    local newPointRightPos = lerpVector( timePercent, neighborSidePointCenter, nextPointLeftPos )
+
+    -- Insert the new point into the curve
+    table.insert( points, pointIndex, {
+        MainPoint = newPointPos,
+        LeftPoint = newPointLeftPos,
+        RightPoint = newPointRightPos
+    } )
+
+    -- Update the neighboring points' control points
+    previousPoint.RightPoint = previousPointRightPos
+    nextPoint.LeftPoint = nextPointLeftPos
+end
+
 -- Evaluate the curve at a given time
 -- This function is also aliased to the __call metamethod
 -- so that you can call the curve like a function.
