@@ -662,6 +662,23 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     return correctedSideHandleX, correctedSideHandleY
 end
 
+-- Called when the graph is clicked
+---@param mouseButton MOUSE
+function PANEL:OnMousePressed( mouseButton )
+
+    if mouseButton ~= MOUSE_LEFT then return end
+
+    if self:IsCurveHovered() then
+        local time, distance, x, y = self:GetMousePosOnCurve()
+
+        print( "Adding point at " .. time )
+
+        self.CurrentCurve:AddPoint( time )
+
+        self:UpdateHandles()
+    end
+end
+
 function PANEL:OnSizeChanged( width, height )
     self.Caches.InteriorRect = nil
     self:PositionHandles()
