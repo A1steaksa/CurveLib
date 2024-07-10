@@ -181,7 +181,6 @@ function PANEL:SetConfig( config )
     end
 end
 
-
 function PANEL:Paint( width, height )
     drawGraph = _G.CurveLib.GraphDraw or drawGraph
 
@@ -424,8 +423,20 @@ function PANEL:ClearPoints()
     self.MainHandles = {}
 end
 
+-- Updates the graph to ensure that the handles are populated and positioned correctly
+function PANEL:UpdateHandles()
+    if not self.CurrentCurve then return end
+
+    -- Each Curve Point in the Curve Data needs a corresponding Main Handle
+    self:PopulateHandles( #self.CurrentCurve.Points )
+
+    -- Move all these new Main Points to the position of their corresponding Curve Point
+    self:PositionHandles()
+end
+
 -- Adds a given number of Main and Side Handles to the panel
 -- Note: The first Main Handle will not have a Left Side Handle and the last Main Handle will not have a Right Side Handle
+---@private
 ---@param count integer
 function PANEL:PopulateHandles( count )
 
@@ -471,6 +482,7 @@ function PANEL:PopulateHandles( count )
 end
 
 -- Moves all handles, which are not being dragged, based on their position in the Curve Data being edited
+---@private
 function PANEL:PositionHandles()
     if not self.CurrentCurve then return end
 
@@ -504,11 +516,7 @@ end
 function PANEL:EditCurve( curve )
     self.CurrentCurve = curve
 
-    -- Each Curve Point in the Curve Data needs a corresponding Main Handle
-    self:PopulateHandles( #curve.Points )
-
-    -- Move all these new Main Points to the position of their corresponding Curve Point
-    self:PositionHandles()
+    self:UpdateHandles()
 end
 
 --#region Handle Events
@@ -597,7 +605,7 @@ end
 ---@param sideHandle CurveLib.Editor.Graph.Handle.SideHandle
 ---@return integer x The X coordinate, with any adjustments made
 ---@return integer y The Y coordinate, with any adjustments made
-function PANEL:OnSideHandleDragged( sideHandle, x, y)
+function PANEL:OnSideHandleDragged( sideHandle, x, y )
     local mainHandle = sideHandle.MainHandle
     local siblingHandle = sideHandle.SiblingHandle
 
@@ -652,6 +660,23 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y)
     self:PositionHandles()
 
     return correctedSideHandleX, correctedSideHandleY
+end
+
+-- Called when the graph is clicked
+---@param mouseButton MOUSE
+function PANEL:OnMousePressed( mouseButton )
+
+    if mouseButton ~= MOUSE_LEFT then return end
+
+    if self:IsCurveHovered() then
+        local time, distance, x, y = self:GetMousePosOnCurve()
+
+        print( "Adding point at " .. time )
+
+        self.CurrentCurve:AddPoint( time )
+
+        self:UpdateHandles()
+    end
 end
 
 function PANEL:OnSizeChanged( width, height )

@@ -259,7 +259,12 @@ local GRAPH = {
         Color = DefaultColors.Curve,
         Thickness = 8,
         VertexCount = 100,
-        HoverSize = 10
+        HoverSize = 10,
+        Hover = {
+            Color = DefaultColors.Point,
+            Thickness = 3,
+            Length = 10
+        }
     },
 
     Axes = {
