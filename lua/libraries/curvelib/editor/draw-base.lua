@@ -414,7 +414,7 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
         local nextLineEnd = points[ segmentNumber + 2 ]
 
         local direction = ( lineEnd - lineStart ):GetNormalized() --[[@as Vector]]
-        local perpendicular = Vector( -direction.y, direction.x )--:GetNormalized()
+        local perpendicular = Vector( -direction.y, direction.x )
 
         local lineStartOffset
         if segmentNumber == 1 then
@@ -435,7 +435,7 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
 
             local theta = ( nextAngle - angle ) / 2
 
-            local calculatedLineWidth = halfWidth / math.cos( theta )
+            local calculatedLineWidth = math.abs( halfWidth / math.cos( theta ) )
 
             local jointDirection = ( ( perpendicular + nextPerpendicular ) / 2 ):GetNormalized()
 
