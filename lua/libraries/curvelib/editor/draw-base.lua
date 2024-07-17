@@ -428,18 +428,23 @@ function DRAW.MultiLine( points, lineWidth, color, alignment )
             lineEndOffset = perpendicular * halfWidth
         else
             local nextDirection = ( nextLineEnd - lineEnd ):GetNormalized()
-            local nextPerpendicular = Vector( -nextDirection.y, nextDirection.x )
-
+            
             local angle = math.atan2( direction.y, direction.x )
             local nextAngle = math.atan2( nextDirection.y, nextDirection.x )
 
             local theta = ( nextAngle - angle ) / 2
 
-            local calculatedLineWidth = math.abs( halfWidth / math.cos( theta ) )
+            -- BUG: As cos( theta ) approaches 0, the line width approaches infinity.
+            local calculatedHalfWidth = math.abs( halfWidth / math.cos( theta ) )
+
+            -- This limits the line width to fix the above issue.
+            calculatedHalfWidth = math.min( calculatedHalfWidth, lineWidth )
+
+            local nextPerpendicular = Vector( -nextDirection.y, nextDirection.x )
 
             local jointDirection = ( ( perpendicular + nextPerpendicular ) / 2 ):GetNormalized()
 
-            lineEndOffset = jointDirection * calculatedLineWidth
+            lineEndOffset = jointDirection * calculatedHalfWidth
         end
 
         local startLeft = lineStart - lineStartOffset
