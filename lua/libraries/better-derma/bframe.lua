@@ -71,13 +71,20 @@ local DefaultConfig = {
 local ConfigMetatable = {}
 ConfigMetatable.__index = DefaultConfig
 
+---@class BFrameData
+---@field Config BFrame.Config
+---@field PreMaximizePos Vector
+---@field PreMaximizeSize Vector
+---@field IsMaximized boolean
+---@field LocalDragPos Vector
+
 ---@class BFrame : DFrame
 ---@field imgIcon  DImage? The BFrame's optional TitleBar Icon
 ---@field btnClose DButton The BFrame's close DButton
 ---@field btnMaxim DButton The BFrame's maximize DButton
 ---@field btnMinim DButton The BFrame's minimize DButton
 ---@field lblTitle DLabel The BFrame's TitleBar DLabel
----@field BFrame { Config: BFrame.Config } 
+---@field BFrame BFrameData
 local PANEL = {}
 
 -- Returns the Colors table for the current frame
@@ -95,11 +102,14 @@ function PANEL:Init()
     self.BFrame.Config = {}
     setmetatable( self.BFrame.Config, ConfigMetatable )
 
-    local config = self.BFrame.Config
     local colors = self:GetColorTable()
 
     self.lblTitle:SetTextColor( colors.TitleText )
 
+    self.btnMaxim:SetEnabled( true )
+    self.btnMaxim.DoClick = function()
+        self:ToggleMaximize()
+    end
 end
 
 function PANEL:PerformLayout()
@@ -262,7 +272,7 @@ function PANEL:Think()
 
     local panelWidth, panelHeight = self:GetWide(), self:GetTall()
 
-    if not self.Dragging and not self.Resizing and self:IsHovered() then
+    if not self.BFrame.LocalDragPos and not self.Resizing and self:IsHovered() then
         -- Resizing handler cursors
         if self:GetSizable() then
             local hoveredHandle = self:GetResizeHandle( cursorLocalPos )
@@ -270,9 +280,9 @@ function PANEL:Think()
         end
     end
 
-    if self.Dragging then
-        local x = cursorScreenPos.x - self.Dragging[1]
-		local y = cursorScreenPos.y - self.Dragging[2]
+    if self.BFrame.LocalDragPos then
+        local x = cursorScreenPos.x - self.BFrame.LocalDragPos[1]
+		local y = cursorScreenPos.y - self.BFrame.LocalDragPos[2]
 
 		-- Lock to screen bounds if screenlock is enabled
 		if ( self:GetScreenLock() ) then
@@ -375,23 +385,58 @@ function PANEL:OnMousePressed( mouseButton )
         end
     end
 
-    if self:GetDraggable() and not self.Dragging then
+    if self:GetDraggable() and not self.BFrame.LocalDragPos  and not self.BFrame.IsMaximized then
         local handles = self.BFrame.Config.ResizeHandleSizes
         local panelWidth = self:GetWide()
 
         local onTitleBarX = localMousePos.x > handles.Left and localMousePos.x < panelWidth - handles.Right
         local onTitleBarY = localMousePos.y > handles.Top and localMousePos.y < handles.Top + self.BFrame.Config.TitleBar.Height
         if onTitleBarX and onTitleBarY then
-            self.Dragging = Vector( localMousePos.x, localMousePos.y )
+            self.BFrame.LocalDragPos = Vector( localMousePos.x, localMousePos.y )
             self:MouseCapture( true )
         end
     end
 end
 
 function PANEL:OnMouseReleased()
-	self.Dragging = nil
+	self.BFrame.LocalDragPos = nil
 	self.Resizing = nil
 	self:MouseCapture( false )
+end
+
+function PANEL:Maximize()
+    self.BFrame.PreMaximizePos = Vector( self:GetPos() )
+    self.BFrame.PreMaximizeSize = Vector( self:GetSize() )
+
+    local x, y = 0, 0
+    local w, h = ScrW(), ScrH()
+
+    self:SetPos( x, y )
+    self:SetSize( w, h )
+
+    self.BFrame.IsMaximized = true
+end
+
+
+function PANEL:Restore()
+    if not self.BFrame.IsMaximized then return end
+
+    local x, y = self.BFrame.PreMaximizePos:Unpack()
+    local w, h = self.BFrame.PreMaximizeSize:Unpack()
+
+    self:SetPos( x, y )
+    self:SetSize( w, h )
+
+    self.BFrame.IsMaximized = false
+end
+
+
+function PANEL:ToggleMaximize()
+    if self.BFrame.IsMaximized then
+        self:Restore()
+    else
+        self:Maximize()
+    end
 end
 
 vgui.Register( "BFrame", PANEL, "DFrame" )
