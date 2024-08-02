@@ -1,6 +1,9 @@
+---@class CurveLib
+---@field IsDevelopment boolean
 _G.CurveLib = _G.CurveLib or {}
+local CurveLib = _G.CurveLib
 
-_G.CurveLib.IsDevelopment = true
+CurveLib.IsDevelopment = true
 
 local function RunClient( path )
     if SERVER then AddCSLuaFile( path ) end
@@ -12,16 +15,29 @@ local function RunShared( path )
     include( path )
 end
 
+---
+--- CurveLib Core
+---
+
+-- Curves
+RunShared( "libraries/curvelib/core/curve/point.lua" )
+RunShared( "libraries/curvelib/core/curve/data.lua" )
+RunShared( "libraries/curvelib/core/loading.lua" )
+
+
+---
+--- Curvelib Editor
+---
+
 -- Utils
 RunShared( "libraries/curvelib/editor/utils.lua" )
 RunShared( "libraries/curvelib/editor/draw-base.lua" )
-if _G.CurveLib.IsDevelopment then
+if CurveLib.IsDevelopment then
     RunClient( "libraries/curvelib/editor/draw-base-tests.lua" )
 end
 
--- Curves
-RunShared( "libraries/curvelib/curve/point.lua" )
-RunShared( "libraries/curvelib/curve/data.lua" )
+-- Popups
+RunClient( "libraries/curvelib/editor/popups.lua" )
 
 -- Better Derma
 RunClient( "libraries/better-derma/blabel.lua" )
@@ -55,6 +71,7 @@ RunClient( "libraries/curvelib/editor/frame.lua" )
 
 -- Editor Testing Panel
 RunClient( "libraries/curvelib/editor/testing-panel.lua" )
+
 
 if not CLIENT then return end
 
