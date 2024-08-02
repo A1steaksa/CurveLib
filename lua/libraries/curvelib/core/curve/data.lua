@@ -1,3 +1,5 @@
+if not _G.CurveLib then error("Cannot initialize Curve Data - CurveLib not found") return end
+
 ---@class CurveLib.Curve.Data
 ---@field Points CurveLib.Curve.Point[]
 ---@field IsCurve boolean
@@ -8,6 +10,10 @@ metatable.IsCurve = true
 metatable.__index = metatable
 
 local lerpVector = LerpVector
+local math_CubicBezier = math.CubicBezier
+local table_insert = table.insert
+local math_Clamp = math.Clamp
+local math_floor = math.floor
 
 -- Adds a point to the curve
 ---@param time number The time value of the point. Must be between 0 and 1.
@@ -16,20 +22,19 @@ function metatable:AddPoint( time )
         error( "Cannot add point with nil time" )
     end
 
-    time = math.Clamp( time, 0, 1 )
+    time = math_Clamp( time, 0, 1 )
 
     local points = self.Points
 
     -- Find the index where the new point should be inserted
     local pointWidth = 1 / ( #points - 1 )
-    local pointIndex = 1 + math.floor( time / pointWidth ) + 1
+    local pointIndex = 1 + math_floor( time / pointWidth ) + 1
 
     local previousPoint = points[ pointIndex - 1 ]
     local nextPoint = points[ pointIndex ]
 
     -- Get the time as a percentage of the segment between the previous and next points
     local previousPointTime = ( pointIndex - 2 ) * pointWidth
-    local nextPointTime = ( pointIndex - 1 ) * pointWidth
     local timeBetweenPoints = time - previousPointTime
     local timePercent = timeBetweenPoints / pointWidth
 
@@ -49,7 +54,7 @@ function metatable:AddPoint( time )
     local newPointRightPos = lerpVector( timePercent, neighborSidePointCenter, nextPointLeftPos )
 
     -- Insert the new point into the curve
-    table.insert( points, pointIndex, {
+    table_insert( points, pointIndex, {
         MainPoint = newPointPos,
         LeftPoint = newPointLeftPos,
         RightPoint = newPointRightPos
@@ -70,13 +75,13 @@ function metatable:Evaluate( time, shouldSuppressHistory )
     if not time then
         error( "Cannot evaluate curve at nil time" )
     end
-    time = math.Clamp( time, 0, 1 )
+    time = math_Clamp( time, 0, 1 )
 
     local points = self.Points
 
     local pointWidth = 1 / ( #points - 1 )
 
-    local curveSegmentIndex = 1 + math.floor( time / pointWidth )
+    local curveSegmentIndex = 1 + math_floor( time / pointWidth )
 
     local curveSegmentStart = points[ curveSegmentIndex ]
     local curveSegmentEnd = points[ curveSegmentIndex + 1 ]
@@ -91,7 +96,7 @@ function metatable:Evaluate( time, shouldSuppressHistory )
             return curveSegmentStart.MainPoint
         end
 
-        local result = math.CubicBezier(
+        local result = math_CubicBezier(
             time * ( #points - 1 ) - ( curveSegmentIndex - 1 ),
             curveSegmentStart.MainPoint,
             curveSegmentStart.RightPoint,

@@ -1,3 +1,5 @@
+if not _G.CurveLib then error("Cannot initialize Curve Point - CurveLib not found") return end
+
 ---@class CurveLib.Curve.Point
 ---@field MainPoint Vector
 ---@field LeftPoint Vector?
