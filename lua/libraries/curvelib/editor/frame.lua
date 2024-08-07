@@ -34,7 +34,7 @@ local Default = {
 
 -- Opens a given Curve for editing
 ---@param curveOrIndex CurveLib.Curve.Data|integer # The Curve to open for editing.  Either the Curve Data table or the index of the Curve in the Editor Frame.
-function FRAME:EditCurve( curveOrIndex )
+function FRAME:OpenCurve( curveOrIndex )
     local curve
     if curveOrIndex.IsCurve then
         curve = curveOrIndex --[[@as CurveLib.Curve.Data]]
@@ -44,7 +44,7 @@ function FRAME:EditCurve( curveOrIndex )
         error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
     end
 
-    self.Panels.Graph:EditCurve( curve )
+    self.Panels.Graph:OpenCurve( curve )
 end
 
 -- Adds a Curve to the frame.

@@ -513,7 +513,7 @@ function PANEL:PositionHandles()
 end
 
 ---@param curve CurveLib.Curve.Data
-function PANEL:EditCurve( curve )
+function PANEL:OpenCurve( curve )
     self.CurrentCurve = curve
 
     self:UpdateHandles()
