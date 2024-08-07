@@ -199,19 +199,21 @@ function PANEL:Paint( width, height )
     -- The axes and labels
     drawGraph.GraphExterior()
 
-    -- The curve
-    render.SetScissorRect( scissorX, scissorY, scissorX + interiorWidth, scissorY + interiorHeight, true )
-    drawGraph.Curve( self.CurrentCurve )
-    render.SetScissorRect( 0, 0, 0, 0, false )
+    if ( self.CurrentCurve ) then
+        -- The curve
+        render.SetScissorRect( scissorX, scissorY, scissorX + interiorWidth, scissorY + interiorHeight, true )
+        drawGraph.Curve( self.CurrentCurve )
+        render.SetScissorRect( 0, 0, 0, 0, false )
 
-    -- Most recently evaluated point
-    drawGraph.RecentEvaluation( self.CurrentCurve )
+        -- Most recently evaluated point
+        drawGraph.RecentEvaluation( self.CurrentCurve )
 
-    -- Curve Hovering
-    if not state.IsDragging and self:IsCurveHovered() then
-        local isHandleHovered = self:IsChildHovered( true )
-        if not isHandleHovered then
-            drawGraph.CurveHovering()
+        -- Curve Hovering
+        if not state.IsDragging and self:IsCurveHovered() then
+            local isHandleHovered = self:IsChildHovered( true )
+            if not isHandleHovered then
+                drawGraph.CurveHovering()
+            end
         end
     end
 
@@ -266,6 +268,8 @@ end
 -- Returns whether the mouse is hovering over the active curve
 ---@return boolean isHovered Whether the mouse is hovering over the active curve
 function PANEL:IsCurveHovered()
+    if not self.CurrentCurve then return false end
+    
     local mouseX, mouseY = self:CursorPos()
     local _, distance = self:GetClosestPointOnCurve( mouseX, mouseY )
 
