@@ -523,6 +523,11 @@ function PANEL:OpenCurve( curve )
     self:UpdateHandles()
 end
 
+function PANEL:CloseCurve()
+    self.CurrentCurve = nil
+    self:ClearPoints()
+end
+
 --#region Handle Events
 
 -- Called when a Handle starts being dragged
