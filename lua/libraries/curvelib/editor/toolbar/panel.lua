@@ -94,5 +94,29 @@ function PANEL:Paint( width, height )
     drawBasic.EndPanel()
 end
 
+--- Called when a curve is opened.
+function PANEL:OnCurveOpened()
+    self.File.Save:SetEnabled( true )
+    self.File.SaveAs:SetEnabled( true )
+    self.File.SaveAll:SetEnabled( true )
+
+    self.File.Export:SetEnabled( true )
+
+    self.File.CloseGraph:SetEnabled( true )
+    self.File.CloseAllGraphs:SetEnabled( true )
+end
+
+--- Called when a curve is closed.
+function PANEL:OnCurveClosed()
+    self.File.Save:SetEnabled( false )
+    self.File.SaveAs:SetEnabled( false )
+    self.File.SaveAll:SetEnabled( false )
+
+    self.File.Export:SetEnabled( false )
+
+    self.File.CloseGraph:SetEnabled( false )
+    self.File.CloseAllGraphs:SetEnabled( false )
+end
+
 vgui.Register( "CurveLib.Editor.Toolbar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )

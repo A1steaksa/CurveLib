@@ -44,7 +44,16 @@ function FRAME:OpenCurve( curveOrIndex )
         error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
     end
 
+    self.Panels.Toolbar:OnCurveOpened()
+    self.Panels.Sidebar:OnCurveOpened()
     self.Panels.Graph:OpenCurve( curve )
+end
+
+-- Closes the currently open Curve.
+function FRAME:CloseCurve()
+    self.Panels.Toolbar:OnCurveClosed()
+    self.Panels.Sidebar:OnCurveClosed()
+    self.Panels.Graph:CloseCurve()
 end
 
 -- Adds a Curve to the frame.
