@@ -105,11 +105,6 @@ function FRAME:Init()
     self:SetMinHeight( Default.FrameSize.MinHeight )
     self:InvalidateLayout( true )
 
-    -- Setup the default curve
-    self.Curves = {}
-
-    self:EditNewCurve()
-
     self:SetSizable( true )
     self:SetVisible( true )
     self:Center()
