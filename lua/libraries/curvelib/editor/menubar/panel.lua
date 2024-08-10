@@ -24,8 +24,8 @@ local Defaults = {
 ---@field SaveAs DMenuOption
 ---@field SaveAll DMenuOption
 ---@field Export DMenuOption
----@field CloseGraph DMenuOption
----@field CloseAllGraphs DMenuOption
+---@field CloseCurve DMenuOption
+---@field CloseAllCurves DMenuOption
 ---@field Exit DMenuOption
 
 ---@class EditMenu : table
@@ -38,7 +38,7 @@ local Defaults = {
 ---@field SelectAll DMenuOption
 ---@field DeselectAll DMenuOption
 
----@class CurveLib.Editor.Toolbar.Panel : CurveLib.Editor.PanelBase
+---@class CurveLib.Editor.MenuBar.Panel : CurveLib.Editor.PanelBase
 ---@field File FileMenu
 ---@field Edit EditMenu
 local PANEL = {}
@@ -127,17 +127,17 @@ function PANEL:AddFileMenu( menuBar )
     self.File.Menu:AddSpacer()
 
     do -- Closing
-        self.File.CloseGraph = self.File.Menu:AddOption( "Close Current Graph", function()
-            self:DoCloseCurrentGraph()
+        self.File.CloseCurve = self.File.Menu:AddOption( "Close Current Curve", function()
+            self:DoCloseCurrentCurve()
         end )
-        self.File.CloseGraph:SetIcon( "icon16/cross.png" )
-        self.File.CloseGraph:SetEnabled( false )
+        self.File.CloseCurve:SetIcon( "icon16/cross.png" )
+        self.File.CloseCurve:SetEnabled( false )
 
-        self.File.CloseAllGraphs = self.File.Menu:AddOption( "Close All Graphs", function()
-            self:DoCloseAllGraphs()
+        self.File.CloseAllCurves = self.File.Menu:AddOption( "Close All Curves", function()
+            self:DoCloseAllCurves()
         end )
-        self.File.CloseAllGraphs:SetIcon( "icon16/cross.png" )
-        self.File.CloseAllGraphs:SetEnabled( false )
+        self.File.CloseAllCurves:SetIcon( "icon16/cross.png" )
+        self.File.CloseAllCurves:SetEnabled( false )
     end
 
     self.File.Menu:AddSpacer()
@@ -169,7 +169,10 @@ end
 --#region Open/Load
 
 function PANEL:DoOpenFile()
-    ErrorNoHalt( "Open File not implemented yet" )
+    CurveLib.Popups.LoadFile( function( path )
+        local curve = CurveLib.LoadCurve( path )
+        self.EditorFrame:OpenCurve( curve )
+    end )
 end
 
 function PANEL:DoOpenEntity()
@@ -193,7 +196,9 @@ function PANEL:DoSaveToFile()
 end
 
 function PANEL:DoSaveToFileAs()
-    ErrorNoHalt( "Save to File As not implemented yet" )
+    CurveLib.Popups.SaveFile( function( path )
+        CurveLib.SaveCurve( path, self.EditorFrame.CurrentCurve  )
+    end )
 end
 
 function PANEL:DoSaveAllToFile()
@@ -212,12 +217,12 @@ end
 
 --#region Closing
 
-function PANEL:DoCloseCurrentGraph()
+function PANEL:DoCloseCurrentCurve()
     self.EditorFrame:CloseCurve()
 end
 
-function PANEL:DoCloseAllGraphs()
-    ErrorNoHalt( "Close All Graphs not implemented yet" )
+function PANEL:DoCloseAllCurves()
+    ErrorNoHalt( "Close All Curves not implemented yet" )
 end
 
 --#endregion Closing
@@ -342,17 +347,7 @@ function PANEL:Init()
     self:AddEditMenu( menuBar )
 end
 
-function PANEL:Paint( width, height )
-    local drawBasic = _G.CurveLib.DrawBase or drawBasic or include( "libraries/curvelib/editor/draw-base.lua" )
-
-    drawBasic.StartPanel( self )
-
-    drawBasic.Rect( 0, 0, width, height, 0, Alignment.TopLeft, self.Config.BackgroundColor )
-
-    drawBasic.EndPanel()
-end
-
---- Called when a curve is opened.
+--- Called externally to alert the panel that a curve has been opened.
 function PANEL:OnCurveOpened()
     self.File.Save:SetEnabled( true )
     self.File.SaveAs:SetEnabled( true )
@@ -360,11 +355,11 @@ function PANEL:OnCurveOpened()
 
     self.File.Export:SetEnabled( true )
 
-    self.File.CloseGraph:SetEnabled( true )
-    self.File.CloseAllGraphs:SetEnabled( true )
+    self.File.CloseCurve:SetEnabled( true )
+    self.File.CloseAllCurves:SetEnabled( true )
 end
 
---- Called when a curve is closed.
+
 function PANEL:OnCurveClosed()
     self.File.Save:SetEnabled( false )
     self.File.SaveAs:SetEnabled( false )
@@ -372,9 +367,9 @@ function PANEL:OnCurveClosed()
 
     self.File.Export:SetEnabled( false )
 
-    self.File.CloseGraph:SetEnabled( false )
-    self.File.CloseAllGraphs:SetEnabled( false )
+    self.File.CloseCurve:SetEnabled( false )
+    self.File.CloseAllCurves:SetEnabled( false )
 end
 
-vgui.Register( "CurveLib.Editor.Toolbar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
+vgui.Register( "CurveLib.Editor.MenuBar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )

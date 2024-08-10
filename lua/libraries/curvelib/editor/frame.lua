@@ -1,7 +1,7 @@
 require( "vguihotload" )
 
 ---@class CurveLib.Editor.Frame.Panels
----@field Toolbar CurveLib.Editor.Toolbar.Panel?
+---@field MenuBar CurveLib.Editor.MenuBar.Panel?
 ---@field Sidebar CurveLib.Editor.Sidebar.Panel?
 ---@field Graph   CurveLib.Editor.Graph.Panel?
 
@@ -44,14 +44,14 @@ function FRAME:OpenCurve( curveOrIndex )
         error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
     end
 
-    self.Panels.Toolbar:OnCurveOpened()
+    self.Panels.MenuBar:OnCurveOpened()
     self.Panels.Sidebar:OnCurveOpened()
     self.Panels.Graph:OpenCurve( curve )
 end
 
 -- Closes the currently open Curve.
 function FRAME:CloseCurve()
-    self.Panels.Toolbar:OnCurveClosed()
+    self.Panels.MenuBar:OnCurveClosed()
     self.Panels.Sidebar:OnCurveClosed()
     self.Panels.Graph:CloseCurve()
 end
@@ -80,10 +80,9 @@ function FRAME:Init()
 
     local derma = self.Panels
 
-    derma.Toolbar = vgui.Create( "CurveLib.Editor.Toolbar.Panel", self )
-    derma.Toolbar:SetConfig( self.Config.ToolbarConfig )
-    derma.Toolbar:Dock( TOP )
-    derma.Toolbar:SetEditorFrame( self )
+    derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
+    derma.MenuBar:Dock( TOP )
+    derma.MenuBar:SetEditorFrame( self )
 
     derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
     derma.Sidebar:SetConfig( self.Config.SidebarConfig )

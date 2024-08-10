@@ -35,9 +35,9 @@ function PANEL:GetSidebar()
     return self.EditorFrame.Panels.Sidebar
 end
 
----@return CurveLib.Editor.Toolbar.Panel
+---@return CurveLib.Editor.MenuBar.Panel
 function PANEL:GetToolbar()
-    return self.EditorFrame.Panels.Toolbar
+    return self.EditorFrame.Panels.MenuBar
 end
 
 --#endregion Parent/Sibling Getters and Setters
