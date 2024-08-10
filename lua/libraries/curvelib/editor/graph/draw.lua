@@ -119,6 +119,7 @@ end
 -- Draws a Curve
 ---@param curve CurveLib.Curve.Data
 function DRAW.Curve( curve )
+    if not curve then return end
 
     local config, graph = DRAW.UnpackEntry()
     local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()
@@ -142,7 +143,8 @@ end
 -- Draws the most recently evaluated point of a Curve
 ---@param curve CurveLib.Curve.Data
 function DRAW.RecentEvaluation( curve )
-    if not curve.lastInput or not curve.lastOutput then return end
+    if ( not curve ) then return end
+    if ( not curve.lastInput or not curve.lastOutput )then return end
 
     local config, graph = DRAW.UnpackEntry()
     local interiorX, interiorY, interiorWidth, interiorHeight = graph:GetInteriorRect()

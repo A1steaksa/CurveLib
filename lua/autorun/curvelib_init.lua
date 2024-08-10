@@ -51,9 +51,8 @@ RunClient( "libraries/curvelib/editor/panel-base.lua" )
 RunClient( "libraries/curvelib/editor/sidebar/draw.lua" )
 RunClient( "libraries/curvelib/editor/sidebar/panel.lua" )
 
--- Editor Toolbar
-RunClient( "libraries/curvelib/editor/toolbar/draw.lua" )
-RunClient( "libraries/curvelib/editor/toolbar/panel.lua" )
+-- Editor Menu Bar
+RunClient( "libraries/curvelib/editor/menubar/panel.lua" )
 
 -- Editor Graph Draggables
 RunClient( "libraries/curvelib/editor/graph/handle/draw.lua" )

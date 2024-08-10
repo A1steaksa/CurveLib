@@ -49,5 +49,13 @@ function PANEL:Paint( width, height )
     drawBasic.EndPanel()
 end
 
+--- Called when a curve is opened.
+function PANEL:OnCurveOpened()
+end
+
+--- Called when a curve is closed.
+function PANEL:OnCurveClosed()
+end
+
 vgui.Register( "CurveLib.Editor.Sidebar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )

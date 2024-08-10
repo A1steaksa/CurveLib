@@ -23,8 +23,7 @@ local DefaultColors = {
     NumberLineSmallText = Color( 100, 100, 100 ),
 
     GraphBackground     = Color( 200, 200, 200 ),
-    SidebarBackground   = Color( 175, 175, 175 ),
-    ToolbarBackground   = Color( 150, 150, 150 )
+    SidebarBackground   = Color( 175, 175, 175 )
 }
 
 local DefaultFonts = {
@@ -71,8 +70,6 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@class (exact) CurveLib.Editor.Config
 ---@field GraphConfig   CurveLib.Editor.Config.Graph
 ---@field SidebarConfig CurveLib.Editor.Config.Sidebar
----@field ToolbarConfig CurveLib.Editor.Config.Toolbar
----@field __index table
 
 --#region Graph Settings
 
@@ -176,14 +173,6 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@field BackgroundColor Color
 
 --#endregion Sidebar Config
-
---#region Toolbar Config
-
--- Toolbar Config
----@class (exact) CurveLib.Editor.Config.Toolbar
----@field BackgroundColor Color
-
---#endregion Toolbar Config
 
 --#endregion Class Definitions
 
@@ -407,15 +396,6 @@ local SIDEBAR = {
 
 --#endregion Sidebar Config
 
---#region Toolbar Config
-
----@class CurveLib.Editor.Config.Toolbar
-local TOOLBAR = {
-    BackgroundColor = DefaultColors.ToolbarBackground
-}
-
---#endregion Toolbar Config
-
 --#endregion Implementations
 
 --#region Metatables
@@ -423,8 +403,7 @@ local TOOLBAR = {
 ---@type CurveLib.Editor.Config
 local DefaultConfig = {
     GraphConfig = GRAPH,
-    SidebarConfig = SIDEBAR,
-    ToolbarConfig = TOOLBAR
+    SidebarConfig = SIDEBAR
 }
 
 

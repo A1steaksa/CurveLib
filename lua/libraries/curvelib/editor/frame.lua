@@ -1,7 +1,7 @@
 require( "vguihotload" )
 
 ---@class CurveLib.Editor.Frame.Panels
----@field Toolbar CurveLib.Editor.Toolbar.Panel?
+---@field MenuBar CurveLib.Editor.MenuBar.Panel?
 ---@field Sidebar CurveLib.Editor.Sidebar.Panel?
 ---@field Graph   CurveLib.Editor.Graph.Panel?
 
@@ -9,16 +9,15 @@ require( "vguihotload" )
 ---@field IsEditorFrame boolean
 ---@field Panels CurveLib.Editor.Frame.Panels
 ---@field Curves table<integer, CurveLib.Curve.Data> # The list of Curves being displayed in the editor.
----@field EditingCurve CurveLib.Curve.Data? # The Curve currently being edited.
+---@field CurrentCurve CurveLib.Curve.Data? # The Curve currently being edited.
 local FRAME = {
     IsEditorFrame = true,
     Panels = {
-        Toolbar = nil,
         Sidebar = nil,
         Graph = nil
     },
     Curves = {},
-    EditingCurve = nil
+    CurrentCurve = nil
 }
 
 local Default = {
@@ -28,21 +27,12 @@ local Default = {
         Width       = 1000,
         Height      = 750
     },
-    SidebarWidth = 150,
-    ToolbarHeight = 100
+    SidebarWidth = 150
 }
-
-function FRAME:EditNewCurve()
-    self:EditCurve( CurveData(
-        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
-        CurvePoint( Vector( 0.5, 0.5 ), Vector( 0.25, 0.75 ), Vector( 0.75, 0.25 ) ),
-        CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
-    ) )
-end
 
 -- Opens a given Curve for editing
 ---@param curveOrIndex CurveLib.Curve.Data|integer # The Curve to open for editing.  Either the Curve Data table or the index of the Curve in the Editor Frame.
-function FRAME:EditCurve( curveOrIndex )
+function FRAME:OpenCurve( curveOrIndex )
     local curve
     if curveOrIndex.IsCurve then
         curve = curveOrIndex --[[@as CurveLib.Curve.Data]]
@@ -52,7 +42,18 @@ function FRAME:EditCurve( curveOrIndex )
         error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
     end
 
-    self.Panels.Graph:EditCurve( curve )
+    self.CurrentCurve = curve
+
+    self.Panels.MenuBar:OnCurveOpened()
+    self.Panels.Sidebar:OnCurveOpened()
+    self.Panels.Graph:OpenCurve( curve )
+end
+
+-- Closes the currently open Curve.
+function FRAME:CloseCurve()
+    self.Panels.MenuBar:OnCurveClosed()
+    self.Panels.Sidebar:OnCurveClosed()
+    self.Panels.Graph:CloseCurve()
 end
 
 -- Adds a Curve to the frame.
@@ -79,10 +80,9 @@ function FRAME:Init()
 
     local derma = self.Panels
 
-    derma.Toolbar = vgui.Create( "CurveLib.Editor.Toolbar.Panel", self )
-    derma.Toolbar:SetConfig( self.Config.ToolbarConfig )
-    derma.Toolbar:Dock( TOP )
-    derma.Toolbar:SetEditorFrame( self )
+    derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
+    derma.MenuBar:Dock( TOP )
+    derma.MenuBar:SetEditorFrame( self )
 
     derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
     derma.Sidebar:SetConfig( self.Config.SidebarConfig )
@@ -103,11 +103,6 @@ function FRAME:Init()
     self:SetMinWidth( Default.FrameSize.MinWidth )
     self:SetMinHeight( Default.FrameSize.MinHeight )
     self:InvalidateLayout( true )
-
-    -- Setup the default curve
-    self.Curves = {}
-
-    self:EditNewCurve()
 
     self:SetSizable( true )
     self:SetVisible( true )
