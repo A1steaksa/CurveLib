@@ -13,7 +13,6 @@ require( "vguihotload" )
 local FRAME = {
     IsEditorFrame = true,
     Panels = {
-        Toolbar = nil,
         Sidebar = nil,
         Graph = nil
     },
@@ -28,8 +27,7 @@ local Default = {
         Width       = 1000,
         Height      = 750
     },
-    SidebarWidth = 150,
-    ToolbarHeight = 100
+    SidebarWidth = 150
 }
 
 -- Opens a given Curve for editing

@@ -5,9 +5,8 @@ CurveLib/
         Sidebar/
             **Panel** : *CurveLib.Editor.PanelBase*
             **Draw** : *CurveLib.Editor.DrawBase*
-        Toolbar/
+        MenuBar/
             **Panel** : *CurveLib.Editor.PanelBase*
-            **Draw** : *CurveLib.Editor.DrawBase*
         Graph/
             **Panel** : *CurveLib.Editor.PanelBase*
             **Draw** : *CurveLib.Editor.DrawBase*
@@ -28,7 +27,6 @@ CurveLib/
 						**NumberLine**
 				**Caches**
 			**Sidebar**
-			**Toolbar**
 		**Utils**
     Curve/
         **Data**

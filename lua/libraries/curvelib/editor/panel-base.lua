@@ -36,7 +36,7 @@ function PANEL:GetSidebar()
 end
 
 ---@return CurveLib.Editor.MenuBar.Panel
-function PANEL:GetToolbar()
+function PANEL:GetMenuBar()
     return self.EditorFrame.Panels.MenuBar
 end
 
