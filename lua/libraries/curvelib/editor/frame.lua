@@ -9,7 +9,7 @@ require( "vguihotload" )
 ---@field IsEditorFrame boolean
 ---@field Panels CurveLib.Editor.Frame.Panels
 ---@field Curves table<integer, CurveLib.Curve.Data> # The list of Curves being displayed in the editor.
----@field EditingCurve CurveLib.Curve.Data? # The Curve currently being edited.
+---@field CurrentCurve CurveLib.Curve.Data? # The Curve currently being edited.
 local FRAME = {
     IsEditorFrame = true,
     Panels = {
@@ -18,7 +18,7 @@ local FRAME = {
         Graph = nil
     },
     Curves = {},
-    EditingCurve = nil
+    CurrentCurve = nil
 }
 
 local Default = {
@@ -43,6 +43,8 @@ function FRAME:OpenCurve( curveOrIndex )
     else
         error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
     end
+
+    self.CurrentCurve = curve
 
     self.Panels.MenuBar:OnCurveOpened()
     self.Panels.Sidebar:OnCurveOpened()
