@@ -49,13 +49,41 @@ function PANEL:Paint( width, height )
     drawBasic.EndPanel()
 end
 
---- Called when a curve is opened.
+--- Called externally to alert the panel that an addon has been opened.
+---@param name string The name of the addon that was opened.
+function PANEL:OnAddonOpened( name )
+    -- Populate the curve tree with the curves from the addon
+    local curves = CurveLib.GetAddonCurves( name )
+
+    if not curves then
+        return
+    end
+
+    self.CurveTree:Clear()
+
+    for curveName, curveData in pairs( curves ) do
+        local node = self.CurveTree:AddNode( curveName, "icon16/chart_curve.png" )
+        node.DoClick = function()
+            self:GetGraph():OpenCurve( curveData )
+        end
+    end
+
+end
+
+--- Called externally to alert the panel that an addon has been closed.
+---@param name string The name of the addon that was closed.
+function PANEL:OnAddonClosed( name )
+    self.CurveTree:Clear()
+end
+
+--- Called externally to alert the panel that a curve has been opened.
 function PANEL:OnCurveOpened()
 end
 
---- Called when a curve is closed.
+--- Called externally to alert the panel that a curve has been closed.
 function PANEL:OnCurveClosed()
 end
+
 
 vgui.Register( "CurveLib.Editor.Sidebar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
