@@ -64,19 +64,6 @@ function FRAME:CloseCurve()
     self.Panels.Graph:CloseCurve()
 end
 
--- Adds a Curve to the frame.
----@param curveData CurveLib.Curve.Data
----@return integer # The index of the Curve in the frame.
-function FRAME:AddCurve( curveData )
-    return table.insert( self.Curves, curveData ) --[[@as integer]]
-end
-
--- Removes a curve from the frame.
----@param index integer
-function FRAME:RemoveCurve( index )
-    table.remove( self.Curves, index )
-end
-
 function FRAME:InitConfig()
     self.Config = CurveEditorGraphConfig()
 end
@@ -101,11 +88,6 @@ function FRAME:Init()
     derma.Graph:SetConfig( self.Config.GraphConfig )
     derma.Graph:Dock( FILL )
     derma.Graph:SetEditorFrame( self )
-
-    -- local testingPanel = vgui.Create( "CurveLib.Editor.TestingPanel", self )
-    -- testingPanel:SetConfig( self.Config.SidebarConfig )
-    -- testingPanel:Dock( FILL )
-    -- testingPanel:SetEditorFrame( self )
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
