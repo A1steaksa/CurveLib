@@ -8,16 +8,14 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Frame : BFrame
 ---@field IsEditorFrame boolean
 ---@field Panels CurveLib.Editor.Frame.Panels
----@field Curves table<integer, CurveLib.Curve.Data> # The list of Curves being displayed in the editor.
+---@field CurrentAddon string? # The currently open addon's name.
 ---@field CurrentCurve CurveLib.Curve.Data? # The Curve currently being edited.
 local FRAME = {
     IsEditorFrame = true,
     Panels = {
         Sidebar = nil,
         Graph = nil
-    },
-    Curves = {},
-    CurrentCurve = nil
+    }
 }
 
 local Default = {
