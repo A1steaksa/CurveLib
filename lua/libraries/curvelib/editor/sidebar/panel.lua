@@ -3,15 +3,6 @@ require( "vguihotload" )
 ---@type CurveLib.Editor.DrawBase
 local drawBasic
 
----@type CurveLib.Editor.Utils
-local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
-
-local Defaults = {
-    Size = {
-        Width = 250
-    }
-}
-
 ---@class CurveLib.Editor.Sidebar.Panel : CurveLib.Editor.PanelBase
 local PANEL = {}
 
