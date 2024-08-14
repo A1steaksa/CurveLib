@@ -1,17 +1,5 @@
 require( "vguihotload" )
 
----@type CurveLib.Editor.DrawBase
-local drawBasic
-
----@type CurveLib.Editor.Utils
-local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
-
-local Defaults = {
-    Size = {
-        Height = 100
-    }
-}
-
 ---@class FileMenu : table
 ---@field Menu DMenu
 ---@field New DMenuOption
