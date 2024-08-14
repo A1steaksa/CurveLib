@@ -27,7 +27,12 @@ end )
 -- Curves
 RunShared( "libraries/curvelib/core/curve/point.lua" )
 RunShared( "libraries/curvelib/core/curve/data.lua" )
+
+-- File Loading/Saving
 RunShared( "libraries/curvelib/core/loading.lua" )
+
+-- Addon Registration
+RunShared( "libraries/curvelib/core/addons.lua" )
 
 
 ---
@@ -75,7 +80,6 @@ RunClient( "libraries/curvelib/editor/frame.lua" )
 
 -- Editor Testing Panel
 RunClient( "libraries/curvelib/editor/testing-panel.lua" )
-
 
 if not CLIENT then return end
 
