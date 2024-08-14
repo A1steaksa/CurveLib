@@ -19,7 +19,7 @@ local Defaults = {
 ---@field OpenFile DMenuOption
 ---@field OpenEntity DMenuOption
 ---@field OpenViewModel DMenuOption
----@field OpenHud DMenuOption
+---@field OpenAddon DMenuOption
 ---@field Save DMenuOption
 ---@field SaveAs DMenuOption
 ---@field SaveAll DMenuOption
@@ -85,11 +85,10 @@ function PANEL:AddFileMenu( menuBar )
         end )
         self.File.OpenViewModel:SetIcon( "icon16/application_edit.png" )
 
-        -- HUD
-        self.File.OpenHud = self.File.Menu:AddOption( "Open HUD", function()
-            self:DoOpenHud()
-        end )
-        self.File.OpenHud:SetIcon( "icon16/monitor_edit.png" )
+        -- Addon
+        local _, openAddonOption = self.File.Menu:AddSubMenu( "Open Addon" )
+        self.File.OpenAddon = openAddonOption
+        self.File.OpenAddon:SetIcon( "icon16/monitor_edit.png" )
     end
 
     self.File.Menu:AddSpacer()
@@ -148,6 +147,32 @@ function PANEL:AddFileMenu( menuBar )
         end )
         self.File.Exit:SetIcon( "icon16/door_open.png" )
     end
+
+    -- Override the menu open function to update the menu options based on the current state
+    local defaultOpen = self.File.Menu.Open
+    self.File.Menu.Open = function( ... )
+
+        do -- Update/Populate the Open Addon submenu
+            self.File.OpenAddon:SetEnabled( CurveLib.HasRegisteredAddons() )
+            local openAddonSubmenu = self.File.OpenAddon:AddSubMenu()
+
+            local addons = CurveLib.GetRegisteredAddons()
+
+            self.File.OpenAddon:SetText( "Open Addon (" .. table.Count( addons ) .. ")" )
+
+            for name, _ in pairs( addons ) do
+                openAddonSubmenu:AddOption( name, function()
+                    self:DoOpenAddon( name )
+                end )
+            end
+
+            if openAddonSubmenu:GetCanvas():GetChildren() == 0 then
+                openAddonSubmenu:AddOption( "No Addons Found" ):SetEnabled( false )
+            end
+        end
+
+        defaultOpen( ... )
+    end
 end
 
 --#region New
@@ -155,7 +180,6 @@ end
 function PANEL:DoFileNew()
     self.EditorFrame:OpenCurve( CurveData(
         CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
-        --CurvePoint( Vector( 0.5, 0.5 ), Vector( 0.25, 0.75 ), Vector( 0.75, 0.25 ) ),
         CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
     ) )
 end
@@ -183,8 +207,10 @@ function PANEL:DoOpenViewModel()
     ErrorNoHalt( "Open View Model not implemented yet" )
 end
 
-function PANEL:DoOpenHud()
-    ErrorNoHalt( "Open HUD not implemented yet" )
+---Opens an addon by name and 
+---@param addonName string
+function PANEL:DoOpenAddon( addonName )
+    self.EditorFrame:OpenAddon( addonName )
 end
 
 --#endregion Open/Load
@@ -339,8 +365,6 @@ end
 --#endregion Edit Menu
 
 function PANEL:Init()
-    self:SetWide( Defaults.Size.Width )
-
     local menuBar = vgui.Create( "DMenuBar", self )
 
     self:AddFileMenu( menuBar )
@@ -359,7 +383,7 @@ function PANEL:OnCurveOpened()
     self.File.CloseAllCurves:SetEnabled( true )
 end
 
-
+--- Called externally to alert the panel that a curve has been closed.
 function PANEL:OnCurveClosed()
     self.File.Save:SetEnabled( false )
     self.File.SaveAs:SetEnabled( false )
@@ -370,6 +394,7 @@ function PANEL:OnCurveClosed()
     self.File.CloseCurve:SetEnabled( false )
     self.File.CloseAllCurves:SetEnabled( false )
 end
+
 
 vgui.Register( "CurveLib.Editor.MenuBar.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
