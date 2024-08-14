@@ -15,6 +15,11 @@ local function RunShared( path )
     include( path )
 end
 
+hook.Add( "InitPostEntity", "A1_CurveLib_RegisterAddons", function()
+    CurveLib.Addons = {}
+    hook.Call( "CurveLib.RegisterAddons" )
+end )
+
 ---
 --- CurveLib Core
 ---
