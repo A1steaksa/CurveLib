@@ -25,19 +25,29 @@ local Default = {
         Width       = 1000,
         Height      = 750
     },
-    SidebarWidth = 150
+    SidebarWidth = 300
 }
 
--- Opens a given Curve for editing
----@param curveOrIndex CurveLib.Curve.Data|integer # The Curve to open for editing.  Either the Curve Data table or the index of the Curve in the Editor Frame.
-function FRAME:OpenCurve( curveOrIndex )
-    local curve
-    if curveOrIndex.IsCurve then
-        curve = curveOrIndex --[[@as CurveLib.Curve.Data]]
-    elseif isnumber( curveOrIndex ) then
-        curve = self.Curves[ curveOrIndex ]
-    else
-        error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
+--- Opens an addon for editing
+function FRAME:OpenAddon( name )
+    self.CurrentAddon = name
+    self.Panels.Sidebar:OnAddonOpened( name )
+    self.Panels.Graph:OnAddonOpened( name )
+    self.Panels.MenuBar:OnAddonOpened( name )
+end
+
+--- Closes an addon
+function FRAME:CloseAddon( name )
+    self.CurrentAddon = nil
+    self.Panels.Sidebar:OnAddonClosed( name )
+    self.Panels.Graph:OnAddonClosed( name )
+    self.Panels.MenuBar:OnAddonClosed( name )
+end
+
+---@param curve CurveLib.Curve.Data # The Curve to open for editing
+function FRAME:OpenCurve( curve )
+    if not curve or not curve.IsCurve then
+        error( "Cannot edit unrecognized Curve: " .. tostring( curve ) )
     end
 
     self.CurrentCurve = curve
