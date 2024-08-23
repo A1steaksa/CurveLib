@@ -38,6 +38,7 @@ surface.CreateFont( fonts.Label, {
 ---@field IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
 ---@field IsDragging boolean Whether the user is currently dragging a Handle
 ---@field SiblingDistance number The distance between the dragged Handle's sibling Handle and their Main Handle
+---@field HoveredHandle CurveLib.Editor.Graph.Handle.Base? The 
 
 
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
@@ -51,7 +52,8 @@ local PANEL = {
         IsRotationMirrored = false,
         IsDistanceMirrored = false,
         IsDragging = false,
-        SiblingDistance = 0
+        SiblingDistance = 0,
+        HoveredHandle = nil
     },
 }
 
@@ -432,7 +434,7 @@ function PANEL:UpdateHandles()
     if not self.CurrentCurve then return end
 
     -- Each Curve Point in the Curve Data needs a corresponding Main Handle
-    self:PopulateHandles( #self.CurrentCurve.Points )
+    self:PopulateHandles()
 
     -- Move all these new Main Points to the position of their corresponding Curve Point
     self:PositionHandles()
@@ -441,11 +443,12 @@ end
 -- Adds a given number of Main and Side Handles to the panel
 -- Note: The first Main Handle will not have a Left Side Handle and the last Main Handle will not have a Right Side Handle
 ---@private
----@param count integer
-function PANEL:PopulateHandles( count )
+function PANEL:PopulateHandles()
 
     -- Remove the previous Curve Data's Main Points
     self:ClearPoints()
+
+    local count = #self.CurrentCurve.Points
 
     for index = 1, count do
         local mainHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.MainHandle", self )
@@ -474,10 +477,14 @@ function PANEL:PopulateHandles( count )
 
         if leftHandle then
             leftHandle.SiblingHandle = rightHandle
+            leftHandle.LeftHandle = leftHandle
+            leftHandle.RightHandle = rightHandle
         end
 
         if rightHandle then
             rightHandle.SiblingHandle = leftHandle
+            rightHandle.LeftHandle = leftHandle
+            rightHandle.RightHandle = rightHandle
         end
 
         mainHandle.Index = index
@@ -671,6 +678,18 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     return correctedSideHandleX, correctedSideHandleY
 end
 
+-- Called externally when a handle is hovered
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnHandleHoverStarted( handle )
+    self.State.HoveredHandle = handle
+end
+
+-- Called externally when a handle no longer hovered
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnHandleHoverEnded( handle )
+    self.State.HoveredHandle = nil
+end
+
 -- Called when the graph is clicked
 ---@param mouseButton MOUSE
 function PANEL:OnMousePressed( mouseButton )
@@ -678,13 +697,41 @@ function PANEL:OnMousePressed( mouseButton )
     if mouseButton ~= MOUSE_LEFT then return end
 
     if self:IsCurveHovered() then
-        local time, distance, x, y = self:GetMousePosOnCurve()
-
-        print( "Adding point at " .. time )
+        local time = self:GetMousePosOnCurve()
 
         self.CurrentCurve:AddPoint( time )
 
         self:UpdateHandles()
+    end
+end
+
+function PANEL:OnCursorEntered()
+    self:RequestFocus()
+end
+
+-- Called when a key is pressed
+---@param keycode KEY
+function PANEL:OnKeyCodePressed( keycode )
+    -- Delete Handles
+    if ( keycode == KEY_DELETE or keycode == KEY_BACKSPACE ) then
+        local handle = self.State.HoveredHandle
+
+        -- Only delete Main Handles
+        if not handle or not handle.IsMainHandle then
+            return
+        end
+
+        ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
+        local index = handle.Index
+
+        -- Can't delete the first or last handle
+        if index == 1 or index == #self.CurrentCurve.Points then
+            return
+        end
+
+        self.CurrentCurve:RemovePoint( handle.MainHandle.Index )
+        self:PopulateHandles()
+        self:PositionHandles()
     end
 end
 

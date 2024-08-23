@@ -5,9 +5,9 @@ if not _G.CurveLib then error("Cannot initialize Curve Data - CurveLib not found
 ---@field IsCurve boolean
 ---@field lastInput number
 ---@field lastOutput Vector
-local metatable = {}
-metatable.IsCurve = true
-metatable.__index = metatable
+local DATA = {}
+DATA.IsCurve = true
+DATA.__index = DATA
 
 local lerpVector = LerpVector
 local math_CubicBezier = math.CubicBezier
@@ -17,7 +17,7 @@ local math_floor = math.floor
 
 -- Adds a point to the curve
 ---@param time number The time value of the point. Must be between 0 and 1.
-function metatable:AddPoint( time )
+function DATA:AddPoint( time )
     if not time then
         error( "Cannot add point with nil time" )
     end
@@ -65,13 +65,23 @@ function metatable:AddPoint( time )
     nextPoint.LeftPoint = nextPointLeftPos
 end
 
+-- Removes a point from the curve.
+---@param index integer The index of the point to be removed
+function DATA:RemovePoint( index )
+    if not index or not isnumber( index ) then
+        error( "Cannot remove a node from a Curve without an integer index" )
+    end
+
+    table.remove( self.Points, index )
+end
+
 -- Evaluate the curve at a given time
 -- This function is also aliased to the __call metamethod
 -- so that you can call the curve like a function.
 ---@param time number The time value to evaluate the curve at. Must be between 0 and 1.
 ---@param shouldSuppressHistory? boolean Whether or not to suppress this evaluation from being stored as the curve's last input/output.
 ---@return Vector # The position of the curve at the given time. May not be between 0 and 1.
-function metatable:Evaluate( time, shouldSuppressHistory )
+function DATA:Evaluate( time, shouldSuppressHistory )
     if not time then
         error( "Cannot evaluate curve at nil time" )
     end
@@ -114,13 +124,13 @@ function metatable:Evaluate( time, shouldSuppressHistory )
         error( "Invalid curve segment index" .. tostring( curveSegmentIndex ) )
     end
 end
-metatable.__call = metatable.Evaluate
+DATA.__call = DATA.Evaluate
 
 -- Creates a new Curve with an optional set of points
 ---@vararg CurveLib.Curve.Point? # The points to add to the curve.
 function CurveData( ... )
     local curveData = { Points = {} }
-    setmetatable( curveData, metatable )
+    setmetatable( curveData, DATA )
 
     for i = 1, select( "#", ... ) do
         curveData.Points[ #curveData.Points + 1 ] = select( i, ... )

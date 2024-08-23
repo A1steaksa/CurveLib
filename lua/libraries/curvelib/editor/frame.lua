@@ -69,7 +69,6 @@ function FRAME:InitConfig()
 end
 
 function FRAME:Init()
-
     -- Create and configure our config table
     self:InitConfig()
 
@@ -84,7 +83,7 @@ function FRAME:Init()
     derma.Sidebar:Dock( RIGHT )
     derma.Sidebar:SetEditorFrame( self )
 
-    derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel",   self )
+    derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel", self )
     derma.Graph:SetConfig( self.Config.GraphConfig )
     derma.Graph:Dock( FILL )
     derma.Graph:SetEditorFrame( self )
