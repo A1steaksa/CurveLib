@@ -22,6 +22,8 @@ end
 -- Curves
 RunShared( "libraries/curvelib/core/curve/point.lua" )
 RunShared( "libraries/curvelib/core/curve/data.lua" )
+
+-- File Loading/Saving
 RunShared( "libraries/curvelib/core/loading.lua" )
 
 
@@ -35,6 +37,9 @@ RunShared( "libraries/curvelib/editor/draw-base.lua" )
 if CurveLib.IsDevelopment then
     RunClient( "libraries/curvelib/editor/draw-base-tests.lua" )
 end
+
+-- Addon Registration
+RunShared( "libraries/curvelib/editor/addons.lua" )
 
 -- Popups
 RunClient( "libraries/curvelib/editor/popups.lua" )
@@ -70,7 +75,6 @@ RunClient( "libraries/curvelib/editor/frame.lua" )
 
 -- Editor Testing Panel
 RunClient( "libraries/curvelib/editor/testing-panel.lua" )
-
 
 if not CLIENT then return end
 

@@ -8,16 +8,14 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Frame : BFrame
 ---@field IsEditorFrame boolean
 ---@field Panels CurveLib.Editor.Frame.Panels
----@field Curves table<integer, CurveLib.Curve.Data> # The list of Curves being displayed in the editor.
+---@field CurrentAddon string? # The currently open addon's name.
 ---@field CurrentCurve CurveLib.Curve.Data? # The Curve currently being edited.
 local FRAME = {
     IsEditorFrame = true,
     Panels = {
         Sidebar = nil,
         Graph = nil
-    },
-    Curves = {},
-    CurrentCurve = nil
+    }
 }
 
 local Default = {
@@ -27,19 +25,29 @@ local Default = {
         Width       = 1000,
         Height      = 750
     },
-    SidebarWidth = 150
+    SidebarWidth = 300
 }
 
--- Opens a given Curve for editing
----@param curveOrIndex CurveLib.Curve.Data|integer # The Curve to open for editing.  Either the Curve Data table or the index of the Curve in the Editor Frame.
-function FRAME:OpenCurve( curveOrIndex )
-    local curve
-    if curveOrIndex.IsCurve then
-        curve = curveOrIndex --[[@as CurveLib.Curve.Data]]
-    elseif isnumber( curveOrIndex ) then
-        curve = self.Curves[ curveOrIndex ]
-    else
-        error( "Cannot edit unrecognized Curve: " .. curveOrIndex )
+--- Opens an addon for editing
+function FRAME:OpenAddon( name )
+    self.CurrentAddon = name
+    self.Panels.Sidebar:OnAddonOpened( name )
+    self.Panels.Graph:OnAddonOpened( name )
+    self.Panels.MenuBar:OnAddonOpened( name )
+end
+
+--- Closes an addon
+function FRAME:CloseAddon( name )
+    self.CurrentAddon = nil
+    self.Panels.Sidebar:OnAddonClosed( name )
+    self.Panels.Graph:OnAddonClosed( name )
+    self.Panels.MenuBar:OnAddonClosed( name )
+end
+
+---@param curve CurveLib.Curve.Data # The Curve to open for editing
+function FRAME:OpenCurve( curve )
+    if not curve or not curve.IsCurve then
+        error( "Cannot edit unrecognized Curve: " .. tostring( curve ) )
     end
 
     self.CurrentCurve = curve
@@ -54,19 +62,6 @@ function FRAME:CloseCurve()
     self.Panels.MenuBar:OnCurveClosed()
     self.Panels.Sidebar:OnCurveClosed()
     self.Panels.Graph:CloseCurve()
-end
-
--- Adds a Curve to the frame.
----@param curveData CurveLib.Curve.Data
----@return integer # The index of the Curve in the frame.
-function FRAME:AddCurve( curveData )
-    return table.insert( self.Curves, curveData ) --[[@as integer]]
-end
-
--- Removes a curve from the frame.
----@param index integer
-function FRAME:RemoveCurve( index )
-    table.remove( self.Curves, index )
 end
 
 function FRAME:InitConfig()
@@ -93,11 +88,6 @@ function FRAME:Init()
     derma.Graph:SetConfig( self.Config.GraphConfig )
     derma.Graph:Dock( FILL )
     derma.Graph:SetEditorFrame( self )
-
-    -- local testingPanel = vgui.Create( "CurveLib.Editor.TestingPanel", self )
-    -- testingPanel:SetConfig( self.Config.SidebarConfig )
-    -- testingPanel:Dock( FILL )
-    -- testingPanel:SetEditorFrame( self )
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
