@@ -147,7 +147,7 @@ end
 ---@param diameter integer|Vector The diameter of the circle, in pixels. Can be a Vector to specify an ellipse.
 ---@param rotation number? The angle of the circle, in degrees. Default: 0
 ---@param vertexCount? integer The number of vertices the circle will have. The higher the number, the smoother the circle. Default: Calculated based on diameter.
----@param alignment CurveLib.Alignment? The text's alignment [Default: Top left]
+---@param alignment CurveLib.Alignment? The circle's alignment [Default: Top left]
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
 function DRAW.Circle( x, y, diameter, rotation, vertexCount, alignment, color )
     if not isnumber( x ) or not isnumber( y ) or ( not isnumber( diameter ) and not isvector( diameter ) ) or ( vertexCount and not isnumber( vertexCount ) ) then
@@ -290,7 +290,7 @@ function DRAW.Text( text, x, y, rotation, scale, alignment, color )
     local textWidth, textHeight = surface.GetTextSize( text )
     textWidth = textWidth * scaleVector.x
     textHeight = textHeight * scaleVector.y
-    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( textWidth, textHeight, alignment or Alignment.TopLeft )
+    local alignOffsetX, alignOffsetY = curveUtils.MultiFloor( curveUtils.GetAlignmentOffset( textWidth, textHeight, alignment or Alignment.TopLeft ) )
     newMatrix:Translate( Vector( alignOffsetX, alignOffsetY ) )
 
     -- 2. Scale the text.
@@ -300,8 +300,10 @@ function DRAW.Text( text, x, y, rotation, scale, alignment, color )
     newMatrix:Translate( -existingTranslation )
 
     cam.PushModelMatrix( newMatrix, false )
-        surface.SetTextPos( 0, 0 ) -- The Model Matrix handles positioning the text for us.
-        surface.DrawText( text )
+
+    surface.SetTextPos( 0, 0 ) -- The Model Matrix handles positioning the text for us.
+    surface.DrawText( text )
+
     cam.PopModelMatrix()
 end
 
