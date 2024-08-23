@@ -432,7 +432,7 @@ function PANEL:UpdateHandles()
     if not self.CurrentCurve then return end
 
     -- Each Curve Point in the Curve Data needs a corresponding Main Handle
-    self:PopulateHandles( #self.CurrentCurve.Points )
+    self:PopulateHandles()
 
     -- Move all these new Main Points to the position of their corresponding Curve Point
     self:PositionHandles()
@@ -441,11 +441,12 @@ end
 -- Adds a given number of Main and Side Handles to the panel
 -- Note: The first Main Handle will not have a Left Side Handle and the last Main Handle will not have a Right Side Handle
 ---@private
----@param count integer
-function PANEL:PopulateHandles( count )
+function PANEL:PopulateHandles()
 
     -- Remove the previous Curve Data's Main Points
     self:ClearPoints()
+
+    local count = #self.CurrentCurve.Points
 
     for index = 1, count do
         local mainHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.MainHandle", self )
