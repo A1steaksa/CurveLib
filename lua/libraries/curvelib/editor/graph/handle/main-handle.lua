@@ -12,6 +12,8 @@ local PANEL = {}
 function PANEL:Init()
     self:SetSize( 20, 20 )
     self.IsMainHandle = true
+
+    self.MainHandle = self
 end
 
 function PANEL:Paint( width, height )
@@ -22,11 +24,8 @@ function PANEL:Paint( width, height )
     end
 
     handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
-
     handleDraw.MainHandleLines()
-
     handleDraw.MainHandle()
-
     handleDraw.EndPanel()
 end
 

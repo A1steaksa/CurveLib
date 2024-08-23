@@ -13,6 +13,9 @@ require( "vguihotload" )
 ---@field CurrentColor Color The current color of the Handle
 ---@field IsMainHandle boolean? Whether or not this Handle is the main Handle
 ---@field IsSideHandle boolean? Whether or not this Handle is a side Handle
+---@field MainHandle CurveLib.Editor.Graph.Handle.MainHandle
+---@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle?
+---@field RightHandle CurveLib.Editor.Graph.Handle.SideHandle?
 local PANEL = {}
 
 function PANEL:OnSizeChanged( width, height )
@@ -87,10 +90,14 @@ function PANEL:OnMouseReleased( mouseButton )
 end
 
 function PANEL:OnCursorEntered()
+    self.GraphPanel:OnHandleHoverStarted( self )
+
     self.HoverStartTime = CurTime()
 end
 
 function PANEL:OnCursorExited()
+    self.GraphPanel:OnHandleHoverEnded( self )
+
     self.HoverEndTime = CurTime()
 end
 
