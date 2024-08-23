@@ -65,6 +65,16 @@ function DATA:AddPoint( time )
     nextPoint.LeftPoint = nextPointLeftPos
 end
 
+-- Removes a point from the curve.
+---@param index integer The index of the point to be removed
+function DATA:RemovePoint( index )
+    if not index or not isnumber( index ) then
+        error( "Cannot remove a node from a Curve without an integer index" )
+    end
+
+    table.remove( self.Points, index )
+end
+
 -- Evaluate the curve at a given time
 -- This function is also aliased to the __call metamethod
 -- so that you can call the curve like a function.
