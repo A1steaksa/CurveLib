@@ -15,11 +15,6 @@ local function RunShared( path )
     include( path )
 end
 
-hook.Add( "InitPostEntity", "A1_CurveLib_RegisterAddons", function()
-    CurveLib.Addons = {}
-    hook.Call( "CurveLib.RegisterAddons" )
-end )
-
 ---
 --- CurveLib Core
 ---
@@ -30,9 +25,6 @@ RunShared( "libraries/curvelib/core/curve/data.lua" )
 
 -- File Loading/Saving
 RunShared( "libraries/curvelib/core/loading.lua" )
-
--- Addon Registration
-RunShared( "libraries/curvelib/core/addons.lua" )
 
 
 ---
@@ -45,6 +37,9 @@ RunShared( "libraries/curvelib/editor/draw-base.lua" )
 if CurveLib.IsDevelopment then
     RunClient( "libraries/curvelib/editor/draw-base-tests.lua" )
 end
+
+-- Addon Registration
+RunShared( "libraries/curvelib/editor/addons.lua" )
 
 -- Popups
 RunClient( "libraries/curvelib/editor/popups.lua" )

@@ -68,3 +68,9 @@ function CurveLib.GetAddonCurves( name )
     return curves
 
 end
+
+-- Prompt addons to register themselves
+hook.Add( "InitPostEntity", "A1_CurveLib_RegisterAddons", function()
+    CurveLib.Addons = {}
+    hook.Call( "CurveLib.RegisterAddons" )
+end )
