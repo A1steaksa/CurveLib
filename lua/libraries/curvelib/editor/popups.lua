@@ -65,6 +65,13 @@ function CurveLib.Popups.LoadFile( callback )
     end
 end
 
+-- Strips the data folder prefix from a path
+---@param path string
+---@return string
+local function StripData( path )
+    return ( string.gsub( path, "^/?data/", "", 1 ) )
+end
+
 function CurveLib.Popups.SaveFile( callback )
     local frame = vgui.Create( "BFrame" )
     frame:SetSize( 600, 440 )
@@ -79,8 +86,9 @@ function CurveLib.Popups.SaveFile( callback )
     fileBrowser:Dock( TOP )
     fileBrowser:SetPath( "GAME" )
     fileBrowser:SetBaseFolder( "data" )
-    fileBrowser:SetOpen( false )
+    fileBrowser:SetOpen( true )
     fileBrowser:SetSize( 0, 350 )
+    fileBrowser:SetCurrentFolder( "data" )
 
     local bottomPanel = vgui.Create( "DPanel", framePanel )
     bottomPanel:Dock( TOP )
@@ -116,10 +124,14 @@ function CurveLib.Popups.SaveFile( callback )
     end
 
     fileBrowser.OnSelect = function( _, path, _ )
+        path = StripData( path )
+
         filePathEntry:SetText( path )
     end
 
     fileBrowser.OnDoubleClick = function( _, path, _ )
+        path = StripData( path )
+
         filePathEntry:SetText( path )
         saveButton:DoClick()
     end
