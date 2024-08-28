@@ -11,24 +11,27 @@ local fonts = {
 }
 
 surface.CreateFont( fonts.NumberLineSmall, {
-	font = "Roboto",
-	extended = false,
+	font = "Roboto Regular",
+	extended = true,
 	size = 18,
-	weight = 500
+	weight = 400,
+    antialias = true
 } )
 
 surface.CreateFont( fonts.NumberLineLarge, {
-	font = "Roboto",
-	extended = false,
-	size = 24,
-	weight = 700
+	font = "Roboto Regular",
+	extended = true,
+	size = 20,
+	weight = 400,
+    antialias = true
 } )
 
 surface.CreateFont( fonts.Label, {
-	font = "Roboto",
-	extended = false,
-	size = 45,
-	weight = 800
+	font = "Roboto Regular",
+	extended = true,
+	size = 30,
+	weight = 400,
+    antialias = true
 } )
 --#endregion Fonts
 
@@ -73,57 +76,63 @@ function PANEL:SetConfig( config )
     do -- Main Handles
         local handle = config.Handles.Main
 
+        local handleColor = Color( 129, 195, 215, 255 )
+        local handleRadius = 5
+
         local idle = handle.Idle
-        idle.Color = Color( 129, 195, 215, 255 )
+        idle.Color = handleColor
         idle.ColorChangeRate = 500
-        idle.Radius = 11
+        idle.Radius = handleRadius
         idle.RadiusChangeRate = 50
 
         local hovered = handle.Hovered
-        hovered.Color = Color( 129, 195, 215, 230 )
+        hovered.Color = handleColor
         hovered.ColorChangeRate = 500
-        hovered.Radius = 10
+        hovered.Radius = handleRadius
         hovered.RadiusChangeRate = 50
 
         local dragged = handle.Dragged
-        dragged.Color = Color( 129, 195, 215, 200 )
+        dragged.Color = handleColor
         dragged.ColorChangeRate = 500
-        dragged.Radius = 9
+        dragged.Radius = handleRadius
         dragged.RadiusChangeRate = 50
     end
 
     do -- Side Handles
         local handle = config.Handles.Side
 
+        local handleColor = Color( 6, 196, 239, 255 )
+        local handleRadius = 3
+
         local idle = handle.Idle
-        idle.Color = Color( 6, 196, 239, 255 )
+        idle.Color = handleColor
         idle.ColorChangeRate = 500
-        idle.Radius = 8
+        idle.Radius = handleRadius
         idle.RadiusChangeRate = 100
 
         local hovered = handle.Hovered
-        hovered.Color = Color( 6, 196, 239, 230 )
+        hovered.Color = handleColor
         hovered.ColorChangeRate = 500
-        hovered.Radius = 8
+        hovered.Radius = handleRadius
         hovered.RadiusChangeRate = 100
 
         local dragged = handle.Dragged
-        dragged.Color = Color( 6, 196, 239, 200)
+        dragged.Color = handleColor
         dragged.ColorChangeRate = 1000
-        dragged.Radius = 8
+        dragged.Radius = handleRadius
         dragged.RadiusChangeRate = 100
     end
 
     do -- Handle Lines
         local line = config.Handles.Line
-        line.Color = Color( 22, 66, 91 )
-        line.Thickness = 3
+        line.Color = Color( 35, 80, 91 )
+        line.Thickness = 1.5
     end
 
     do -- Curve
         local curve = self.Config.Curve
         curve.Color = Color( 47, 102, 144 )
-        curve.Thickness = 7
+        curve.Thickness = 2
         curve.HoverSize = 10
         curve.VertexCount = 80
     end
@@ -132,27 +141,28 @@ function PANEL:SetConfig( config )
         local border = self.Config.Borders.Right
         border.Enabled = true
         border.Color = colors.Borders
-        border.Thickness = 2
+        border.Thickness = 0.75
     end
 
     do -- Top Border
         local border = self.Config.Borders.Top
         border.Enabled = true
         border.Color = colors.Borders
-        border.Thickness = 2
+        border.Thickness = 0.75
     end
 
     do -- Horizontal Axis
         local axis = self.Config.Axes.Horizontal
-        axis.EndMargin = 50
+        axis.EndMargin = 25
+        axis.Thickness = 1
 
         axis.Label.Text = "X"
         axis.Label.Rotation = 0
         axis.Label.Font = fonts.Label
         axis.Label.Color = colors.Axes
-        axis.Label.EdgeMargin = 10
+        axis.Label.EdgeMargin = 3
 
-        axis.NumberLine.LabelMargin    = 3
+        axis.NumberLine.LabelMargin    = 5
         axis.NumberLine.MaxNumberCount = 3
         axis.NumberLine.StartingValue  = 0
         axis.NumberLine.EndingValue    = 1
@@ -164,15 +174,16 @@ function PANEL:SetConfig( config )
 
     do -- Vertical Axis
         local axis = self.Config.Axes.Vertical
-        axis.EndMargin = 50
+        axis.EndMargin = 25
+        axis.Thickness = 1
 
         axis.Label.Text = "Y"
         axis.Label.Rotation = 0
         axis.Label.Font = fonts.Label
         axis.Label.Color = colors.Axes
-        axis.Label.EdgeMargin = 30
+        axis.Label.EdgeMargin = 10
 
-        axis.NumberLine.LabelMargin    = 25
+        axis.NumberLine.LabelMargin    = 5
         axis.NumberLine.MaxNumberCount = 3
         axis.NumberLine.StartingValue  = 0
         axis.NumberLine.EndingValue    = 1
@@ -211,12 +222,12 @@ function PANEL:Paint( width, height )
         drawGraph.RecentEvaluation( self.CurrentCurve )
 
         -- Curve Hovering
-        if not state.IsDragging and self:IsCurveHovered() then
-            local isHandleHovered = self:IsChildHovered( true )
-            if not isHandleHovered then
-                drawGraph.CurveHovering()
-            end
-        end
+        -- if not state.IsDragging and self:IsCurveHovered() then
+        --     local isHandleHovered = self:IsChildHovered( true )
+        --     if not isHandleHovered then
+        --         drawGraph.CurveHovering()
+        --     end
+        -- end
     end
 
     drawGraph.EndPanel()

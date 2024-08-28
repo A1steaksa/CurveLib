@@ -9,153 +9,139 @@ local drawBase = include( "libraries/curvelib/editor/draw-base.lua" )
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
 local PANEL = {}
 
-local COLOR_WHITE = Color( 255, 255, 255, 255 )
-local COLOR_BLACK = Color( 0, 0, 0, 255 )
-local COLOR_RED = Color( 255, 0, 0, 255 )
-local COLOR_GREEN = Color( 0, 255, 0, 255 )
-local COLOR_BLUE = Color( 0, 0, 255, 255 )
+--- Adds a labeled numerical counter with buttons to increment and decrement the value for debugging
+---@param x number
+---@param y number
+---@param labelText string
+---@param startingValue number
+---@param minValue number
+---@param maxValue number
+---@param incrementAmount number
+---@param valueChangeCallback fun( newValue: number )
+function PANEL:AddCounter( x, y, labelText, startingValue, minValue, maxValue, incrementAmount, valueChangeCallback )
+    
+    local key = "CounterValue" .. tostring( labelText )
 
-PANEL.MinRadius = 3
-PANEL.MaxRadius = 25
-PANEL.Diameter = PANEL.MaxRadius
+    self[key] = startingValue
 
-PANEL.MinVertexCount = 10
-PANEL.MaxVertexCount = 100
-PANEL.VertexCount = PANEL.MaxVertexCount
-
-function PANEL:Init()
     local buttonWidth = 50
     local buttonHeight = 25
 
     local labelWidth = 65
     local labelHeight = buttonHeight
 
-    local buttonStartX = 200
-    local buttonStartY = 50
-
     local padding = 5
 
-    do -- Radius Debug Config
-        local label = vgui.Create( "DLabel", self )
-        local decreaseButton = vgui.Create( "DButton", self )
-        local valueLabel = vgui.Create( "DLabel", self )
-        local increaseButton = vgui.Create( "DButton", self )
+    local label = vgui.Create( "DLabel", self )
+    local decreaseButton = vgui.Create( "DButton", self )
+    local valueLabel = vgui.Create( "DLabel", self )
+    local increaseButton = vgui.Create( "DButton", self )
 
-        -- Label
-        label:SetPos( buttonStartX, buttonStartY - labelHeight - padding )
-        label:SetSize( labelWidth + buttonWidth * 2 + padding * 2, labelHeight )
-        label:SetText( "Radius" )
-        label:SetFont( "DermaLarge" )
-        label:SetTextColor( COLOR_WHITE )
-        label:SetContentAlignment( 5 )
+    -- Label
+    label:SetPos( x, y - labelHeight - padding )
+    label:SetSize( labelWidth + buttonWidth * 2 + padding * 2, labelHeight )
+    label:SetText( labelText )
+    label:SetFont( "DermaLarge" )
+    label:SetTextColor( Color( 255, 255, 255, 255 ) )
+    label:SetContentAlignment( 5 )
+    
 
-        -- Decrease Button
-        decreaseButton:SetText( "-" )
-        decreaseButton:SetSize( buttonWidth, buttonHeight )
-        decreaseButton:SetPos(
-            buttonStartX,
-            buttonStartY
-        )
-        decreaseButton.DoClick = function()
-            self.Diameter = math.max( self.Diameter - 1, self.MinRadius )
-            valueLabel:SetText(tostring( self.Diameter ) )
-        end
-
-        -- Radius Label
-        valueLabel:SetPos(
-            buttonStartX + buttonWidth + padding,
-            buttonStartY
-        )
-        valueLabel:SetSize( labelWidth, labelHeight )
-        valueLabel:SetText( tostring( self.Diameter ) )
-        valueLabel:SetFont( "DermaLarge" )
-        valueLabel:SetTextColor( COLOR_WHITE )
-        valueLabel:SetContentAlignment( 5 )
-
-        -- Increase Button
-        increaseButton:SetText( "+" )
-        increaseButton:SetSize( buttonWidth, buttonHeight )
-        increaseButton:SetPos(
-            buttonStartX + buttonWidth + padding + labelWidth + padding,
-            buttonStartY
-        )
-        increaseButton.DoClick = function()
-            self.Diameter = math.min( self.Diameter + 1, self.MaxRadius )
-            valueLabel:SetText(tostring( self.Diameter ) )
-        end
+    -- Decrease Button
+    decreaseButton:SetText( "-" .. incrementAmount )
+    decreaseButton:SetSize( buttonWidth, buttonHeight )
+    decreaseButton:SetPos( x, y )
+    decreaseButton.DoClick = function()
+        self[key] = math.Clamp( self[key] - incrementAmount, minValue, maxValue )
+        valueLabel:SetText(tostring( self[key] ) )
+        valueChangeCallback( self[key] )
     end
 
-    do -- Vertex Count Debug Config
-        local label = vgui.Create( "DLabel", self )
-        local decreaseButton = vgui.Create( "DButton", self )
-        local valueLabel = vgui.Create( "DLabel", self )
-        local increaseButton = vgui.Create( "DButton", self )
+    -- Radius Label
+    valueLabel:SetPos( x + buttonWidth + padding, y )
+    valueLabel:SetSize( labelWidth, labelHeight )
+    valueLabel:SetText( tostring( self[key] ) )
+    valueLabel:SetFont( "DermaLarge" )
+    valueLabel:SetTextColor( Color( 255, 255, 255, 255 ) )
+    valueLabel:SetContentAlignment( 5 )
 
-        -- Label
-        label:SetPos( buttonStartX, buttonStartY + buttonHeight + padding )
-        label:SetSize( labelWidth + buttonWidth * 2 + padding * 2, labelHeight )
-        label:SetText( "Vertex Count" )
-        label:SetFont( "DermaLarge" )
-        label:SetTextColor( COLOR_WHITE )
-        label:SetContentAlignment( 5 )
-
-        -- Decrease Button
-        decreaseButton:SetText( "-" )
-        decreaseButton:SetSize( buttonWidth, buttonHeight )
-        decreaseButton:SetPos(
-            buttonStartX,
-            buttonStartY + buttonHeight + padding * 2 + labelHeight
-        )
-        decreaseButton.DoClick = function()
-            self.VertexCount = math.max( self.VertexCount - 1, self.MinVertexCount )
-            valueLabel:SetText(tostring( self.VertexCount ) )
-        end
-
-        -- Radius Label
-        valueLabel:SetPos(
-            buttonStartX + buttonWidth + padding,
-            buttonStartY + buttonHeight + padding * 2 + labelHeight
-        )
-        valueLabel:SetSize( labelWidth, labelHeight )
-        valueLabel:SetText( tostring( self.VertexCount ) )
-        valueLabel:SetFont( "DermaLarge" )
-        valueLabel:SetTextColor( COLOR_WHITE )
-        valueLabel:SetContentAlignment( 5 )
-
-        -- Increase Button
-        increaseButton:SetText( "+" )
-        increaseButton:SetSize( buttonWidth, buttonHeight )
-        increaseButton:SetPos(
-            buttonStartX + buttonWidth + padding + labelWidth + padding,
-            buttonStartY + buttonHeight + padding * 2 + labelHeight
-        )
-        increaseButton.DoClick = function()
-            self.VertexCount = math.min( self.VertexCount + 1, self.MaxVertexCount )
-            valueLabel:SetText(tostring( self.VertexCount ) )
-        end
+    -- Increase Button
+    increaseButton:SetText( "+" .. incrementAmount )
+    increaseButton:SetSize( buttonWidth, buttonHeight )
+    increaseButton:SetPos( x + buttonWidth + padding + labelWidth + padding, y )
+    increaseButton.DoClick = function()
+        self[key] = math.Clamp( self[key] + incrementAmount, minValue, maxValue )
+        valueLabel:SetText( tostring( self[key] ) )
+        valueChangeCallback( self[key] )
     end
-
 end
 
-local drawStartX = 100
-local drawStartY = 125
+local baseFont = "Roboto Regular"
+local fontName = "CurveLib_TestFont"
+function PANEL:RebuildFonts()
+    surface.CreateFont( fontName, {
+        font = baseFont,
+        size = self.CurrentSize,
+        weight = self.CurrentWeight,
+        extended = true
+    } )
+end
+
+function PANEL:Init()
+
+    self.CurrentSize = 32
+    self.CurrentWeight = 500
+    self.CurrentRotation = 0
+    self.CurrentScale = 1
+
+    local fontLabel = vgui.Create( "DLabel", self )
+    fontLabel:SetFont( "DermaLarge" )
+    fontLabel:SetText( "Font: " .. baseFont )
+    fontLabel:SetWide( 500 )
+    fontLabel:SetTall( 70 )
+    fontLabel:SetPos( 300, 0 )
+
+    self:AddCounter( 15, 35, "Size", self.CurrentSize, 0, 9999, 4, function( value )
+        self.CurrentSize = value
+        self:RebuildFonts()
+    end )
+
+    self:AddCounter( 15, 135, "Weight", self.CurrentWeight, 300, 800, 25, function( value )
+        self.CurrentWeight = value
+        self:RebuildFonts()
+    end )
+
+    self:AddCounter( 15, 235, "Rotation", self.CurrentRotation, -360, 360, 15, function( value )
+        self.CurrentRotation = value
+        self:RebuildFonts()
+    end )
+    
+    self:AddCounter( 15, 335, "Scale", self.CurrentScale, 0, 10, 0.25, function( value )
+        self.CurrentScale = value
+        self:RebuildFonts()
+    end )
+
+    self:RebuildFonts()
+end
 
 function PANEL:Paint( width, height )
     drawBase.StartPanel( self )
 
     -- Background
-    drawBase.Rect( 0, 0, width, height, 0, Alignment.TopLeft, COLOR_BLACK )
+    drawBase.Rect( 0, 0, width, height, 0, Alignment.TopLeft, Color( 128, 128, 128 ) )
 
-    local alignment = Alignment.Center
+    local x = 750
+    local y = 300
 
-    -- Draw a circle
-    drawBase.Circle( drawStartX, drawStartY, self.Diameter + 0.5, 0, self.VertexCount, alignment, Color( 255, 0, 255, 255 ) )
-    drawBase.Circle( drawStartX, drawStartY, self.Diameter, 0, self.VertexCount, alignment, Color( 0, 0, 255, 255 ) )
-    --drawBase.Circle( drawStartX, drawStartY, self.Radius, 0, self.VertexCount, Alignment.Center, COLOR_BLUE )
+    local text = "Text 123456789.0"
+    surface.SetFont( fontName )
+    local textWidth = surface.GetTextSize( text )
 
-    -- Draw Center Lines
-    --drawBase.Line( drawStartX - self.MaxRadius * 2, drawStartY, drawStartX + self.MaxRadius * 2, drawStartY, 1, Alignment.Center, COLOR_RED )
-    --drawBase.Line( drawStartX, drawStartY - self.MaxRadius * 2, drawStartX, drawStartY + self.MaxRadius * 2, 1, Alignment.Center, COLOR_RED )
+    local lineSize = self.CurrentScale * textWidth/2
+
+    drawBase.Line( x - lineSize, y, x + lineSize, y, 1, HorizontalAlignment.Center, Color( 255, 0, 0 ) )
+
+    
+    drawBase.Text( text, x, y, self.CurrentRotation, self.CurrentScale, Alignment.Center, Color( 255, 255, 255, 255 ) )
 
     drawBase.EndPanel()
 end

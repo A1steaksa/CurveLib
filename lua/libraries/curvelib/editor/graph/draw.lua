@@ -46,7 +46,7 @@ end
 ---@param width integer The width of the Graph, in pixels
 ---@param height integer The height of the Graph, in pixels
 function DRAW.StartPanel( config, graph, x, y, width, height )
-    drawBase = _G.CurveLib.DrawBase or drawBase or include( "libraries/curvelib/editor/draw-base.lua" )
+    drawBase = drawBase or _G.CurveLib.DrawBase
 
     x, y, width, height = curveUtils.MultiFloor( x, y, width, height )
 

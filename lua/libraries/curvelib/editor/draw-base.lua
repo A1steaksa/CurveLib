@@ -276,7 +276,7 @@ function DRAW.Text( text, x, y, rotation, scale, alignment, color )
     local newMatrix = Matrix()
 
     -- 6. Move to our draw position
-    newMatrix:Translate( Vector( x, y ) )
+    newMatrix:Translate( Vector( curveUtils.MultiFloor( x, y ) ) )
 
     -- 5. Move back to the panel we're drawing on
     newMatrix:Translate( existingTranslation )

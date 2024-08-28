@@ -74,19 +74,26 @@ function FRAME:Init()
 
     local derma = self.Panels
 
-    derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
-    derma.MenuBar:Dock( TOP )
-    derma.MenuBar:SetEditorFrame( self )
+    -- To make enabling and disabling the debug panel easier
+    local useDebugPanel = false
+    if useDebugPanel then
+        local debugPanel = vgui.Create( "CurveLib.Editor.TestingPanel", self )
+        debugPanel:Dock( FILL )
+    else
+        derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
+        derma.MenuBar:Dock( TOP )
+        derma.MenuBar:SetEditorFrame( self )
 
-    derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
-    derma.Sidebar:SetConfig( self.Config.SidebarConfig )
-    derma.Sidebar:Dock( RIGHT )
-    derma.Sidebar:SetEditorFrame( self )
+        derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
+        derma.Sidebar:SetConfig( self.Config.SidebarConfig )
+        derma.Sidebar:Dock( RIGHT )
+        derma.Sidebar:SetEditorFrame( self )
 
-    derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel", self )
-    derma.Graph:SetConfig( self.Config.GraphConfig )
-    derma.Graph:Dock( FILL )
-    derma.Graph:SetEditorFrame( self )
+        derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel", self )
+        derma.Graph:SetConfig( self.Config.GraphConfig )
+        derma.Graph:Dock( FILL )
+        derma.Graph:SetEditorFrame( self )
+    end
 
     self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
     self:SetMinWidth( Default.FrameSize.MinWidth )
