@@ -11,24 +11,27 @@ local fonts = {
 }
 
 surface.CreateFont( fonts.NumberLineSmall, {
-	font = "Roboto",
-	extended = false,
-	size = 16,
-	weight = 500
+	font = "Roboto Regular",
+	extended = true,
+	size = 18,
+	weight = 400,
+    antialias = true
 } )
 
 surface.CreateFont( fonts.NumberLineLarge, {
-	font = "Roboto",
-	extended = false,
-	size = 18,
-	weight = 700
+	font = "Roboto Regular",
+	extended = true,
+	size = 20,
+	weight = 400,
+    antialias = true
 } )
 
 surface.CreateFont( fonts.Label, {
-	font = "Roboto",
-	extended = false,
+	font = "Roboto Regular",
+	extended = true,
 	size = 30,
-	weight = 800
+	weight = 400,
+    antialias = true
 } )
 --#endregion Fonts
 
