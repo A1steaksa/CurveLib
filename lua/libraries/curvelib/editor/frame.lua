@@ -8,7 +8,7 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Frame : BFrame
 ---@field IsEditorFrame boolean
 ---@field Panels CurveLib.Editor.Frame.Panels
----@field CurrentAddon string? # The currently open addon's name.
+---@field CurrentAddonName string? # The currently open addon's name.
 ---@field CurrentCurve CurveLib.Curve.Data? # The Curve currently being edited.
 local FRAME = {
     IsEditorFrame = true,
@@ -30,7 +30,8 @@ local Default = {
 
 --- Opens an addon for editing
 function FRAME:OpenAddon( name )
-    self.CurrentAddon = name
+    self.CurrentAddonName = name
+    self.CurrentAddonCurveName = nil
     self.Panels.Sidebar:OnAddonOpened( name )
     self.Panels.Graph:OnAddonOpened( name )
     self.Panels.MenuBar:OnAddonOpened( name )
@@ -38,10 +39,23 @@ end
 
 --- Closes an addon
 function FRAME:CloseAddon( name )
-    self.CurrentAddon = nil
+    self.CurrentAddonName = nil
+    self.CurrentAddonCurveName = nil
     self.Panels.Sidebar:OnAddonClosed( name )
     self.Panels.Graph:OnAddonClosed( name )
     self.Panels.MenuBar:OnAddonClosed( name )
+end
+
+--- Opens one of the curves from the currently open addon
+function FRAME:OpenAddonCurve( curveName )
+    if not self.CurrentAddonName then
+        error( "Cannot open a curve without an addon being opened." )
+    end
+
+    local curve = CurveLib.GetAddonCurves( self.CurrentAddonName )[ curveName ]
+
+    self.CurrentAddonCurveName = curveName
+    self:OpenCurve( curve )
 end
 
 ---@param curve CurveLib.Curve.Data # The Curve to open for editing
@@ -104,6 +118,41 @@ function FRAME:Init()
     self:SetVisible( true )
     self:Center()
     self:MakePopup()
+end
+
+function FRAME:PreHotload()
+    local data = {}
+    data.Size = Vector( self:GetSize() )
+    data.Pos = Vector( self:GetPos() )
+    data.IsMaximized = self.BFrame.IsMaximized
+    data.PreMaximizeSize = self.BFrame.PreMaximizeSize
+    data.PreMaximizePos = self.BFrame.PreMaximizePos
+    data.CurrentAddonName = self.CurrentAddonName
+    data.CurrentAddonCurveName = self.CurrentAddonCurveName
+
+    return data
+end
+
+function FRAME:PostHotload( data )
+    if data.IsMaximized then
+        self:Maximize()
+
+        self.BFrame.PreMaximizeSize = data.PreMaximizeSize
+        self.BFrame.PreMaximizePos = data.PreMaximizePos
+    else
+        self:SetSize( data.Size:Unpack() )
+        self:SetPos( data.Pos:Unpack() )
+    end
+
+    if data.CurrentAddonName then
+        self:OpenAddon( data.CurrentAddonName )
+
+        if data.CurrentAddonCurveName then
+            self:OpenAddonCurve( data.CurrentAddonCurveName )
+        end
+
+    end
+
 end
 
 vgui.Register( "CurveLib.Editor.Frame", FRAME, "BFrame" )
