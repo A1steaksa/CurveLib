@@ -272,11 +272,13 @@ function PANEL:Think()
 
     local panelWidth, panelHeight = self:GetWide(), self:GetTall()
 
-    if not self.BFrame.LocalDragPos and not self.Resizing and self:IsHovered() then
-        -- Resizing handler cursors
-        if self:GetSizable() then
-            local hoveredHandle = self:GetResizeHandle( cursorLocalPos )
-            self:SetCursor( HandleToCursor[ hoveredHandle ] )
+    if not self.BFrame.IsMaximized then
+        if not self.BFrame.LocalDragPos and not self.Resizing and self:IsHovered() then
+            -- Resizing handler cursors
+            if self:GetSizable() then
+                local hoveredHandle = self:GetResizeHandle( cursorLocalPos )
+                self:SetCursor( HandleToCursor[ hoveredHandle ] )
+            end
         end
     end
 
