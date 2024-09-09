@@ -41,7 +41,6 @@ function PANEL:AddCurveSelectionPanel( categoryList )
 end
 
 function PANEL:Init()
-
     self:SetWide( 250 )
 
     self.CategoryList = vgui.Create( "DCategoryList", self )
@@ -76,7 +75,7 @@ function PANEL:OnAddonOpened( name )
     for curveName, curveData in pairs( curves ) do
         local node = self.CurveTree:AddNode( curveName, "icon16/chart_curve.png" )
         node.DoClick = function()
-            self:GetGraph():OpenCurve( curveData )
+            self:GetEditorFrame():OpenAddonCurve( curveName )
         end
     end
 

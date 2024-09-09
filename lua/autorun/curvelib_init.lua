@@ -53,7 +53,6 @@ RunClient( "libraries/better-derma/bbutton.lua" )
 RunClient( "libraries/curvelib/editor/panel-base.lua" )
 
 -- Editor Sidebar
-RunClient( "libraries/curvelib/editor/sidebar/draw.lua" )
 RunClient( "libraries/curvelib/editor/sidebar/panel.lua" )
 
 -- Editor Menu Bar
