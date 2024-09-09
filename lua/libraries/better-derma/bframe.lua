@@ -272,11 +272,13 @@ function PANEL:Think()
 
     local panelWidth, panelHeight = self:GetWide(), self:GetTall()
 
-    if not self.BFrame.LocalDragPos and not self.Resizing and self:IsHovered() then
-        -- Resizing handler cursors
-        if self:GetSizable() then
-            local hoveredHandle = self:GetResizeHandle( cursorLocalPos )
-            self:SetCursor( HandleToCursor[ hoveredHandle ] )
+    if not self.BFrame.IsMaximized then
+        if not self.BFrame.LocalDragPos and not self.Resizing and self:IsHovered() then
+            -- Resizing handler cursors
+            if self:GetSizable() then
+                local hoveredHandle = self:GetResizeHandle( cursorLocalPos )
+                self:SetCursor( HandleToCursor[ hoveredHandle ] )
+            end
         end
     end
 
@@ -370,30 +372,32 @@ function PANEL:OnMousePressed( mouseButton )
 
     local localMousePos = self:GetLocalMousePos()
 
-    if self:GetSizable() then
-        local hoveredHandle = self:GetResizeHandle( localMousePos )
-
-        if hoveredHandle ~= HANDLE_NONE then
-            self.Resizing = {
-                StartingWidth = self:GetWide(),
-                StartingHeight = self:GetTall(),
-                x = localMousePos.x,
-                y = localMousePos.y,
-                Handle = hoveredHandle
-            }
-            self:MouseCapture( true )
+    if not self.BFrame.IsMaximized then
+        if self:GetSizable() then
+            local hoveredHandle = self:GetResizeHandle( localMousePos )
+    
+            if hoveredHandle ~= HANDLE_NONE then
+                self.Resizing = {
+                    StartingWidth = self:GetWide(),
+                    StartingHeight = self:GetTall(),
+                    x = localMousePos.x,
+                    y = localMousePos.y,
+                    Handle = hoveredHandle
+                }
+                self:MouseCapture( true )
+            end
         end
-    end
 
-    if self:GetDraggable() and not self.BFrame.LocalDragPos  and not self.BFrame.IsMaximized then
-        local handles = self.BFrame.Config.ResizeHandleSizes
-        local panelWidth = self:GetWide()
-
-        local onTitleBarX = localMousePos.x > handles.Left and localMousePos.x < panelWidth - handles.Right
-        local onTitleBarY = localMousePos.y > handles.Top and localMousePos.y < handles.Top + self.BFrame.Config.TitleBar.Height
-        if onTitleBarX and onTitleBarY then
-            self.BFrame.LocalDragPos = Vector( localMousePos.x, localMousePos.y )
-            self:MouseCapture( true )
+        if self:GetDraggable() and not self.BFrame.LocalDragPos then
+            local handles = self.BFrame.Config.ResizeHandleSizes
+            local panelWidth = self:GetWide()
+    
+            local onTitleBarX = localMousePos.x > handles.Left and localMousePos.x < panelWidth - handles.Right
+            local onTitleBarY = localMousePos.y > handles.Top and localMousePos.y < handles.Top + self.BFrame.Config.TitleBar.Height
+            if onTitleBarX and onTitleBarY then
+                self.BFrame.LocalDragPos = Vector( localMousePos.x, localMousePos.y )
+                self:MouseCapture( true )
+            end
         end
     end
 end
@@ -405,6 +409,8 @@ function PANEL:OnMouseReleased()
 end
 
 function PANEL:Maximize()
+    if self.BFrame.IsMaximized then return end
+
     self.BFrame.PreMaximizePos = Vector( self:GetPos() )
     self.BFrame.PreMaximizeSize = Vector( self:GetSize() )
 
@@ -416,7 +422,6 @@ function PANEL:Maximize()
 
     self.BFrame.IsMaximized = true
 end
-
 
 function PANEL:Restore()
     if not self.BFrame.IsMaximized then return end
