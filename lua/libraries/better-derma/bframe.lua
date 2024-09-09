@@ -372,20 +372,21 @@ function PANEL:OnMousePressed( mouseButton )
 
     local localMousePos = self:GetLocalMousePos()
 
-    if self:GetSizable() then
-        local hoveredHandle = self:GetResizeHandle( localMousePos )
-
-        if hoveredHandle ~= HANDLE_NONE then
-            self.Resizing = {
-                StartingWidth = self:GetWide(),
-                StartingHeight = self:GetTall(),
-                x = localMousePos.x,
-                y = localMousePos.y,
-                Handle = hoveredHandle
-            }
-            self:MouseCapture( true )
+    if not self.BFrame.IsMaximized then
+        if self:GetSizable() then
+            local hoveredHandle = self:GetResizeHandle( localMousePos )
+    
+            if hoveredHandle ~= HANDLE_NONE then
+                self.Resizing = {
+                    StartingWidth = self:GetWide(),
+                    StartingHeight = self:GetTall(),
+                    x = localMousePos.x,
+                    y = localMousePos.y,
+                    Handle = hoveredHandle
+                }
+                self:MouseCapture( true )
+            end
         end
-    end
 
     if self:GetDraggable() and not self.BFrame.LocalDragPos  and not self.BFrame.IsMaximized then
         local handles = self.BFrame.Config.ResizeHandleSizes
