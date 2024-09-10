@@ -2,15 +2,21 @@ require( "vguihotload" )
 
 ---@class (exact) BFrame.Config
 ---@field TitleBar BFrame.Config.TitleBar 
----@field DockPadding BFrame.Config.Sides The size of the padding between the Resizing Handles, TitleBar, and the docked contents .
+---@field DockPadding BFrame.Config.DockPadding The size of the padding between the Resizing Handles, TitleBar, and the docked contents.
 ---@field ResizeHandleSizes BFrame.Config.ResizingSides The size of the padding that allows for resizing of the BFrame.
 ---@field Colors { Focused: BFrame.Config.Colors, Unfocused: BFrame.Config.Colors }
 
 ---@class (exact) BFrame.Config.TitleBar
+---@field TitleBarLeftPadding integer The spacing between elements of the title bar and the left edge of the BFrame.
+---@field TitleBarRightPadding integer The spacing between elements of the title bar and the right edge of the BFrame.
 ---@field Height integer The height of the TitleBar, in addition to the top Resize Handle and top Dock Padding.
 ---@field ButtonWidth integer The width, in pixels, of close, minimize, and maximize buttons.
 ---@field ButtonHeight integer The height, in pixels, of close, minimize, and maximize buttons.
 ---@field ButtonSpacing integer The horizontal spacing, in pixels, between the close, minimize, and maximize buttons.
+
+---@class (exact) BFrame.Config.DockPadding
+---@field Windowed BFrame.Config.Sides The size of the frame's padding when the BFrame is windowed.
+---@field Maximized BFrame.Config.Sides The size of the frame's padding when the BFrame is maximized.
 
 ---@class (exact) BFrame.Config.Sides
 ---@field Top integer
@@ -32,16 +38,26 @@ require( "vguihotload" )
 ---@type BFrame.Config
 local DefaultConfig = {
     TitleBar = {
+        TitleBarLeftPadding = 9,
+        TitleBarRightPadding = 0,
         Height = 24,
         ButtonWidth = 31,
         ButtonHeight = 24,
         ButtonSpacing = 4
     },
     DockPadding = {
-        Top = 9,
-        Bottom = 9,
-        Left = 9,
-        Right = 9
+        Windowed = {
+            Top = 5,
+            Bottom = 6,
+            Left = 6,
+            Right = 6
+        },
+        Maximized = {
+            Top = 6,
+            Bottom = 4,
+            Left = 4,
+            Right = 4
+        }
     },
     ResizeHandleSizes = {
         Top = 5,
@@ -77,6 +93,7 @@ ConfigMetatable.__index = DefaultConfig
 ---@field PreMaximizeSize Vector
 ---@field IsMaximized boolean
 ---@field LocalDragPos Vector
+---@field TitleBarClickTime number
 
 ---@class BFrame : DFrame
 ---@field imgIcon  DImage? The BFrame's optional TitleBar Icon
@@ -115,7 +132,6 @@ end
 function PANEL:PerformLayout()
     local config = self.BFrame.Config
     local handles = config.ResizeHandleSizes
-    local dockPadding = config.DockPadding
     local titleBar = config.TitleBar
 
     local panelWidth, panelHeight = self:GetWide(), self:GetTall()
@@ -128,12 +144,19 @@ function PANEL:PerformLayout()
 		titlePush = 16
 	end
 
-    local leftDockPadding = config.DockPadding.Left
-    local topDockPadding = config.DockPadding.Top + config.TitleBar.Height
-    local rightDockPadding = config.DockPadding.Right
-    local bottomDockPadding = config.DockPadding.Bottom
+    local dockPadding
+    if self.BFrame.IsMaximized then
+        dockPadding = config.DockPadding.Maximized
+    else
+        dockPadding = config.DockPadding.Windowed
+    end
 
-    if self:GetSizable() then
+    local leftDockPadding = dockPadding.Left
+    local topDockPadding = dockPadding.Top + config.TitleBar.Height
+    local rightDockPadding = dockPadding.Right
+    local bottomDockPadding = dockPadding.Bottom
+
+    if self:GetSizable() and not self.BFrame.IsMaximized then
         leftDockPadding = leftDockPadding + config.ResizeHandleSizes.Left
         topDockPadding = topDockPadding + config.ResizeHandleSizes.Top
         rightDockPadding = rightDockPadding + config.ResizeHandleSizes.Right
@@ -149,7 +172,8 @@ function PANEL:PerformLayout()
 
     local closeButtonX = panelWidth
         - titleBar.ButtonWidth
-        - handles.Right
+        - rightDockPadding
+        - titleBar.TitleBarRightPadding
 
     local maximizeButtonX = closeButtonX
         - titleBar.ButtonWidth
@@ -168,7 +192,7 @@ function PANEL:PerformLayout()
 	self.btnMinim:SetPos( minimizeButtonX, handles.Top )
 	self.btnMinim:SetSize( titleBar.ButtonWidth, titleBar.ButtonHeight )
 
-	self.lblTitle:SetPos( dockPadding.Left + titlePush, handles.Top )
+	self.lblTitle:SetPos( titleBar.TitleBarLeftPadding + titlePush, handles.Top )
 	--self.lblTitle:SetSize( panelWidth - titlePush, 20 )
 end
 
@@ -375,7 +399,7 @@ function PANEL:OnMousePressed( mouseButton )
     if not self.BFrame.IsMaximized then
         if self:GetSizable() then
             local hoveredHandle = self:GetResizeHandle( localMousePos )
-    
+
             if hoveredHandle ~= HANDLE_NONE then
                 self.Resizing = {
                     StartingWidth = self:GetWide(),
@@ -387,18 +411,42 @@ function PANEL:OnMousePressed( mouseButton )
                 self:MouseCapture( true )
             end
         end
+    end
 
-        if self:GetDraggable() and not self.BFrame.LocalDragPos then
-            local handles = self.BFrame.Config.ResizeHandleSizes
-            local panelWidth = self:GetWide()
-    
-            local onTitleBarX = localMousePos.x > handles.Left and localMousePos.x < panelWidth - handles.Right
-            local onTitleBarY = localMousePos.y > handles.Top and localMousePos.y < handles.Top + self.BFrame.Config.TitleBar.Height
-            if onTitleBarX and onTitleBarY then
+    -- Check if the mouse is on the title bar
+    local handles = self.BFrame.Config.ResizeHandleSizes
+    local panelWidth = self:GetWide()
+    local onTitleBarX = localMousePos.x > handles.Left and localMousePos.x < panelWidth - handles.Right
+    local onTitleBarY = localMousePos.y > handles.Top and localMousePos.y < handles.Top + self.BFrame.Config.TitleBar.Height
+    if onTitleBarX and onTitleBarY then
+
+        -- Double-clicking to maximize
+        if self.BFrame.TitleBarClickTime then
+            local timeSinceLastClick = SysTime() - self.BFrame.TitleBarClickTime
+            if timeSinceLastClick < 0.3 then
+                self:ToggleMaximize()
+                self.BFrame.TitleBarClickTime = nil
+                
+                -- Don't allow dragging if we're double-clicking
+                return
+            else
+                self.BFrame.TitleBarClickTime = SysTime()
+            end
+        else
+            self.BFrame.TitleBarClickTime = SysTime()
+        end
+
+        -- Dragging
+        if not self.BFrame.IsMaximized then
+            if self:GetDraggable() and not self.BFrame.LocalDragPos then
                 self.BFrame.LocalDragPos = Vector( localMousePos.x, localMousePos.y )
                 self:MouseCapture( true )
             end
         end
+    else
+        -- If we're clicking outside the title bar, we're not dragging or double-clicking
+        self.BFrame.LocalDragPos = nil
+        self.BFrame.TitleBarClickTime = nil
     end
 end
 
@@ -414,11 +462,8 @@ function PANEL:Maximize()
     self.BFrame.PreMaximizePos = Vector( self:GetPos() )
     self.BFrame.PreMaximizeSize = Vector( self:GetSize() )
 
-    local x, y = 0, 0
-    local w, h = ScrW(), ScrH()
-
-    self:SetPos( x, y )
-    self:SetSize( w, h )
+    self:SetPos( 0, 0 )
+    self:SetSize( ScrW(), ScrH() )
 
     self.BFrame.IsMaximized = true
 end
@@ -434,7 +479,6 @@ function PANEL:Restore()
 
     self.BFrame.IsMaximized = false
 end
-
 
 function PANEL:ToggleMaximize()
     if self.BFrame.IsMaximized then
