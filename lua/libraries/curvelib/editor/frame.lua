@@ -150,9 +150,7 @@ function FRAME:PostHotload( data )
         if data.CurrentAddonCurveName then
             self:OpenAddonCurve( data.CurrentAddonCurveName )
         end
-
     end
-
 end
 
 vgui.Register( "CurveLib.Editor.Frame", FRAME, "BFrame" )
