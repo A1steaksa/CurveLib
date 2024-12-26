@@ -117,7 +117,8 @@ function FRAME:Init()
     self:SetSizable( true )
     self:SetVisible( true )
     self:Center()
-    self:MakePopup()
+    self:SetMouseInputEnabled( true )
+    self:RequestFocus()
 end
 
 function FRAME:PreHotload()
@@ -152,6 +153,18 @@ function FRAME:PostHotload( data )
         end
     end
 end
+
+-- Add our window to the C menu
+list.Set( "DesktopWindows", "CurveEditor", {
+    title = "Curve Editor",
+    icon = "curvelib/logo.png",
+    onewindow = true,
+    init = function( icon, oldFrame )
+        -- We don't want to use their default DFrame, so just close it and create our own.
+        oldFrame:Close()
+        icon.Window = g_ContextMenu:Add( "CurveLib.Editor.Frame" )
+    end
+} )
 
 vgui.Register( "CurveLib.Editor.Frame", FRAME, "BFrame" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
