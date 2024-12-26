@@ -5,15 +5,22 @@ local CurveLib = _G.CurveLib
 
 CurveLib.IsDevelopment = true
 
-local function RunClient( path )
-    if SERVER then AddCSLuaFile( path ) end
-    if CLIENT then include( path ) end
-end
-
 local function RunShared( path )
     AddCSLuaFile( path )
     include( path )
 end
+
+local function RunClient( path )
+    AddCSLuaFile( path )
+    if CLIENT then include( path ) end
+end
+
+---
+--- Curvelib Resources
+---
+
+resource.AddFile( "materials/curvelib/logo.png" )
+
 
 ---
 --- CurveLib Core
