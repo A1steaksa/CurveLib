@@ -523,6 +523,7 @@ function PANEL:PopulateHandles()
 
     for index = 1, count do
         local mainHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.MainHandle", self )
+        mainHandle:SetConfig( self.Config.Handles.Main )
 
         local needsLeftHandle = index ~= 1
         local needsRightHandle = index ~= count
@@ -530,20 +531,26 @@ function PANEL:PopulateHandles()
         local leftHandle, rightHandle
         if needsLeftHandle then
             leftHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
+            leftHandle:SetConfig( self.Config.Handles.Side )
             leftHandle.GraphPanel = self
             leftHandle.IsRightHandle = false
             leftHandle.MainHandle = mainHandle
             leftHandle:MoveToAfter( mainHandle )
             mainHandle.LeftHandle = leftHandle
+
+            leftHandle:SetEnabled( false )
         end
 
         if needsRightHandle then
             rightHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.SideHandle", self )
+            rightHandle:SetConfig( self.Config.Handles.Side )
             rightHandle.GraphPanel = self
             rightHandle.IsRightHandle = true
             rightHandle.MainHandle = mainHandle
             rightHandle:MoveToAfter( mainHandle )
             mainHandle.RightHandle = rightHandle
+
+            rightHandle:SetEnabled( false )
         end
 
         if leftHandle then

@@ -1,10 +1,23 @@
 require( "vguihotload" )
 
+---@alias MainHandle CurveLib.Editor.Graph.Handle.MainHandle
+---@alias SideHandle CurveLib.Editor.Graph.Handle.SideHandle
+---@alias HandleConfig CurveLib.Editor.Config.Graph.Handles.Handle
+---@alias GraphPanel CurveLib.Editor.Graph.Panel
+
 ---@class CurveLib.Editor.Graph.Handle.Base : DPanel
 ---@field x integer
 ---@field y integer
----@field GraphPanel CurveLib.Editor.Graph.Panel The Graph Panel this Handle is parented to.  Cached here for autocomplete convenience and access speed.
+---@field GraphPanel GraphPanel The Graph Panel this Handle is parented to.  Cached here for autocomplete convenience and access speed.
 ---@field IsBeingDragged boolean? Whether or not the Handle is being dragged
+---@field LocalDragX integer? The X coordinate of the mouse relative to the Handle when the drag started
+---@field LocalDragY integer? The Y coordinate of the mouse relative to the Handle when the drag started
+---@field IsLeftMouseDown boolean? Whether or not the left mouse button is currently held down over this Handle 
+---@field IsRightMouseDown boolean? Whether or not the right mouse button is currently down over this Handle
+---@field LeftMouseDownX integer? The X coordinate of the mouse when the left mouse button was pressed
+---@field LeftMouseDownY integer? The Y coordinate of the mouse when the left mouse button was pressed
+---@field RightMouseDownX integer? The X coordinate of the mouse when the right mouse button was pressed
+---@field RightMouseDownY integer? The Y coordinate of the mouse when the right mouse button was pressed
 ---@field HalfWidth integer
 ---@field HalfHeight integer
 ---@field HoverStartTime number
@@ -13,10 +26,25 @@ require( "vguihotload" )
 ---@field CurrentColor Color The current color of the Handle
 ---@field IsMainHandle boolean? Whether or not this Handle is the main Handle
 ---@field IsSideHandle boolean? Whether or not this Handle is a side Handle
----@field MainHandle CurveLib.Editor.Graph.Handle.MainHandle
----@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle?
----@field RightHandle CurveLib.Editor.Graph.Handle.SideHandle?
+---@field MainHandle MainHandle
+---@field LeftHandle SideHandle?
+---@field RightHandle SideHandle?
 local PANEL = {}
+
+function PANEL:Init()
+    self.GraphPanel = self:GetParent() --[[@as GraphPanel]]
+    self:SetSelectable( true )
+end
+
+---@param handleConfig HandleConfig The Handle's configuration
+function PANEL:SetConfig( handleConfig )
+    self.Config = handleConfig
+end
+
+---@return HandleConfig # The Handle's configuration
+function PANEL:GetConfig()
+    return self.Config
+end
 
 function PANEL:OnSizeChanged( width, height )
     self.HalfWidth = math.floor( width / 2 )
@@ -38,54 +66,82 @@ function PANEL:GetCenterPos()
     return self.x + self.HalfWidth, self.y + self.HalfHeight
 end
 
--- Called when the Handle is dragged.  Don't return anything to prevent the movement.
+-- Called when the Handle is dragged.  Modify the x and y parameters to constrain the dragged location.
+-- Don't return to prevent dragging movement entirely.
 ---@param x integer The Handle's proposed new X coordinate
 ---@param y integer The Handle's propoxed new Y coordinate
 ---@return integer? correctedX The actual X coordinate to use
 ---@return integer? correctedY The actual Y coordinate to use
 function PANEL:OnDragged( x, y )
-    if not self.GraphPanel then
-        self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
-    end
-
     if self.IsMainHandle then
-        return self.GraphPanel:OnMainHandleDragged( self --[[@as CurveLib.Editor.Graph.Handle.MainHandle]], x, y )
+        return self.GraphPanel:OnMainHandleDragged( self --[[@as MainHandle]], x, y )
     else
-        return self.GraphPanel:OnSideHandleDragged( self --[[@as CurveLib.Editor.Graph.Handle.SideHandle]], x, y )
+        return self.GraphPanel:OnSideHandleDragged( self --[[@as SideHandle]], x, y )
     end
 end
 
 function PANEL:Think()
-    if self.IsBeingDragged then
-        local graphMouseX, graphMouseY = self:GetParent():ScreenToLocal( gui.MouseX(), gui.MouseY() )
-        local correctedX, correctedY = self:OnDragged( graphMouseX + self.LocalMouseX, graphMouseY + self.LocalMouseY )
+    if self.IsLeftMouseDown and not self.IsBeingDragged then
+        local cursorMoveX = ( self.LeftMouseDownX - gui.MouseX() ) ^ 2
+        local cursorMoveY = ( self.LeftMouseDownY - gui.MouseY() ) ^ 2
+        local cursorMoveDistance = math.sqrt( cursorMoveX + cursorMoveY )
 
-        if correctedX and correctedY then
-            self:SetPos( correctedX, correctedY )
+        if ( cursorMoveDistance >= self.GraphPanel.Config:GetDragDistanceThreshold() ) then
+            self.IsBeingDragged = true
+
+            -- Calculate where the cursor was on the handle when the drag started
+            self.LocalDragX, self.LocalDragY = self:ScreenToLocal( self.LeftMouseDownX, self.LeftMouseDownY )
+
+            self.GraphPanel:OnHandleDragStarted( self )
+        end
+    end
+
+    if self.IsBeingDragged then
+        local graphCursorX, graphCursorY = self:GetParent():ScreenToLocal( gui.MouseX(), gui.MouseY() )
+        local proposedX, proposedY = graphCursorX - self.LocalDragX, graphCursorY - self.LocalDragY
+
+        local correctedX, correctedY = self:OnDragged( proposedX, proposedY )
+
+        if correctedX or correctedY then
+            self:SetPos( correctedX or proposedX, correctedY or proposedY )
         end
     end
 end
 
 function PANEL:OnMousePressed( mouseButton )
-    if mouseButton ~= MOUSE_LEFT then return end
     self:MouseCapture( true )
-    self.IsBeingDragged = true
 
-    self.GraphPanel:OnDragStarted( self )
-
-    local draggableX, draggableY = self:LocalToScreen( 0, 0 )
-    local mouseX, mouseY = gui.MouseX(), gui.MouseY()
-    self.LocalMouseX = draggableX - mouseX
-    self.LocalMouseY = draggableY - mouseY
+    if mouseButton == MOUSE_LEFT then
+        self.IsLeftMouseDown = true
+        self.LeftMouseDownX = gui.MouseX()
+        self.LeftMouseDownY =  gui.MouseY()
+    elseif mouseButton == MOUSE_RIGHT then
+        self.IsRightMouseDown = true
+        self.RightMouseDownX = gui.MouseX()
+        self.RightMouseDownY = gui.MouseY()
+    end
 end
 
 function PANEL:OnMouseReleased( mouseButton )
-    if mouseButton ~= MOUSE_LEFT then return end
     self:MouseCapture( false )
+
+    if mouseButton == MOUSE_LEFT then
+        self.IsLeftMouseDown = nil
+        self.LeftMouseDownX = nil
+        self.LeftMouseDownY = nil
+    elseif mouseButton == MOUSE_RIGHT then
+        self.IsRightMouseDown = nil
+        self.RightMouseDownX = nil
+        self.RightMouseDownY = nil
+    end
 
     if self.IsBeingDragged then
         self.IsBeingDragged = nil
-        self.GraphPanel:OnDragEnded( self )
+        self.GraphPanel:OnHandleDragEnded( self )
+    else
+        if mouseButton == MOUSE_LEFT then
+            self.GraphPanel:OnHandleSelected( self )
+        end
     end
 end
 
@@ -109,21 +165,19 @@ function PANEL:GetHoverDuration()
 end
 
 -- Returns the current state of the Handle
----@param handleConfig CurveLib.Editor.Config.Graph.Handles.Handle The Handle's configuration
-function PANEL:GetState( handleConfig )
+function PANEL:GetState()
     if self.IsBeingDragged then
-        return handleConfig.Dragged
+        return self.Config.Dragged
     elseif self:IsHovered() then
-        return handleConfig.Hovered
+        return self.Config.Hovered
     else
-        return handleConfig.Idle
+        return self.Config.Idle
     end
 end
 
 -- Updates the current visuals of the Handle based on its current state
----@param handleConfig CurveLib.Editor.Config.Graph.Handles.Handle The Handle's configuration
-function PANEL:UpdateVisuals( handleConfig )
-    local goalState = self:GetState( handleConfig )
+function PANEL:UpdateVisuals()
+    local goalState = self:GetState()
 
     if not self.CurrentRadius or not self.CurrentColor then
         local goalColor = goalState.Color

@@ -15,11 +15,9 @@ function PANEL:Init()
 end
 
 function PANEL:Paint( width, height )
-    handleDraw = _G.CurveLib.HandleDraw or handleDraw or include( "libraries/curvelib/editor/graph/handle/draw.lua" )
+    if not self:IsEnabled() then return end
 
-    if not self.GraphPanel then
-        self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
-    end
+    handleDraw = --[[handleDraw or ]] _G.CurveLib.HandleDraw or include( "libraries/curvelib/editor/graph/handle/draw.lua" )
 
     handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
 

@@ -80,27 +80,26 @@ end
 --#endregion Handle Stack
 
 
----@param handleConfig CurveLib.Editor.Config.Graph.Handles.Handle
-function DRAW.Handle( handleConfig )
+function DRAW.Handle()
     local handle = DRAW.PeekEntry().Handle
 
-    handle:UpdateVisuals( handleConfig )
+    handle:UpdateVisuals()
 
-    local graphX, graphY = handle.GraphPanel:LocalToScreen( 0, 0 )
-    local interiorX, interiorY, interiorWidth, interiorHeight = handle.GraphPanel:GetInteriorRect()
-
-    render.SetScissorRect( graphX + interiorX, graphY + interiorY, graphX + interiorX + interiorWidth, graphY + interiorY + interiorHeight, true )
     drawBase.StartPanel( handle )
+
+    if handle:IsSelected() then
+        local config = DRAW.PeekEntry().Config --[[@as CurveLib.Editor.Config.Graph]]
+        drawBase.Circle( handle.HalfWidth, handle.HalfHeight, handle.CurrentRadius + config:GetSelectedOutlineThickness(), 45, 25, Alignment.Center, config:GetSelectedOutlineColor() )
+    end
 
     drawBase.Circle( handle.HalfWidth, handle.HalfHeight, handle.CurrentRadius, 45, 25, Alignment.Center, handle.CurrentColor )
 
     drawBase.EndPanel()
-    render.SetScissorRect( 0, 0, 0, 0, false )
 end
 
 
 function DRAW.MainHandle()
-    DRAW.Handle( DRAW.PeekEntry().Config.Handles.Main )
+    DRAW.Handle()
 end
 
 
@@ -111,7 +110,7 @@ function DRAW.SideHandle()
 
     drawBase.StartPanel( handle )
 
-    DRAW.Handle( DRAW.PeekEntry().Config.Handles.Side )
+    DRAW.Handle()
 
     drawBase.EndPanel()
 end

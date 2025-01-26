@@ -4,8 +4,8 @@ require( "vguihotload" )
 local handleDraw
 
 ---@class CurveLib.Editor.Graph.Handle.MainHandle : CurveLib.Editor.Graph.Handle.Base
----@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle -- The Left Handle that this Main Handle is paired with
----@field RightHandle CurveLib.Editor.Graph.Handle.SideHandle -- The Right Handle that this Main Handle is paired with
+---@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle The Left Handle that this Main Handle is paired with
+---@field RightHandle CurveLib.Editor.Graph.Handle.SideHandle The Right Handle that this Main Handle is paired with
 ---@field Index integer The index of the Curve Point that this Main Handle represents
 local PANEL = {}
 
@@ -24,8 +24,13 @@ function PANEL:Paint( width, height )
     end
 
     handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
-    handleDraw.MainHandleLines()
+
+    if self:IsSelected() then
+        handleDraw.MainHandleLines()
+    end
+
     handleDraw.MainHandle()
+
     handleDraw.EndPanel()
 end
 
