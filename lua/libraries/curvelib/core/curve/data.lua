@@ -17,6 +17,7 @@ local math_floor = math.floor
 
 -- Adds a point to the curve
 ---@param time number The time value of the point. Must be between 0 and 1.
+---@return integer # The index of the point that was added.
 function DATA:AddPoint( time )
     if not time then
         error( "Cannot add point with nil time" )
@@ -54,7 +55,7 @@ function DATA:AddPoint( time )
     local newPointRightPos = lerpVector( timePercent, neighborSidePointCenter, nextPointLeftPos )
 
     -- Insert the new point into the curve
-    table_insert( points, pointIndex, {
+    local newPointIndex = table_insert( points, pointIndex, {
         MainPoint = newPointPos,
         LeftPoint = newPointLeftPos,
         RightPoint = newPointRightPos
@@ -63,6 +64,8 @@ function DATA:AddPoint( time )
     -- Update the neighboring points' control points
     previousPoint.RightPoint = previousPointRightPos
     nextPoint.LeftPoint = nextPointLeftPos
+
+    return newPointIndex
 end
 
 -- Removes a point from the curve.
