@@ -194,6 +194,30 @@ function PANEL:SetConfig( config )
     end
 end
 
+---@param value boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+function PANEL:SetMirrorHandleRotation( value )
+    self._IsRotationMirrored = value
+
+    self:GetSidebar().MirrorRotationCheckbox:SetChecked( value )
+end
+
+---@param value boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+function PANEL:SetMirrorHandleDistance( value )
+    self._IsDistanceMirrored = value
+
+    self:GetSidebar().MirrorDistanceCheckbox:SetChecked( value )
+end
+
+---@return boolean # Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+function PANEL:IsHandleRotationMirrored()
+    return self._IsRotationMirrored
+end
+
+---@return boolean # Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+function PANEL:IsHandleDistanceMirrored()
+    return self._IsDistanceMirrored
+end
+
 function PANEL:Paint( width, height )
     drawGraph = _G.CurveLib.GraphDraw or drawGraph
 
