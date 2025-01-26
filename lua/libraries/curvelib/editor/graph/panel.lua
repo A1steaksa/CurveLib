@@ -259,17 +259,38 @@ function PANEL:Paint( width, height )
 
         -- Most recently evaluated point
         drawGraph.RecentEvaluation( self.CurrentCurve )
+    end
 
-        -- Curve Hovering
-        -- if not state.IsDragging and self:IsCurveHovered() then
-        --     local isHandleHovered = self:IsChildHovered( true )
-        --     if not isHandleHovered then
-        --         drawGraph.CurveHovering()
-        --     end
-        -- end
+    if ( self.IsBoxSelecting ) then
+        local mouseX, mouseY = self:CursorPos()
+        mouseX = math.Clamp( mouseX, 0, self:GetWide() )
+        mouseY = math.Clamp( mouseY, 0, self:GetTall() )
+        drawGraph.BoxSelection( self.LeftMouseDownX, self.LeftMouseDownY, mouseX, mouseY )
     end
 
     drawGraph.EndPanel()
+end
+
+function PANEL:Think()
+    if self.HeldMouseButtons and self.HeldMouseButtons[ MOUSE_LEFT ] then
+        -- If we don't know where the mouse was pressed, something has gone wrong
+        if not self.LeftMouseDownX or not self.LeftMouseDownY then return end
+
+        if self.IsDraggingHandle then return end
+
+        if not self.IsBoxSelecting then
+            local mouseX, mouseY = self:CursorPos()
+            local distanceFromMouseDown = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
+
+            if distanceFromMouseDown >= self.Config:GetDragDistanceThreshold() then
+                self:OnBoxSelectionStarted()
+            end
+        end
+    end
+
+    if self.IsBoxSelecting then
+        self:BoxSelectionThink()
+    end
 end
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
@@ -573,6 +594,15 @@ function PANEL:PositionHandles()
     end
 end
 
+function PANEL:DeselectAllHandles()
+    for selectedHandle in pairs( self.SelectedHandles ) do
+        if ( selectedHandle and selectedHandle ~= NULL and IsValid( selectedHandle ) ) then
+            self:OnHandleDeselected( selectedHandle )
+        end
+        self.SelectedHandles[ selectedHandle ] = nil
+    end
+end
+
 ---@param curve CurveLib.Curve.Data
 function PANEL:OpenCurve( curve )
     self.CurrentCurve = curve
@@ -586,6 +616,52 @@ function PANEL:CloseCurve()
 end
 
 --#region Handle Events
+
+-- Called when a Handle is selected
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnHandleSelected( handle )
+    if not handle.IsMainHandle then return end
+
+    local isMultiSelect = input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT )
+
+    -- Deselect all other handles if not multi-selecting
+    if not isMultiSelect then
+        for selectedHandle in pairs( self.SelectedHandles ) do
+            if ( selectedHandle and selectedHandle ~= NULL and IsValid( selectedHandle ) ) then
+                self:OnHandleDeselected( selectedHandle )
+            end
+            self.SelectedHandles[ selectedHandle ] = nil
+        end
+    end
+
+    handle:SetSelected( true )
+    self.SelectedHandles[ handle ] = true
+
+    if handle.LeftHandle then
+        handle.LeftHandle:SetEnabled( true )
+    end
+
+    if handle.RightHandle then
+        handle.RightHandle:SetEnabled( true )
+    end
+end
+
+-- Called when a Handle is deselected
+---@param handle CurveLib.Editor.Graph.Handle.Base
+function PANEL:OnHandleDeselected( handle )
+    if not handle.IsMainHandle then return end
+
+    self.SelectedHandles[ handle ] = nil
+    handle:SetSelected( false )
+
+    if handle.LeftHandle then
+        handle.LeftHandle:SetEnabled( false )
+    end
+
+    if handle.RightHandle then
+        handle.RightHandle:SetEnabled( false )
+    end
+end
 
 -- Called when a Handle starts being dragged
 ---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
@@ -731,6 +807,24 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     return correctedSideHandleX, correctedSideHandleY
 end
 
+-- Called when box selection begins
+function PANEL:OnBoxSelectionStarted()
+    self.IsBoxSelecting = true
+    self:MouseCapture( true ) -- Capture the mouse so that the box selection can continue even if the cursor leaves the panel
+end
+
+-- Called each frame while box selection is active
+function PANEL:BoxSelectionThink()
+
+end
+
+-- Called when box selection ends
+---@param isCanceled boolean? True if the box selection was canceled prematurely rather than ending naturally. [Default: false] 
+function PANEL:OnBoxSelectionEnded( isCanceled )
+    self.IsBoxSelecting = false
+    self:MouseCapture( false )
+end
+
 -- Called externally when a handle is hovered
 ---@param handle CurveLib.Editor.Graph.Handle.Base
 function PANEL:OnHandleHoverStarted( handle )
@@ -746,46 +840,122 @@ end
 -- Called when the graph is clicked
 ---@param mouseButton MOUSE
 function PANEL:OnMousePressed( mouseButton )
+    self.HeldMouseButtons = self.HeldMouseButtons or {}
 
-    if mouseButton ~= MOUSE_LEFT then return end
+    if mouseButton == MOUSE_LEFT then
+        self.LeftMouseDownX, self.LeftMouseDownY = self:CursorPos()
+    elseif mouseButton == MOUSE_RIGHT then
+        self.RightMouseDownX, self.RightMouseDownY = self:CursorPos()
+    end
 
-    if self:IsCurveHovered() then
-        local time = self:GetMousePosOnCurve()
+    self.HeldMouseButtons[ mouseButton ] = true
+end
 
-        self.CurrentCurve:AddPoint( time )
+-- Called when the mouse is released
+---@param mouseButton MOUSE
+function PANEL:OnMouseReleased( mouseButton )
+    self.HeldMouseButtons = self.HeldMouseButtons or {}
 
-        self:UpdateHandles()
+    local isLeftMouseDown = self.HeldMouseButtons[ MOUSE_LEFT ]
+    if mouseButton == MOUSE_LEFT and isLeftMouseDown then
+        local leftMouseUpX, leftMouseUpY = self:CursorPos()
+        local dragDistance = math.sqrt( math.pow( leftMouseUpX - self.LeftMouseDownX, 2 ) + math.pow( leftMouseUpY - self.LeftMouseDownY, 2 ) )
+        local wasClick = dragDistance < self.Config:GetDragDistanceThreshold()
+
+        if wasClick then
+            -- Add a new point to the curve
+            if self:IsCurveHovered() then
+                local time = self:GetCursorPosOnCurveAsTime()
+                local pointIndex = self.CurrentCurve:AddPoint( time )
+                self:UpdateHandles()
+
+                self:OnHandleSelected( self.MainHandles[ pointIndex ] )
+            else
+                -- Clicking on the background deselects all handles
+                self:DeselectAllHandles()
+            end
+        end
+
+        if self.IsBoxSelecting then
+            self:OnBoxSelectionEnded()
+        end
+    end
+
+    self.HeldMouseButtons[ mouseButton ] = nil
+    if mouseButton == MOUSE_LEFT then
+        self.LeftMouseDownX = nil
+        self.LeftMouseDownY = nil
+    elseif mouseButton == MOUSE_RIGHT then
+        self.RightMouseDownX = nil
+        self.RightMouseDownY = nil
     end
 end
 
-function PANEL:OnCursorEntered()
-    self:RequestFocus()
+-- The Esc key requires special handling
+function PANEL:HandleEscPressed()
+    if self:IsVisible() then
+        self:OnKeyCodePressed( KEY_ESCAPE )
+
+        -- Don't open the main menu if the editor is open
+        return false
+    end
 end
 
 -- Called when a key is pressed
----@param keycode KEY
+---@param keycode KEY|integer
 function PANEL:OnKeyCodePressed( keycode )
-    -- Delete Handles
-    if ( keycode == KEY_DELETE or keycode == KEY_BACKSPACE ) then
-        local handle = self.State.HoveredHandle
+    self.HeldKeys = self.HeldKeys or {}
 
-        -- Only delete Main Handles
-        if not handle or not handle.IsMainHandle then
+    if keycode == KEY_ESCAPE then
+        -- If there are keys down, cancel them
+        if table.Count( self.HeldKeys ) > 0 then
+            self.HeldKeys = nil
+            return
+        -- If esc is pressed without an action to cancel, deselect handles
+        elseif self.SelectedHandles then
+            self:DeselectAllHandles()
             return
         end
 
-        ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
-        local index = handle.Index
-
-        -- Can't delete the first or last handle
-        if index == 1 or index == #self.CurrentCurve.Points then
-            return
-        end
-
-        self.CurrentCurve:RemovePoint( handle.MainHandle.Index )
-        self:PopulateHandles()
-        self:PositionHandles()
+        -- Never consider Esc to be a held key
+        return
     end
+
+    self.HeldKeys[ keycode ] = true
+end
+
+-- Called when a key is released
+---@param keycode KEY|integer
+function PANEL:OnKeyCodeReleased( keycode )
+    if not self.HeldKeys then return end
+
+    -- Delete selected Handles
+    if ( keycode == KEY_DELETE or keycode == KEY_BACKSPACE ) then
+
+        local hadEdgeHandleSelected = false
+
+        for handle, _ in pairs( self.SelectedHandles ) do
+            ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
+            if not handle then continue end
+
+            -- Don't delete the first or last Main Handle
+            if handle.Index == 1 or handle.Index == #self.MainHandles then
+                hadEdgeHandleSelected = true
+                continue
+            end
+
+            self.CurrentCurve:RemovePoint( handle.Index )
+        end
+
+        -- Communicate to the user why some Handles were not deleted
+        if hadEdgeHandleSelected then
+            notification.AddLegacy( "You cannot delete a curve's first or last point!", NOTIFY_ERROR, 5 )
+        end
+
+        self:UpdateHandles()
+    end
+
+    self.HeldKeys[ keycode ] = nil
 end
 
 function PANEL:OnSizeChanged( width, height )
