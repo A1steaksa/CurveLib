@@ -127,7 +127,7 @@ function PANEL:Paint( width, height )
     drawBase.StartPanel( self )
 
     -- Background
-    drawBase.Rect( 0, 0, width, height, 0, Alignment.TopLeft, Color( 128, 128, 128 ) )
+    drawBase.FilledRect( 0, 0, width, height, 0, Alignment.TopLeft, Color( 128, 128, 128 ) )
 
     local x = 750
     local y = 300
