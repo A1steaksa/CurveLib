@@ -35,37 +35,53 @@ surface.CreateFont( fonts.Label, {
 } )
 --#endregion Fonts
 
--- The current state of the Graph's editor
----@class CurveLib.Editor.Graph.State
----@field IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
----@field IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
----@field IsDragging boolean Whether the user is currently dragging a Handle
----@field SiblingDistance number The distance between the dragged Handle's sibling Handle and their Main Handle
----@field HoveredHandle CurveLib.Editor.Graph.Handle.Base? The 
-
-
----@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
----@field Caches table
----@field State CurveLib.Editor.Graph.State
----@field MainHandles table<CurveLib.Editor.Graph.Handle.MainHandle>
----@field CurrentCurve CurveLib.Curve.Data
-local PANEL = {
-    MainHandles = {},
-    State = {
-        IsRotationMirrored = false,
-        IsDistanceMirrored = false,
-        IsDragging = false,
-        SiblingDistance = 0,
-        HoveredHandle = nil
-    },
-}
-
 -- For Colors used multiple times within the Graph
 local colors = {
     Text = Color( 22, 66, 91 ),
     Borders = Color( 22, 66, 91 ),
     Axes = Color( 22, 66, 91 )
 }
+
+---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
+---@field CurrentCurve CurveLib.Curve.Data The Curve currently being edited
+---@field MainHandles table<CurveLib.Editor.Graph.Handle.MainHandle> The Main Handles of the Graph
+---@field SelectedHandles table<CurveLib.Editor.Graph.Handle.MainHandle> The currently selected Main Handles
+---@field HoveredHandle CurveLib.Editor.Graph.Handle.Base? The Handle currently being hovered over
+---@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
+---@field HeldMouseButtons table<MOUSE|integer, boolean> The mouse buttons currently being held down
+---@field Caches table A table of cached values to improve performance
+---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
+---@field LeftMouseDownX integer The X coordinate of the cursor when the left mouse button was pressed
+---@field LeftMouseDownY integer The Y coordinate of the cursor when the left mouse button was pressed
+---@field RightMouseDownX integer The X coordinate of the cursor when the right mouse button was pressed
+---@field RightMouseDownY integer The Y coordinate of the cursor when the right mouse button was pressed
+---@field _IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+---@field _IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+---@field IsDraggingHandle boolean Whether the user is currently dragging a Handle
+---@field IsBoxSelecting boolean Whether the user is currently performing a box selection
+local PANEL = {
+    MainHandles = {},
+    _IsRotationMirrored = false,
+    _IsDistanceMirrored = false,
+    IsDraggingHandle = false,
+    IsBoxSelecting = false,
+    SiblingDistance = 0,
+    SelectedHandles = {},
+    HoveredHandle = nil
+}
+
+function PANEL:Init()
+    self:RequestFocus()
+    self:SetKeyboardInputEnabled( true )
+    self:SetMouseInputEnabled( true )
+
+    hook.Add( "OnPauseMenuShow", self, self.HandleEscPressed )
+end
+
+function PANEL:PostConnectionInit()
+    self:SetMirrorHandleDistance( true )
+    self:SetMirrorHandleRotation( true )
+end
 
 ---@param config CurveLib.Editor.Config.Graph
 function PANEL:SetConfig( config )
@@ -222,7 +238,6 @@ function PANEL:Paint( width, height )
     drawGraph = _G.CurveLib.GraphDraw or drawGraph
 
     local config = self.Config
-    local state = self.State
 
     local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
     local panelX, panelY = self:LocalToScreen( 0, 0 )
@@ -574,8 +589,14 @@ end
 
 -- Called when a Handle starts being dragged
 ---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
-function PANEL:OnDragStarted( handle )
-    self.State.IsDragging = true
+function PANEL:OnHandleDragStarted( handle )
+    self.IsDraggingHandle = true
+
+    if handle.IsMainHandle then
+        if not handle:IsSelected() then
+            self:OnHandleSelected( handle )
+        end
+    end
 
     if handle.IsSideHandle then
         local mainHandle = handle.MainHandle
@@ -584,23 +605,20 @@ function PANEL:OnDragStarted( handle )
         if siblingHandle then
             local mainHandleX, mainHandleY = self:PanelToNormalized( mainHandle:GetCenterPos() )
             local siblingHandleX, siblingHandleY = self:PanelToNormalized( siblingHandle:GetCenterPos() )
-    
-            self.State.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
+
+            self.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
         else
-            self.State.SiblingDistance = 0
+            self.SiblingDistance = 0
         end
     end
-
 end
-
 
 -- Called when a Handle stops being dragged
 ---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
-function PANEL:OnDragEnded( handle )
-    self.State.IsDragging = false
-    self.State.SiblingDistance = 0
+function PANEL:OnHandleDragEnded( handle )
+    self.IsDraggingHandle = false
+    self.SiblingDistance = 0
 end
-
 
 -- Called when a Main Handle is moved
 ---@param mainHandle CurveLib.Editor.Graph.Handle.MainHandle
@@ -660,8 +678,8 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     local mainHandle = sideHandle.MainHandle
     local siblingHandle = sideHandle.SiblingHandle
 
-    local isDistanceMirrored = self.State.IsDistanceMirrored
-    local isRotationMirrored = self.State.IsRotationMirrored
+    local isDistanceMirrored = self:IsHandleDistanceMirrored()
+    local isRotationMirrored = self:IsHandleRotationMirrored()
 
     -- Correct the side handle's proposed position
     local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, x, y )
@@ -696,7 +714,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
         if isDistanceMirrored then
             newSiblingDistance = math.sqrt( math.pow( mainToSideX, 2 ) + math.pow( mainToSideY, 2 ) )
         else
-            newSiblingDistance = self.State.SiblingDistance
+            newSiblingDistance = self.SiblingDistance
         end
 
         local newSiblingX = mainHandleX + math.cos( newSiblingAngle ) * newSiblingDistance
@@ -716,13 +734,13 @@ end
 -- Called externally when a handle is hovered
 ---@param handle CurveLib.Editor.Graph.Handle.Base
 function PANEL:OnHandleHoverStarted( handle )
-    self.State.HoveredHandle = handle
+    self.HoveredHandle = handle
 end
 
 -- Called externally when a handle no longer hovered
 ---@param handle CurveLib.Editor.Graph.Handle.Base
 function PANEL:OnHandleHoverEnded( handle )
-    self.State.HoveredHandle = nil
+    self.HoveredHandle = nil
 end
 
 -- Called when the graph is clicked
