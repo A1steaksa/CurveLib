@@ -166,9 +166,16 @@ list.Set( "DesktopWindows", "CurveEditor", {
     icon = "curvelib/logo.png",
     onewindow = true,
     init = function( icon, oldFrame )
-        -- We don't want to use their default DFrame, so just close it and create our own.
+        -- We don't want to use the default DFrame, so just close it and create our own.
         oldFrame:Close()
-        icon.Window = g_ContextMenu:Add( "CurveLib.Editor.Frame" )
+
+        vguihotload.Register( "CurveLib.Editor.Frame", function()
+            return vgui.Create( "CurveLib.Editor.Frame" )
+        end )
+
+        --vgui.Create( "CurveLib.Editor.Frame" )
+
+        g_ContextMenu:Close()
     end
 } )
 
