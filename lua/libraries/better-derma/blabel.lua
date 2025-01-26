@@ -77,8 +77,6 @@ end
 function PANEL:OnMousePressed( mouseCode )
 	if ( not self:IsEnabled() ) then return end
 
-	self:RequestFocus()
-
 	local config = self.BLabel.Config
 
 	if self.m_bDoubleClicking and mouseCode == MOUSE_LEFT and !dragndrop.IsDragging() then
