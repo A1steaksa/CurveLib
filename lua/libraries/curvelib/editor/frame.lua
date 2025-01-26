@@ -1,5 +1,15 @@
 require( "vguihotload" )
 
+local Default = {
+    FrameSize = {
+        MinWidth    = 750,
+        MinHeight   = 500,
+        Width       = 1000,
+        Height      = 750
+    },
+    SidebarWidth = 300
+}
+
 ---@class CurveLib.Editor.Frame.Panels
 ---@field MenuBar CurveLib.Editor.MenuBar.Panel?
 ---@field Sidebar CurveLib.Editor.Sidebar.Panel?
@@ -18,15 +28,50 @@ local FRAME = {
     }
 }
 
-local Default = {
-    FrameSize = {
-        MinWidth    = 750,
-        MinHeight   = 500,
-        Width       = 1000,
-        Height      = 750
-    },
-    SidebarWidth = 300
-}
+function FRAME:Init()
+    -- Create and configure our config table
+    self:InitConfig()
+
+    local derma = self.Panels
+
+    -- To make enabling and disabling the debug panel easier
+    local useDebugPanel = false
+    if useDebugPanel then
+        local debugPanel = vgui.Create( "CurveLib.Editor.TestingPanel", self )
+        debugPanel:Dock( FILL )
+    else
+        derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
+        derma.MenuBar:Dock( TOP )
+        derma.MenuBar:SetEditorFrame( self )
+
+        derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
+        derma.Sidebar:SetConfig( self.Config.SidebarConfig )
+        derma.Sidebar:Dock( RIGHT )
+        derma.Sidebar:SetEditorFrame( self )
+
+        derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel", self )
+        derma.Graph:SetConfig( self.Config.GraphConfig )
+        derma.Graph:Dock( FILL )
+        derma.Graph:SetEditorFrame( self )
+
+        derma.MenuBar:PostConnectionInit()
+        derma.Sidebar:PostConnectionInit()
+        derma.Graph:PostConnectionInit()
+    end
+
+    self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
+    self:SetMinWidth( Default.FrameSize.MinWidth )
+    self:SetMinHeight( Default.FrameSize.MinHeight )
+    self:InvalidateLayout( true )
+
+    self:SetSizable( true )
+    self:SetVisible( true )
+    self:Center()
+
+    self:MakePopup()
+    self:SetKeyboardInputEnabled( true )
+    self:SetMouseInputEnabled( true )
+end
 
 --- Opens an addon for editing
 function FRAME:OpenAddon( name )
@@ -80,45 +125,6 @@ end
 
 function FRAME:InitConfig()
     self.Config = CurveEditorGraphConfig()
-end
-
-function FRAME:Init()
-    -- Create and configure our config table
-    self:InitConfig()
-
-    local derma = self.Panels
-
-    -- To make enabling and disabling the debug panel easier
-    local useDebugPanel = false
-    if useDebugPanel then
-        local debugPanel = vgui.Create( "CurveLib.Editor.TestingPanel", self )
-        debugPanel:Dock( FILL )
-    else
-        derma.MenuBar = vgui.Create( "CurveLib.Editor.MenuBar.Panel", self )
-        derma.MenuBar:Dock( TOP )
-        derma.MenuBar:SetEditorFrame( self )
-
-        derma.Sidebar = vgui.Create( "CurveLib.Editor.Sidebar.Panel", self )
-        derma.Sidebar:SetConfig( self.Config.SidebarConfig )
-        derma.Sidebar:Dock( RIGHT )
-        derma.Sidebar:SetEditorFrame( self )
-
-        derma.Graph = vgui.Create( "CurveLib.Editor.Graph.Panel", self )
-        derma.Graph:SetConfig( self.Config.GraphConfig )
-        derma.Graph:Dock( FILL )
-        derma.Graph:SetEditorFrame( self )
-    end
-
-    self:SetSize( Default.FrameSize.Width, Default.FrameSize.Height )
-    self:SetMinWidth( Default.FrameSize.MinWidth )
-    self:SetMinHeight( Default.FrameSize.MinHeight )
-    self:InvalidateLayout( true )
-
-    self:SetSizable( true )
-    self:SetVisible( true )
-    self:Center()
-    self:SetMouseInputEnabled( true )
-    self:RequestFocus()
 end
 
 function FRAME:PreHotload()

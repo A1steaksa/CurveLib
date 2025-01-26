@@ -13,6 +13,11 @@ function PANEL:Init()
     self:ClearAllCaches()
 end
 
+--- Called after the panel has been initialized and its connections to siblings and parents have been made.
+--- This is the ideal place to do any post-initialization setup that requires the graph, sidebar, menu bar, etc. to be connected.
+function PANEL:PostConnectionInit()
+end
+
 --#region Parent/Sibling Getters and Setters
 
 ---@param editorFrame CurveLib.Editor.Frame
