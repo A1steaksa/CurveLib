@@ -289,4 +289,17 @@ function DRAW.CurveHovering()
     drawBase.FilledRect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
+function DRAW.BoxSelection( startX, startY, endX, endY )
+    local width = endX - startX
+    local height = endY - startY
+
+    startX, startY, width, height = curveUtils.MultiFloor( startX, startY, width, height )
+
+    -- Background
+    drawBase.FilledRect( startX, startY, width, height, 0, Alignment.TopLeft, Color( 0, 0, 200, 100 ) )
+
+    -- Border
+    drawBase.OutlinedRect( startX, startY, width, height, 0, Alignment.TopLeft, 1, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 ) )
+end
+
 return _G.CurveLib.GraphDraw
