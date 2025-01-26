@@ -85,7 +85,7 @@ end
 
 --#endregion Mesh Functions
 
--- Draws a rectangle with a given color and rotation.
+-- Draws a filled rectangle with a given color and rotation.
 ---@param x integer
 ---@param y integer
 ---@param width integer
@@ -93,7 +93,17 @@ end
 ---@param rotation number? The angle of the rectangle, in degrees [Default: 0]
 ---@param alignment CurveLib.Alignment? The alignment of the rectangle [Default: Top left]
 ---@param color Color? Default: `surface.GetDrawColor` or white if not set.
-function DRAW.Rect( x, y, width, height, rotation, alignment, color )
+function DRAW.FilledRect( x, y, width, height, rotation, alignment, color )
+    -- Handle negative width and height
+    if width < 0 then
+        x = x + width
+        width = -width
+    end
+    if height < 0 then
+        y = y + height
+        height = -height
+    end
+
     local r, g, b, a = 255, 255, 255, 255
     if color then
         r, g, b, a = color:Unpack()
@@ -138,6 +148,48 @@ function DRAW.Rect( x, y, width, height, rotation, alignment, color )
             mesh.Position( topLeft )
             mesh.AdvanceVertex()
         DRAW.EndMesh()
+    cam.PopModelMatrix()
+end
+
+-- Draws the outline of a rectangle
+---@param x integer
+---@param y integer
+---@param width integer
+---@param height integer
+---@param rotation number? The angle of the rectangle, in degrees [Default: 0]
+---@param rectAlignment CurveLib.Alignment? The alignment of the rectangle [Default: Top left]
+---@param lineWidth number The width of the outline, in pixels
+---@param lineAlignment CurveLib.Alignment.Perimeter? Controls which side of the rectangle's border the lines should be drawn. [Default: Outside]
+---@param color Color? Default: `surface.GetDrawColor` or white if not set.
+function DRAW.OutlinedRect( x, y, width, height, rotation, rectAlignment, lineWidth, lineAlignment, color )
+    local x, y, width, height, halfWidth, halfHeight = curveUtils.MultiFloor( x, y, width, height, width / 2, height / 2 )
+    local topRight, bottomRight, bottomLeft, topLeft = curveUtils.GetRectangleCornerOffsets( width, height, 0 )
+    local alignOffsetX, alignOffsetY = curveUtils.GetAlignmentOffset( width, height, rectAlignment or Alignment.TopLeft, true )
+
+    local newMatrix = Matrix()
+
+    -- 3. Move to our draw position
+    newMatrix:Translate( Vector( x, y ) )
+
+    -- 2. Apply rotation around 0,0
+    newMatrix:Rotate( Angle( 0, rotation, 0 ) )
+
+    -- 1. Offset alignment while we're at 0,0
+    newMatrix:Translate( Vector( alignOffsetX + halfWidth, alignOffsetY + halfHeight ) )
+
+    render.SetColorMaterial()
+    cam.PushModelMatrix( newMatrix, true )
+        -- Right
+        DRAW.Line( topRight.x, topRight.y, bottomRight.x, bottomRight.y, lineWidth, lineAlignment, color )
+
+        -- Bottom
+        DRAW.Line( bottomRight.x, bottomRight.y, bottomLeft.x, bottomLeft.y, lineWidth, lineAlignment, color )
+
+        -- Left
+        DRAW.Line( bottomLeft.x, bottomLeft.y, topLeft.x, topLeft.y, lineWidth, lineAlignment, color )
+
+        -- Top
+        DRAW.Line( topLeft.x, topLeft.y, topRight.x, topRight.y, lineWidth, lineAlignment, color )
     cam.PopModelMatrix()
 end
 

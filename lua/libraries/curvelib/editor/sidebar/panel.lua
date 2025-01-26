@@ -59,7 +59,7 @@ function PANEL:Paint( width, height )
 
     drawBasic.StartPanel( self )
 
-    drawBasic.Rect( 0, 0, width, height, 0, Alignment.TopLeft, self.Config.BackgroundColor )
+    drawBasic.FilledRect( 0, 0, width, height, 0, Alignment.TopLeft, self.Config.BackgroundColor )
 
     drawBasic.EndPanel()
 end

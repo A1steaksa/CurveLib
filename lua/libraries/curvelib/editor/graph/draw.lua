@@ -153,8 +153,8 @@ function DRAW.RecentEvaluation( curve )
     local y = interiorY + interiorHeight - ( curve.lastOutput.y * interiorHeight )
 
     drawBase.Line( interiorX, y, interiorX + interiorWidth, y, 1, HorizontalAlignment.Center, Color( 255, 0, 0, 255 ) )
-    drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
-    drawBase.Rect( interiorX, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
+    drawBase.FilledRect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
+    drawBase.FilledRect( interiorX, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
 -- Draws the exterior of the Graph, which includes the Axes, Labels, and Number Lines but not the curve itself
@@ -193,7 +193,7 @@ function DRAW.GraphExterior()
     local verticalLabelY = interiorY + math.floor( interiorHeight / 2 )
 
     -- Background
-    drawBase.Rect( x, y, width, height, 0, Alignment.TopLeft,config.BackgroundColor )
+    drawBase.FilledRect( x, y, width, height, 0, Alignment.TopLeft,config.BackgroundColor )
 
     do -- Horizontal Axis Line
         local rightBorderOffset = rightBorder.Enabled and math.max( rightBorder.Thickness, 1 ) or 0
@@ -284,9 +284,9 @@ end
 function DRAW.CurveHovering()
     local config, graph = DRAW.UnpackEntry()
 
-    local _, _, x, y = graph:GetMousePosOnCurve()
+    local _, _, x, y = graph:GetCursorPosOnCurveAsTime()
 
-    drawBase.Rect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
+    drawBase.FilledRect( x, y, 10, 10, 0, Alignment.Center, Color( 255, 0, 0, 255 ) )
 end
 
 return _G.CurveLib.GraphDraw

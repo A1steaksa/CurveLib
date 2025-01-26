@@ -24,7 +24,7 @@ local function DrawAlignmentTest( text, x, y, width, height, rotation, scale, al
     local backgroundRectColor = Color( 100, 100, 100 )
 
     -- Background Rectangle
-    drawBase.Rect( x, y, width, height, rotation, alignment, backgroundRectColor )
+    drawBase.FilledRect( x, y, width, height, rotation, alignment, backgroundRectColor )
 
     -- Text 
     drawBase.Text( text, x, y, rotation, scale, alignment, textColor )
