@@ -12,6 +12,8 @@ local PANEL = {}
 ---@param categoryList DCategoryList
 function PANEL:AddSettingsPanel( categoryList )
 
+    local settingsPanel = categoryList:Add( "Tool Settings" )
+
     self.MirrorRotationCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
     self.MirrorRotationCheckbox:SetText( "Mirror Handle Rotation" )
     self.MirrorRotationCheckbox:SetTextColor( Color( 0, 0, 0 ) )
