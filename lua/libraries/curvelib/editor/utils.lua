@@ -7,6 +7,14 @@ end
 
 --#region Alignment Enums
 
+---@enum CurveLib.Alignment.Perimeter
+PerimeterAlignment = {
+    Inside  = 1,
+    Center  = 2,
+    Outside = 3
+}
+
+
 ---@enum CurveLib.Alignment.Horizontal
 HorizontalAlignment = {
     Left   = 4,
