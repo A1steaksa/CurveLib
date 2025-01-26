@@ -390,7 +390,7 @@ end
 ---@return number distance The distance between the point and the closest point on the curve
 ---@return integer x The X coordinate of the closest point on the curve, in panel-relative coordinates
 ---@return integer y The Y coordinate of the closest point on the curve, in panel-relative coordinates
-function PANEL:GetMousePosOnCurve()
+function PANEL:GetCursorPosOnCurveAsTime()
     if not self.Config.Caches.MousePosOnCurve then
         local time, distance, x, y = self:GetClosestPointOnCurve( self:CursorPos() )
         self.Config.Caches.MousePosOnCurve = {
