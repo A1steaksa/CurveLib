@@ -4,28 +4,30 @@ require( "vguihotload" )
 local drawBasic
 
 ---@class CurveLib.Editor.Sidebar.Panel : CurveLib.Editor.PanelBase
+---@field MirrorRotationCheckbox DCheckBoxLabel
+---@field MirrorDistanceCheckbox DCheckBoxLabel
 ---@field CurveTree DTree
 local PANEL = {}
 
 ---@param categoryList DCategoryList
 function PANEL:AddSettingsPanel( categoryList )
 
-    local settingsPanel = categoryList:Add( "Tool Settings" )
-
-    local mirrorRotationCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
-    mirrorRotationCheckbox:SetText( "Mirror Handle Rotation" )
-    mirrorRotationCheckbox:SetTextColor( Color( 0, 0, 0 ) )
-    mirrorRotationCheckbox:Dock( TOP )
-    mirrorRotationCheckbox.OnChange = function ( value )
-        self:GetGraph().State.IsRotationMirrored = value
+    self.MirrorRotationCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
+    self.MirrorRotationCheckbox:SetText( "Mirror Handle Rotation" )
+    self.MirrorRotationCheckbox:SetTextColor( Color( 0, 0, 0 ) )
+    self.MirrorRotationCheckbox:Dock( TOP )
+    self.MirrorRotationCheckbox.OnChange = function ( value )
+        -- Set the value directly to avoid circular calls
+        self:GetGraph()._IsRotationMirrored = value
     end
 
-    local mirrorDistanceCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
-    mirrorDistanceCheckbox:SetText( "Mirror Handle Distance" )
-    mirrorDistanceCheckbox:SetTextColor( Color( 0, 0, 0 ) )
-    mirrorDistanceCheckbox:Dock( TOP )
-    mirrorDistanceCheckbox.OnChange = function ( value )
-        self:GetGraph().State.IsDistanceMirrored = value
+    self.MirrorDistanceCheckbox = vgui.Create( "DCheckBoxLabel", settingsPanel )
+    self.MirrorDistanceCheckbox:SetText( "Mirror Handle Distance" )
+    self.MirrorDistanceCheckbox:SetTextColor( Color( 0, 0, 0 ) )
+    self.MirrorDistanceCheckbox:Dock( TOP )
+    self.MirrorDistanceCheckbox.OnChange = function ( value )
+        -- Set the value directly to avoid circular calls
+        self:GetGraph()._IsDistanceMirrored = value
     end
 end
 
