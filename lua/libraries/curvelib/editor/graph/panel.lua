@@ -93,7 +93,7 @@ function PANEL:SetConfig( config )
         local handle = config.Handles.Main
 
         local handleColor = Color( 129, 195, 215, 255 )
-        local handleRadius = 5
+        local handleRadius = 10
 
         local idle = handle.Idle
         idle.Color = handleColor
@@ -118,7 +118,7 @@ function PANEL:SetConfig( config )
         local handle = config.Handles.Side
 
         local handleColor = Color( 6, 196, 239, 255 )
-        local handleRadius = 3
+        local handleRadius = 10
 
         local idle = handle.Idle
         idle.Color = handleColor
@@ -142,13 +142,13 @@ function PANEL:SetConfig( config )
     do -- Handle Lines
         local line = config.Handles.Line
         line.Color = Color( 35, 80, 91 )
-        line.Thickness = 1.5
+        line.Thickness = 5
     end
 
     do -- Curve
         local curve = self.Config.Curve
         curve.Color = Color( 47, 102, 144 )
-        curve.Thickness = 2
+        curve.Thickness = 7
         curve.HoverSize = 10
         curve.VertexCount = 80
     end
