@@ -76,6 +76,7 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 -- The settings for the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph
 ---@field BackgroundColor Color
+---@field DragDistanceThreshold integer The distance, in pixels, that the cursor must move while the mouse button is pressed over a Handle before it is considered "dragged".
 ---@field Borders CurveLib.Editor.Config.Graph.Borders
 ---@field Handles CurveLib.Editor.Config.Graph.Handles
 ---@field Curve CurveLib.Editor.Config.Graph.Curve
@@ -95,6 +96,8 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 
 -- The Handles of the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph.Handles
+---@field SelectedOutlineThickness integer The thickness, in pixels, of the outline that appears around a Handle when it is selected.
+---@field SelectedOutlineColor Color The color of the outline that appears around a Handle when it is selected.
 ---@field Main CurveLib.Editor.Config.Graph.Handles.Handle
 ---@field Side CurveLib.Editor.Config.Graph.Handles.Handle
 ---@field Line CurveLib.Editor.Config.Graph.HandleLine
@@ -176,13 +179,14 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 
 --#endregion Class Definitions
 
---#region Implementations
+--#region Default Class Implementations
 
---#region Graph Config
+--#region Default Graph Config
 
 ---@class CurveLib.Editor.Config.Graph
 local GRAPH = {
     BackgroundColor = DefaultColors.GraphBackground,
+    DragDistanceThreshold = 3,
 
     Borders = {
         Right = {
@@ -198,6 +202,8 @@ local GRAPH = {
     },
 
     Handles = {
+        SelectedOutlineThickness = 3,
+        SelectedOutlineColor = Color( 255, 255, 255 ),
         Main = {
             Idle = {
                 Color = DefaultColors.Handle,
@@ -248,7 +254,7 @@ local GRAPH = {
         Color = DefaultColors.Curve,
         Thickness = 8,
         VertexCount = 100,
-        HoverSize = 10,
+        HoverSize = 8,
         Hover = {
             Color = DefaultColors.Point,
             Thickness = 3,
@@ -312,6 +318,485 @@ local GRAPH = {
     ---@field NumberLineTextSize { Large: { Width: integer, Height: integer }, Small: { Width: integer, Height: integer } }
     Caches = {}
 }
+
+--#region Graph Config Functions
+
+-- Returns the background color of the Graph
+---@return Color
+function GRAPH:GetBackgroundColor()
+    return self.BackgroundColor
+end
+
+-- Sets the background color of the Graph
+---@param color Color
+function GRAPH:SetBackgroundColor( color )
+    self.BackgroundColor = color
+end
+
+--#region Border Functions
+
+-- Returns whether the right border of the Graph is enabled
+---@return boolean
+function GRAPH:GetRightBorderEnabled()
+    return self.Borders.Right.Enabled
+end
+
+-- Sets whether the right border of the Graph is enabled
+---@param enabled boolean
+function GRAPH:SetRightBorderEnabled( enabled )
+    self.Borders.Right.Enabled = enabled
+end
+
+-- Returns the thickness of the right border of the Graph
+---@return integer
+function GRAPH:GetRightBorderThickness()
+    return self.Borders.Right.Thickness
+end
+
+-- Sets the thickness of the right border of the Graph
+---@param thickness integer
+function GRAPH:SetRightBorderThickness( thickness )
+    self.Borders.Right.Thickness = thickness
+end
+
+-- Returns the color of the right border of the Graph
+---@return Color
+function GRAPH:GetRightBorderColor()
+    return self.Borders.Right.Color
+end
+
+-- Sets the color of the right border of the Graph
+---@param color Color
+function GRAPH:SetRightBorderColor( color )
+    self.Borders.Right.Color = color
+end
+
+-- Returns whether the top border of the Graph is enabled
+---@return boolean
+function GRAPH:GetTopBorderEnabled()
+    return self.Borders.Top.Enabled
+end
+
+-- Sets whether the top border of the Graph is enabled
+---@param enabled boolean
+function GRAPH:SetTopBorderEnabled( enabled )
+    self.Borders.Top.Enabled = enabled
+end
+
+-- Returns the thickness of the top border of the Graph
+---@return integer
+function GRAPH:GetTopBorderThickness()
+    return self.Borders.Top.Thickness
+end
+
+-- Sets the thickness of the top border of the Graph
+---@param thickness integer
+function GRAPH:SetTopBorderThickness( thickness )
+    self.Borders.Top.Thickness = thickness
+end
+
+-- Returns the color of the top border of the Graph
+---@return Color
+function GRAPH:GetTopBorderColor()
+    return self.Borders.Top.Color
+end
+
+-- Sets the color of the top border of the Graph
+---@param color Color
+function GRAPH:SetTopBorderColor( color )
+    self.Borders.Top.Color = color
+end
+
+--#endregion Border Functions
+
+--#region Handle Functions
+
+-- Returns the distance, in pixels, that the cursor must move while the mouse button is pressed before it is considered "dragged".
+---@return integer
+function GRAPH:GetDragDistanceThreshold()
+    return self.DragDistanceThreshold
+end
+
+-- Sets the distance, in pixels, that the cursor must move while the mouse button is pressed before it is considered "dragged".
+---@param distance integer
+function GRAPH:SetDragDistanceThreshold( distance )
+    self.DragDistanceThreshold = distance
+end
+
+-- Returns the thickness, in pixels, of the outline that appears around a Handle when it is selected.
+---@return integer
+function GRAPH:GetSelectedOutlineThickness()
+    return self.Handles.SelectedOutlineThickness
+end
+
+-- Sets the thickness, in pixels, of the outline that appears around a Handle when it is selected.
+---@param thickness integer
+function GRAPH:SetSelectedOutlineThickness( thickness )
+    self.Handles.SelectedOutlineThickness = thickness
+end
+
+-- Returns the color of the outline that appears around a Handle when it is selected.
+---@return Color
+function GRAPH:GetSelectedOutlineColor()
+    return self.Handles.SelectedOutlineColor
+end
+
+-- Sets the color of the outline that appears around a Handle when it is selected.
+---@param color Color
+function GRAPH:SetSelectedOutlineColor( color )
+    self.Handles.SelectedOutlineColor = color
+end
+
+--#region Main Handle Functions
+
+--#region Main Handle Idle Functions
+
+-- Returns the color of the Main Handle when it is in the Idle state.
+---@return Color
+function GRAPH:GetMainHandleIdleColor()
+    return self.Handles.Main.Idle.Color
+end
+
+-- Sets the color of the Main Handle when it is in the Idle state.
+---@param color Color
+function GRAPH:SetMainHandleIdleColor( color )
+    self.Handles.Main.Idle.Color = color
+end
+
+-- Returns the rate at which their Main Handle changes color when transitioning to the Idle state.
+---@return number
+function GRAPH:GetMainHandleIdleColorChangeRate()
+    return self.Handles.Main.Idle.ColorChangeRate
+end
+
+-- Sets the rate at which the Main Handle's color changes when transitioning to the Idle state.
+---@param rate number
+function GRAPH:SetMainHandleIdleColorChangeRate( rate )
+    self.Handles.Main.Idle.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Main Handle when it is in the Idle state.
+---@return integer
+function GRAPH:GetMainHandleIdleRadius()
+    return self.Handles.Main.Idle.Radius
+end
+
+-- Sets the radius of the Main Handle when it is in the Idle state.
+---@param radius integer
+function GRAPH:SetMainHandleIdleRadius( radius )
+    self.Handles.Main.Idle.Radius = radius
+end
+
+-- Returns the rate at which the Main Handle's radius changes when transitioning to the Idle state.
+---@return number
+function GRAPH:GetMainHandleIdleRadiusChangeRate()
+    return self.Handles.Main.Idle.RadiusChangeRate
+end
+
+-- Sets the rate at which the Main Handle's radius changes when transitioning to the Idle state.
+---@param rate number
+function GRAPH:SetMainHandleIdleRadiusChangeRate( rate )
+    self.Handles.Main.Idle.RadiusChangeRate = rate
+end
+
+--#endregion Main Handle Idle Functions
+
+--#region Main Handle Hovered Functions
+
+-- Returns the color of the Main Handle when it is in the Hovered state.
+---@return Color
+function GRAPH:GetMainHandleHoveredColor()
+    return self.Handles.Main.Hovered.Color
+end
+
+-- Sets the color of the Main Handle when it is in the Hovered state.
+---@param color Color
+function GRAPH:SetMainHandleHoveredColor( color )
+    self.Handles.Main.Hovered.Color = color
+end
+
+-- Returns the rate at which the Main Handle's color changes when transitioning to the Hovered state.
+---@return number
+function GRAPH:GetMainHandleHoveredColorChangeRate()
+    return self.Handles.Main.Hovered.ColorChangeRate
+end
+
+-- Sets the rate at which the Main Handle's color changes when transitioning to the Hovered state.
+---@param rate number
+function GRAPH:SetMainHandleHoveredColorChangeRate( rate )
+    self.Handles.Main.Hovered.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Main Handle when it is in the Hovered state.
+---@return integer
+function GRAPH:GetMainHandleHoveredRadius()
+    return self.Handles.Main.Hovered.Radius
+end
+
+-- Sets the radius of the Main Handle when it is in the Hovered state.
+---@param radius integer
+function GRAPH:SetMainHandleHoveredRadius( radius )
+    self.Handles.Main.Hovered.Radius = radius
+end
+
+-- Returns the rate at which the Main Handle's radius changes when transitioning to the Hovered state.
+---@return number
+function GRAPH:GetMainHandleHoveredRadiusChangeRate()
+    return self.Handles.Main.Hovered.RadiusChangeRate
+end
+
+-- Sets the rate at which the Main Handle's radius changes when transitioning to the Hovered state.
+---@param rate number
+function GRAPH:SetMainHandleHoveredRadiusChangeRate( rate )
+    self.Handles.Main.Hovered.RadiusChangeRate = rate
+end
+
+--#endregion Main Handle Hovered Functions
+
+--#region Main Handle Dragged Functions
+
+-- Returns the color of the Main Handle when it is in the Dragged state.
+---@return Color
+function GRAPH:GetMainHandleDraggedColor()
+    return self.Handles.Main.Dragged.Color
+end
+
+-- Sets the color of the Main Handle when it is in the Dragged state.
+---@param color Color
+function GRAPH:SetMainHandleDraggedColor( color )
+    self.Handles.Main.Dragged.Color = color
+end
+
+-- Returns the rate at which the Main Handle's color changes when transitioning to the Dragged state.
+---@return number
+function GRAPH:GetMainHandleDraggedColorChangeRate()
+    return self.Handles.Main.Dragged.ColorChangeRate
+end
+
+-- Sets the rate at which the Main Handle's color changes when transitioning to the Dragged state.
+---@param rate number
+function GRAPH:SetMainHandleDraggedColorChangeRate( rate )
+    self.Handles.Main.Dragged.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Main Handle when it is in the Dragged state.
+---@return integer
+function GRAPH:GetMainHandleDraggedRadius()
+    return self.Handles.Main.Dragged.Radius
+end
+
+-- Sets the radius of the Main Handle when it is in the Dragged state.
+---@param radius integer
+function GRAPH:SetMainHandleDraggedRadius( radius )
+    self.Handles.Main.Dragged.Radius = radius
+end
+
+-- Returns the rate at which the Main Handle's radius changes when transitioning to the Dragged state.
+---@return number
+function GRAPH:GetMainHandleDraggedRadiusChangeRate()
+    return self.Handles.Main.Dragged.RadiusChangeRate
+end
+
+-- Sets the rate at which the Main Handle's radius changes when transitioning to the Dragged state.
+---@param rate number
+function GRAPH:SetMainHandleDraggedRadiusChangeRate( rate )
+    self.Handles.Main.Dragged.RadiusChangeRate = rate
+end
+
+--#endregion Main Handle Dragged Functions
+
+--#endregion Main Handle Functions
+
+--#region Side Handle Functions
+
+--#region Side Handle Idle Functions
+
+-- Returns the color of the Side Handle when it is in the Idle state.
+---@return Color
+function GRAPH:GetSideHandleIdleColor()
+    return self.Handles.Side.Idle.Color
+end
+
+-- Sets the color of the Side Handle when it is in the Idle state.
+---@param color Color
+function GRAPH:SetSideHandleIdleColor( color )
+    self.Handles.Side.Idle.Color = color
+end
+
+-- Returns the rate at which the Side Handle's color changes when transitioning to the Idle state.
+---@return number
+function GRAPH:GetSideHandleIdleColorChangeRate()
+    return self.Handles.Side.Idle.ColorChangeRate
+end
+
+-- Sets the rate at which the Side Handle's color changes when transitioning to the Idle state.
+---@param rate number
+function GRAPH:SetSideHandleIdleColorChangeRate( rate )
+    self.Handles.Side.Idle.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Side Handle when it is in the Idle state.
+---@return integer
+function GRAPH:GetSideHandleIdleRadius()
+    return self.Handles.Side.Idle.Radius
+end
+
+-- Sets the radius of the Side Handle when it is in the Idle state.
+---@param radius integer
+function GRAPH:SetSideHandleIdleRadius( radius )
+    self.Handles.Side.Idle.Radius = radius
+end
+
+-- Returns the rate at which the Side Handle's radius changes when transitioning to the Idle state.
+---@return number
+function GRAPH:GetSideHandleIdleRadiusChangeRate()
+    return self.Handles.Side.Idle.RadiusChangeRate
+end
+
+-- Sets the rate at which the Side Handle's radius changes when transitioning to the Idle state.
+---@param rate number
+function GRAPH:SetSideHandleIdleRadiusChangeRate( rate )
+    self.Handles.Side.Idle.RadiusChangeRate = rate
+end
+
+--#endregion Side Handle Idle Functions
+
+--#region Side Handle Hovered Functions
+
+-- Returns the color of the Side Handle when it is in the Hovered state.
+---@return Color
+function GRAPH:GetSideHandleHoveredColor()
+    return self.Handles.Side.Hovered.Color
+end
+
+-- Sets the color of the Side Handle when it is in the Hovered state.
+---@param color Color
+function GRAPH:SetSideHandleHoveredColor( color )
+    self.Handles.Side.Hovered.Color = color
+end
+
+-- Returns the rate at which the Side Handle's color changes when transitioning to the Hovered state.
+---@return number
+function GRAPH:GetSideHandleHoveredColorChangeRate()
+    return self.Handles.Side.Hovered.ColorChangeRate
+end
+
+-- Sets the rate at which the Side Handle's color changes when transitioning to the Hovered state.
+---@param rate number
+function GRAPH:SetSideHandleHoveredColorChangeRate( rate )
+    self.Handles.Side.Hovered.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Side Handle when it is in the Hovered state.
+---@return integer
+function GRAPH:GetSideHandleHoveredRadius()
+    return self.Handles.Side.Hovered.Radius
+end
+
+-- Sets the radius of the Side Handle when it is in the Hovered state.
+---@param radius integer
+function GRAPH:SetSideHandleHoveredRadius( radius )
+    self.Handles.Side.Hovered.Radius = radius
+end
+
+-- Returns the rate at which the Side Handle's radius changes when transitioning to the Hovered state.
+---@return number
+function GRAPH:GetSideHandleHoveredRadiusChangeRate()
+    return self.Handles.Side.Hovered.RadiusChangeRate
+end
+
+-- Sets the rate at which the Side Handle's radius changes when transitioning to the Hovered state.
+---@param rate number
+function GRAPH:SetSideHandleHoveredRadiusChangeRate( rate )
+    self.Handles.Side.Hovered.RadiusChangeRate = rate
+end
+
+--#endregion Side Handle Hovered Functions
+
+--#region Side Handle Dragged Functions
+
+-- Returns the color of the Side Handle when it is in the Dragged state.
+---@return Color
+function GRAPH:GetSideHandleDraggedColor()
+    return self.Handles.Side.Dragged.Color
+end
+
+-- Sets the color of the Side Handle when it is in the Dragged state.
+---@param color Color
+function GRAPH:SetSideHandleDraggedColor( color )
+    self.Handles.Side.Dragged.Color = color
+end
+
+-- Returns the rate at which the Side Handle's color changes when transitioning to the Dragged state.
+---@return number
+function GRAPH:GetSideHandleDraggedColorChangeRate()
+    return self.Handles.Side.Dragged.ColorChangeRate
+end
+
+-- Sets the rate at which the Side Handle's color changes when transitioning to the Dragged state.
+---@param rate number
+function GRAPH:SetSideHandleDraggedColorChangeRate( rate )
+    self.Handles.Side.Dragged.ColorChangeRate = rate
+end
+
+-- Returns the radius of the Side Handle when it is in the Dragged state.
+---@return integer
+function GRAPH:GetSideHandleDraggedRadius()
+    return self.Handles.Side.Dragged.Radius
+end
+
+-- Sets the radius of the Side Handle when it is in the Dragged state.
+---@param radius integer
+function GRAPH:SetSideHandleDraggedRadius( radius )
+    self.Handles.Side.Dragged.Radius = radius
+end
+
+-- Returns the rate at which the Side Handle's radius changes when transitioning to the Dragged state.
+---@return number
+function GRAPH:GetSideHandleDraggedRadiusChangeRate()
+    return self.Handles.Side.Dragged.RadiusChangeRate
+end
+
+-- Sets the rate at which the Side Handle's radius changes when transitioning to the Dragged state.
+---@param rate number
+function GRAPH:SetSideHandleDraggedRadiusChangeRate( rate )
+    self.Handles.Side.Dragged.RadiusChangeRate = rate
+end
+
+--#endregion Side Handle Dragged Functions
+
+--#endregion Side Handle Functions
+
+--#region Handle Line Functions
+
+-- Returns the color of the line between Main and Side Handles
+---@return Color
+function GRAPH:GetHandleLineColor()
+    return self.Handles.Line.Color
+end
+
+-- Sets the color of the line between Main and Side Handles
+---@param color Color
+function GRAPH:SetHandleLineColor( color )
+    self.Handles.Line.Color = color
+end
+
+-- Returns the thickness of the line between Main and Side Handles
+---@return integer
+function GRAPH:GetHandleLineThickness()
+    return self.Handles.Line.Thickness
+end
+
+-- Sets the thickness of the line between Main and Side Handles
+---@param thickness integer
+function GRAPH:SetHandleLineThickness( thickness )
+    self.Handles.Line.Thickness = thickness
+end
+
+
+--#endregion Handle Line Functions
+
+--#endregion Handle Functions
 
 --#region Cache Functions
 
@@ -385,18 +870,20 @@ function GRAPH:GetLabelSize( axis )
     return size.Width, size.Height
 end
 
---#endregion Graph Config
+--#endregion Graph Config Functions
 
---#region Sidebar Config
+--#endregion Default Graph Config
+
+--#region Default Sidebar Config
 
 ---@class CurveLib.Editor.Config.Sidebar
 local SIDEBAR = {
     BackgroundColor = DefaultColors.SidebarBackground
 }
 
---#endregion Sidebar Config
+--#endregion Default Sidebar Config
 
---#endregion Implementations
+--#endregion Default Class Implementations
 
 --#region Metatables
 
