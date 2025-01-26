@@ -34,6 +34,7 @@ local PANEL = {}
 function PANEL:Init()
     self.GraphPanel = self:GetParent() --[[@as GraphPanel]]
     self:SetSelectable( true )
+    self:SetPaintedManually( true )
 end
 
 ---@param handleConfig HandleConfig The Handle's configuration

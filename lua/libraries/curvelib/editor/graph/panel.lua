@@ -259,6 +259,18 @@ function PANEL:Paint( width, height )
 
         -- Most recently evaluated point
         drawGraph.RecentEvaluation( self.CurrentCurve )
+
+        -- Handles
+        for _, mainHandle in ipairs( self.MainHandles ) do
+            mainHandle:PaintManual()
+            if mainHandle.LeftHandle then
+                mainHandle.LeftHandle:PaintManual()
+            end
+            if mainHandle.RightHandle then
+                mainHandle.RightHandle:PaintManual()
+            end
+        end
+
     end
 
     if ( self.IsBoxSelecting ) then
