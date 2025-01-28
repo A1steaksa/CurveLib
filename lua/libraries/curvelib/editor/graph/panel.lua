@@ -974,17 +974,10 @@ function PANEL:OnKeyCodePressed( keycode )
         -- If there are keys down, cancel them
         if table.Count( self.HeldKeys ) > 0 then
             self.HeldKeys = nil
-            return
         elseif self.IsBoxSelecting then
             self:OnBoxSelectionEnded( true )
-            return
-        elseif self.IsDraggingHandle then
-
-            -- TODO: move handles back where they were
-
         elseif self.SelectedHandles then
             self:DeselectAllHandles()
-            return
         end
 
         -- Never consider Esc to be a held key
