@@ -144,6 +144,13 @@ function FRAME:PreHotload()
     data.PreMaximizePos = self.BFrame.PreMaximizePos
     data.CurrentAddonName = self.CurrentAddonName
     data.CurrentAddonCurveName = self.CurrentAddonCurveName
+    data.Curve = self.CurrentCurve
+
+    data.SelectedIndices = {}
+    ---@param handle CurveLib.Editor.Graph.Handle.MainHandle
+    for handle, _ in pairs( self.Panels.Graph.SelectedHandles ) do
+        data.SelectedIndices[ handle.Index ] = true
+    end
 
     return data
 end
@@ -164,6 +171,16 @@ function FRAME:PostHotload( data )
 
         if data.CurrentAddonCurveName then
             self:OpenAddonCurve( data.CurrentAddonCurveName )
+        end
+    end
+
+    if data.Curve then
+        self:OpenCurve( data.Curve )
+    end
+
+    if data.SelectedIndices then
+        for index, _ in pairs( data.SelectedIndices ) do
+            self.Panels.Graph:OnHandleSelected( self.Panels.Graph.MainHandles[ index ] )
         end
     end
 end
