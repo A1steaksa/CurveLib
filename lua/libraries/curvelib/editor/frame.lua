@@ -103,6 +103,14 @@ function FRAME:OpenAddonCurve( curveName )
     self:OpenCurve( curve )
 end
 
+--- Opens a new curve for editing
+function FRAME:OpenNewCurve()
+    self:OpenCurve( CurveData(
+        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
+        CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
+    ) )
+end
+
 ---@param curve CurveLib.Curve.Data # The Curve to open for editing
 function FRAME:OpenCurve( curve )
     if not curve or not curve.IsCurve then

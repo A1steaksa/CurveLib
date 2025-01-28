@@ -166,10 +166,7 @@ end
 --#region New
 
 function PANEL:DoFileNew()
-    self.EditorFrame:OpenCurve( CurveData(
-        CurvePoint( Vector( 0, 0 ), nil, Vector( 0.25, 0.25 ) ),
-        CurvePoint( Vector( 1, 1 ), Vector( 0.75, 0.75 ), nil )
-    ) )
+    self.EditorFrame:OpenNewCurve()
 end
 
 function PANEL:DoFileNewFromTemplate()

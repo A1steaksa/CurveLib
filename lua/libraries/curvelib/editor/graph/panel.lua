@@ -622,6 +622,30 @@ function PANEL:DeselectAllHandles()
     end
 end
 
+function PANEL:DeleteSelectedHandles()
+    local hadEdgeHandleSelected = false
+
+    for handle, _ in pairs( self.SelectedHandles ) do
+        ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
+        if not handle then continue end
+
+        -- Don't delete the first or last Main Handle
+        if handle.Index == 1 or handle.Index == lastHandleIndex then
+            hadEdgeHandleSelected = true
+            continue
+        end
+
+        self.CurrentCurve:RemovePoint( handle.Index )
+    end
+
+    -- Communicate to the user why some Handles were not deleted
+    if hadEdgeHandleSelected then
+        notification.AddLegacy( "You cannot delete a curve's first or last point!", NOTIFY_ERROR, 5 )
+    end
+
+    self:UpdateHandles()
+end
+
 ---@param curve CurveLib.Curve.Data
 function PANEL:OpenCurve( curve )
     self.CurrentCurve = curve
@@ -688,6 +712,8 @@ function PANEL:OnHandleDragStarted( handle )
     self.IsDraggingHandle = true
 
     if handle.IsMainHandle then
+        self.HandleDragStartX, self.HandleDragStartY = handle:GetCenterPos()
+
         if not handle:IsSelected() then
             self:OnHandleSelected( handle )
         end
@@ -710,8 +736,11 @@ end
 
 -- Called when a Handle stops being dragged
 ---@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
-function PANEL:OnHandleDragEnded( handle )
+---@param wasCanceled boolean? Whether the drag was canceled
+function PANEL:OnHandleDragEnded( handle, wasCanceled )
     self.IsDraggingHandle = false
+    self.HandleDragStartX = nil
+    self.HandleDragStartY = nil
     self.SiblingDistance = 0
 end
 
@@ -842,6 +871,11 @@ end
 function PANEL:OnBoxSelectionEnded( isCanceled )
     self.IsBoxSelecting = false
     self:MouseCapture( false )
+
+    if isCanceled then
+        self.LeftMouseDownX = nil
+        self.LeftMouseDownY = nil
+    end
 end
 
 -- Called externally when a handle is hovered
@@ -876,7 +910,7 @@ function PANEL:OnMouseReleased( mouseButton )
     self.HeldMouseButtons = self.HeldMouseButtons or {}
 
     local isLeftMouseDown = self.HeldMouseButtons[ MOUSE_LEFT ]
-    if mouseButton == MOUSE_LEFT and isLeftMouseDown then
+    if mouseButton == MOUSE_LEFT and isLeftMouseDown and self.LeftMouseDownX and self.LeftMouseDownY then
         local leftMouseUpX, leftMouseUpY = self:CursorPos()
         local dragDistance = math.sqrt( math.pow( leftMouseUpX - self.LeftMouseDownX, 2 ) + math.pow( leftMouseUpY - self.LeftMouseDownY, 2 ) )
         local wasClick = dragDistance < self.Config:GetDragDistanceThreshold()
@@ -910,6 +944,12 @@ function PANEL:OnMouseReleased( mouseButton )
     end
 end
 
+---@param keycode KEY|integer
+---@return boolean # True if the key is currently held down, false otherwise
+function PANEL:IsKeyDown( keycode )
+    return self.HeldKeys and self.HeldKeys[ keycode ]
+end
+
 -- The Esc key requires special handling
 function PANEL:HandleEscPressed()
     if self:IsVisible() then
@@ -925,12 +965,23 @@ end
 function PANEL:OnKeyCodePressed( keycode )
     self.HeldKeys = self.HeldKeys or {}
 
+    local ctrl = self:IsKeyDown( KEY_LCONTROL ) or self:IsKeyDown( KEY_RCONTROL )
+    local shift = self:IsKeyDown( KEY_LSHIFT ) or self:IsKeyDown( KEY_RSHIFT )
+    local alt = self:IsKeyDown( KEY_LALT ) or self:IsKeyDown( KEY_RALT )
+
+    -- ESC - Cancel ongoing actions
     if keycode == KEY_ESCAPE then
         -- If there are keys down, cancel them
         if table.Count( self.HeldKeys ) > 0 then
             self.HeldKeys = nil
             return
-        -- If esc is pressed without an action to cancel, deselect handles
+        elseif self.IsBoxSelecting then
+            self:OnBoxSelectionEnded( true )
+            return
+        elseif self.IsDraggingHandle then
+
+            -- TODO: move handles back where they were
+
         elseif self.SelectedHandles then
             self:DeselectAllHandles()
             return
@@ -938,6 +989,11 @@ function PANEL:OnKeyCodePressed( keycode )
 
         -- Never consider Esc to be a held key
         return
+    end
+
+    -- CTRL + N - Open a new curve
+    if ctrl and keycode == KEY_N then
+        self.EditorFrame:OpenNewCurve()
     end
 
     self.HeldKeys[ keycode ] = true
@@ -948,30 +1004,8 @@ end
 function PANEL:OnKeyCodeReleased( keycode )
     if not self.HeldKeys then return end
 
-    -- Delete selected Handles
     if ( keycode == KEY_DELETE or keycode == KEY_BACKSPACE ) then
-
-        local hadEdgeHandleSelected = false
-
-        for handle, _ in pairs( self.SelectedHandles ) do
-            ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
-            if not handle then continue end
-
-            -- Don't delete the first or last Main Handle
-            if handle.Index == 1 or handle.Index == #self.MainHandles then
-                hadEdgeHandleSelected = true
-                continue
-            end
-
-            self.CurrentCurve:RemovePoint( handle.Index )
-        end
-
-        -- Communicate to the user why some Handles were not deleted
-        if hadEdgeHandleSelected then
-            notification.AddLegacy( "You cannot delete a curve's first or last point!", NOTIFY_ERROR, 5 )
-        end
-
-        self:UpdateHandles()
+        self:DeleteSelectedHandles()
     end
 
     self.HeldKeys[ keycode ] = nil
