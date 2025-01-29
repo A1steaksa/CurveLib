@@ -141,7 +141,7 @@ function PANEL:OnMouseReleased( mouseButton )
         self.GraphPanel:OnHandleDragEnded( self )
     else
         if mouseButton == MOUSE_LEFT then
-            self.GraphPanel:OnHandleSelected( self )
+            self.GraphPanel:SelectHandle( self )
         end
     end
 end

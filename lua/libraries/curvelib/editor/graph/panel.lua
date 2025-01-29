@@ -616,7 +616,7 @@ end
 function PANEL:DeselectAllHandles()
     for selectedHandle in pairs( self.SelectedHandles ) do
         if ( selectedHandle and selectedHandle ~= NULL and IsValid( selectedHandle ) ) then
-            self:OnHandleDeselected( selectedHandle )
+            self:DeselectHandle( selectedHandle )
         end
         self.SelectedHandles[ selectedHandle ] = nil
     end
@@ -662,19 +662,12 @@ end
 
 -- Called when a Handle is selected
 ---@param handle CurveLib.Editor.Graph.Handle.Base
-function PANEL:OnHandleSelected( handle )
+---@param addToSelection boolean? Whether to add the Handle to the current selection, rather than deselecting all other Handles [Default: false]
+function PANEL:SelectHandle( handle, addToSelection )
     if not handle.IsMainHandle then return end
 
-    local isMultiSelect = input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT )
-
-    -- Deselect all other handles if not multi-selecting
-    if not isMultiSelect then
-        for selectedHandle in pairs( self.SelectedHandles ) do
-            if ( selectedHandle and selectedHandle ~= NULL and IsValid( selectedHandle ) ) then
-                self:OnHandleDeselected( selectedHandle )
-            end
-            self.SelectedHandles[ selectedHandle ] = nil
-        end
+    if not addToSelection then
+        self:DeselectAllHandles()
     end
 
     handle:SetSelected( true )
@@ -691,7 +684,7 @@ end
 
 -- Called when a Handle is deselected
 ---@param handle CurveLib.Editor.Graph.Handle.Base
-function PANEL:OnHandleDeselected( handle )
+function PANEL:DeselectHandle( handle )
     if not handle.IsMainHandle then return end
 
     self.SelectedHandles[ handle ] = nil
@@ -715,7 +708,7 @@ function PANEL:OnHandleDragStarted( handle )
         self.HandleDragStartX, self.HandleDragStartY = handle:GetCenterPos()
 
         if not handle:IsSelected() then
-            self:OnHandleSelected( handle )
+            self:SelectHandle( handle )
         end
     end
 
@@ -922,7 +915,7 @@ function PANEL:OnMouseReleased( mouseButton )
                 local pointIndex = self.CurrentCurve:AddPoint( time )
                 self:UpdateHandles()
 
-                self:OnHandleSelected( self.MainHandles[ pointIndex ] )
+                self:SelectHandle( self.MainHandles[ pointIndex ] )
             else
                 -- Clicking on the background deselects all handles
                 self:DeselectAllHandles()
