@@ -977,6 +977,13 @@ function PANEL:OnKeyCodePressed( keycode )
         return
     end
 
+    -- CTRL + A - Select all handles
+    if ctrl and keycode == KEY_A then
+        for _, handle in ipairs( self.MainHandles ) do
+            self:SelectHandle( handle, true )
+        end
+    end
+
     -- CTRL + N - Open a new curve
     if ctrl and keycode == KEY_N then
         self.EditorFrame:OpenNewCurve()
