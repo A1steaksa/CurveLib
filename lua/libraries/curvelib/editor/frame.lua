@@ -180,7 +180,7 @@ function FRAME:PostHotload( data )
 
     if data.SelectedIndices then
         for index, _ in pairs( data.SelectedIndices ) do
-            self.Panels.Graph:SelectHandle( self.Panels.Graph.MainHandles[ index ] )
+            self.Panels.Graph:SelectHandle( self.Panels.Graph.MainHandles[ index ], true )
         end
     end
 end
