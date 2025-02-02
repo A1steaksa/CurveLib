@@ -137,6 +137,54 @@ function utils.GetRectangleCornerOffsets( width, height, rotation )
     end
 end
 
+-- Returns the bounding box of a set of handles
+---@param handles table<CurveLib.Editor.Graph.Handle.MainHandle, boolean>
+---@return integer startX, integer startY, integer width, integer height
+function utils.GetHandlesBoundingBox( handles )
+    local startX, startY, endX, endY
+
+    for handle, _ in pairs( handles ) do
+        ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
+
+        local mainX, mainY = handle:GetCenterPos()
+
+        local minX, minY = mainX, mainY
+        local maxX, maxY = mainX, mainY
+
+        if handle.LeftHandle then
+            local leftX, leftY = handle.LeftHandle:GetCenterPos()
+            minX = math.min( minX, leftX )
+            minY = math.min( minY, leftY )
+            maxX = math.max( maxX, leftX )
+            maxY = math.max( maxY, leftY )
+        end
+
+        if handle.RightHandle then
+            local rightX, rightY = handle.RightHandle:GetCenterPos()
+            minX = math.min( minX, rightX )
+            minY = math.min( minY, rightY )
+            maxX = math.max( maxX, rightX )
+            maxY = math.max( maxY, rightY )
+        end
+
+        if not startX or not startY or not endX or not endY then
+            startX, startY, endX, endY = minX, minY, maxX, maxY
+        else
+            startX = math.min( startX, minX )
+            startY = math.min( startY, minY )
+            endX = math.max( endX, maxX )
+            endY = math.max( endY, maxY )
+        end
+    end
+
+    startX, startY, endX, endY = utils.MultiFloor( startX, startY, endX, endY )
+
+    local width = endX - startX
+    local height = endY - startY
+
+    return startX, startY, width, height
+end
+
 _G.CurveLib.Utils = utils
 
 return _G.CurveLib.Utils
