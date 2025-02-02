@@ -1,11 +1,13 @@
 require( "vguihotload" )
 
----@type CurveLib.Editor.Graph.Handle.Draw
-local handleDraw
+---@type HandleDraw
+local handleDraw = include( "libraries/curvelib/editor/graph/handle/draw.lua" )
+
+---@alias SideHandle CurveLib.Editor.Graph.Handle.SideHandle
 
 ---@class CurveLib.Editor.Graph.Handle.SideHandle : CurveLib.Editor.Graph.Handle.Base
----@field MainHandle CurveLib.Editor.Graph.Handle.MainHandle
----@field SiblingHandle CurveLib.Editor.Graph.Handle.SideHandle?
+---@field MainHandle MainHandle
+---@field SiblingHandle SideHandle?
 ---@field IsRightHandle boolean
 local PANEL = {}
 
@@ -17,12 +19,8 @@ end
 function PANEL:Paint( width, height )
     if not self:IsEnabled() then return end
 
-    handleDraw = --[[handleDraw or ]] _G.CurveLib.HandleDraw or include( "libraries/curvelib/editor/graph/handle/draw.lua" )
-
     handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
-
-    handleDraw.SideHandle()
-
+       handleDraw.SideHandle()
     handleDraw.EndPanel()
 end
 

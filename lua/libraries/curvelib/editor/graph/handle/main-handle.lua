@@ -1,7 +1,9 @@
 require( "vguihotload" )
 
----@type CurveLib.Editor.Graph.Handle.Draw
-local handleDraw
+---@type HandleDraw
+local handleDraw = include( "libraries/curvelib/editor/graph/handle/draw.lua" )
+
+---@alias MainHandle CurveLib.Editor.Graph.Handle.MainHandle
 
 ---@class CurveLib.Editor.Graph.Handle.MainHandle : CurveLib.Editor.Graph.Handle.Base
 ---@field LeftHandle CurveLib.Editor.Graph.Handle.SideHandle The Left Handle that this Main Handle is paired with
@@ -17,20 +19,16 @@ function PANEL:Init()
 end
 
 function PANEL:Paint( width, height )
-    handleDraw = _G.CurveLib.HandleDraw or handleDraw or include( "libraries/curvelib/editor/graph/handle/draw.lua" )
-
     if not self.GraphPanel then
         self.GraphPanel = self:GetParent() --[[@as CurveLib.Editor.Graph.Panel]]
     end
 
     handleDraw.StartPanel( self.GraphPanel.Config, self, 0, 0, width, height )
+        if self:IsSelected() then
+            handleDraw.MainHandleLines()
+        end
 
-    if self:IsSelected() then
-        handleDraw.MainHandleLines()
-    end
-
-    handleDraw.MainHandle()
-
+        handleDraw.MainHandle()
     handleDraw.EndPanel()
 end
 

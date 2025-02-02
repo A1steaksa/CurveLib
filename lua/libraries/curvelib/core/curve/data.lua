@@ -1,5 +1,7 @@
 if not _G.CurveLib then error("Cannot initialize Curve Data - CurveLib not found") return end
 
+---@alias CurveData CurveLib.Curve.Data
+
 ---@class CurveLib.Curve.Data
 ---@field Points CurveLib.Curve.Point[]
 ---@field IsCurve boolean

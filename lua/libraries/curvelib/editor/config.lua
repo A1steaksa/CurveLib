@@ -102,6 +102,8 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 ---@field Side CurveLib.Editor.Config.Graph.Handles.Handle
 ---@field Line CurveLib.Editor.Config.Graph.HandleLine
 
+---@alias HandleConfig CurveLib.Editor.Config.Graph.Handles.Handle
+
 -- A single Handle on the Graph
 ---@class (exact) CurveLib.Editor.Config.Graph.Handles.Handle
 ---@field Idle CurveLib.Editor.Config.Graph.Handles.Handle.State The configuration of the Handle when it is not being hovered over or dragged.
@@ -182,6 +184,8 @@ surface.CreateFont( DefaultFonts.NumberLineSmallText, {
 --#region Default Class Implementations
 
 --#region Default Graph Config
+
+---@alias GraphConfig CurveLib.Editor.Config.Graph
 
 ---@class CurveLib.Editor.Config.Graph
 local GRAPH = {

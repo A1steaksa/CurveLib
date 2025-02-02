@@ -11,6 +11,8 @@ local drawBase
 ---@type CurveLib.Editor.Utils
 local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 
+---@alias HandleDraw CurveLib.Editor.Graph.Handle.Draw
+
 ---@class CurveLib.Editor.Graph.Draw
 ---@field GraphStack Stack A stack of Graphs that are being drawn.  This is used to calculate the relative positions of elements.
 local DRAW = {

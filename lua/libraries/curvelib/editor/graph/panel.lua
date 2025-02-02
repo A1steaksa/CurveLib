@@ -3,13 +3,23 @@ require( "vguihotload" )
 ---@type CurveLib.Editor.Graph.Draw
 local drawGraph = include( "libraries/curvelib/editor/graph/draw.lua" )
 
+---@alias GraphPanel CurveLib.Editor.Graph.Panel
+
+---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
+---@field Caches table A table of cached values to improve performance
+local PANEL = {}
+
+PANEL.Caches = {}
+
 --#region Fonts
+
 local fonts = {
     NumberLineSmall = "CurveLib_Graph_Small",
     NumberLineLarge = "CurveLib_Graph_Large",
     Label           = "CurveLib_Graph_Label",
 }
 
+-- Small numbers on the number line
 surface.CreateFont( fonts.NumberLineSmall, {
 	font = "Roboto Regular",
 	extended = true,
@@ -18,6 +28,7 @@ surface.CreateFont( fonts.NumberLineSmall, {
     antialias = true
 } )
 
+-- Large numbers on the number line
 surface.CreateFont( fonts.NumberLineLarge, {
 	font = "Roboto Regular",
 	extended = true,
@@ -26,6 +37,7 @@ surface.CreateFont( fonts.NumberLineLarge, {
     antialias = true
 } )
 
+-- Labels on the axes
 surface.CreateFont( fonts.Label, {
 	font = "Roboto Regular",
 	extended = true,
@@ -33,42 +45,19 @@ surface.CreateFont( fonts.Label, {
 	weight = 400,
     antialias = true
 } )
+
 --#endregion Fonts
 
--- For Colors used multiple times within the Graph
-local colors = {
-    Text = Color( 22, 66, 91 ),
-    Borders = Color( 22, 66, 91 ),
-    Axes = Color( 22, 66, 91 )
-}
 
----@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
----@field CurrentCurve CurveLib.Curve.Data The Curve currently being edited
----@field MainHandles table<CurveLib.Editor.Graph.Handle.MainHandle> The Main Handles of the Graph
----@field SelectedHandles table<CurveLib.Editor.Graph.Handle.MainHandle> The currently selected Main Handles
----@field HoveredHandle CurveLib.Editor.Graph.Handle.Base? The Handle currently being hovered over
----@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
----@field HeldMouseButtons table<MOUSE|integer, boolean> The mouse buttons currently being held down
----@field Caches table A table of cached values to improve performance
----@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
----@field LeftMouseDownX integer The X coordinate of the cursor when the left mouse button was pressed
----@field LeftMouseDownY integer The Y coordinate of the cursor when the left mouse button was pressed
----@field RightMouseDownX integer The X coordinate of the cursor when the right mouse button was pressed
----@field RightMouseDownY integer The Y coordinate of the cursor when the right mouse button was pressed
----@field _IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
----@field _IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
----@field IsDraggingHandle boolean Whether the user is currently dragging a Handle
----@field IsBoxSelecting boolean Whether the user is currently performing a box selection
-local PANEL = {
-    MainHandles = {},
-    _IsRotationMirrored = false,
-    _IsDistanceMirrored = false,
-    IsDraggingHandle = false,
-    IsBoxSelecting = false,
-    SiblingDistance = 0,
-    SelectedHandles = {},
-    HoveredHandle = nil
-}
+
+---
+--- Panel
+---
+
+--#region Panel Basics
+
+---@class CurveLib.Editor.Graph.Panel
+---@field Config GraphConfig The active configuration for this Graph
 
 function PANEL:Init()
     self:RequestFocus()
@@ -83,9 +72,15 @@ function PANEL:PostConnectionInit()
     self:SetMirrorHandleRotation( true )
 end
 
----@param config CurveLib.Editor.Config.Graph
+---@param config GraphConfig
 function PANEL:SetConfig( config )
     self.Config = config
+
+    local colors = {
+        Text = Color( 22, 66, 91 ),
+        Borders = Color( 22, 66, 91 ),
+        Axes = Color( 22, 66, 91 )
+    }
 
     config.BackgroundColor = Color( 217, 220, 214 )
 
@@ -210,28 +205,26 @@ function PANEL:SetConfig( config )
     end
 end
 
----@param value boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
-function PANEL:SetMirrorHandleRotation( value )
-    self._IsRotationMirrored = value
+function PANEL:Think()
+    if self.HeldMouseButtons and self.HeldMouseButtons[ MOUSE_LEFT ] then
+        -- If we don't know where the mouse was pressed, something has gone wrong
+        if not self.LeftMouseDownX or not self.LeftMouseDownY then return end
 
-    self:GetSidebar().MirrorRotationCheckbox:SetChecked( value )
-end
+        if self.IsDraggingHandles then return end
 
----@param value boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
-function PANEL:SetMirrorHandleDistance( value )
-    self._IsDistanceMirrored = value
+        if not self.IsBoxSelecting then
+            local mouseX, mouseY = self:CursorPos()
+            local distanceFromMouseDown = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
 
-    self:GetSidebar().MirrorDistanceCheckbox:SetChecked( value )
-end
+            if distanceFromMouseDown >= self.Config:GetDragDistanceThreshold() then
+                self:StartBoxSelection()
+            end
+        end
+    end
 
----@return boolean # Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
-function PANEL:IsHandleRotationMirrored()
-    return self._IsRotationMirrored
-end
-
----@return boolean # Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
-function PANEL:IsHandleDistanceMirrored()
-    return self._IsDistanceMirrored
+    if self.IsBoxSelecting then
+        self:BoxSelectionThink()
+    end
 end
 
 function PANEL:Paint( width, height )
@@ -273,37 +266,41 @@ function PANEL:Paint( width, height )
 
     end
 
+    -- Box around selected handles
+    if ( table.Count( self.SelectedHandles ) > 0 ) then
+        Log.ShouldSuppress( false )
+        drawGraph.SelectedOutline( self.SelectedHandles )
+        Log.ShouldSuppress( true )
+    end
+
+    -- Box selection
+    -- This should remain low on the draw order to ensure it is drawn over everything else
     if ( self.IsBoxSelecting ) then
         local mouseX, mouseY = self:CursorPos()
         mouseX = math.Clamp( mouseX, 0, self:GetWide() )
         mouseY = math.Clamp( mouseY, 0, self:GetTall() )
-        drawGraph.BoxSelection( self.LeftMouseDownX, self.LeftMouseDownY, mouseX, mouseY )
+
+        self.BoxSelectionEndX = mouseX
+        self.BoxSelectionEndY = mouseY
+
+        drawGraph.BoxSelection( self.LeftMouseDownX, self.LeftMouseDownY, self.BoxSelectionEndX, self.BoxSelectionEndY )
     end
 
     drawGraph.EndPanel()
 end
 
-function PANEL:Think()
-    if self.HeldMouseButtons and self.HeldMouseButtons[ MOUSE_LEFT ] then
-        -- If we don't know where the mouse was pressed, something has gone wrong
-        if not self.LeftMouseDownX or not self.LeftMouseDownY then return end
-
-        if self.IsDraggingHandle then return end
-
-        if not self.IsBoxSelecting then
-            local mouseX, mouseY = self:CursorPos()
-            local distanceFromMouseDown = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
-
-            if distanceFromMouseDown >= self.Config:GetDragDistanceThreshold() then
-                self:OnBoxSelectionStarted()
-            end
-        end
-    end
-
-    if self.IsBoxSelecting then
-        self:BoxSelectionThink()
-    end
+function PANEL:OnSizeChanged( width, height )
+    self.Caches.InteriorRect = nil
+    self:PositionHandles()
 end
+
+--#endregion
+
+
+
+--#region Coordinates and Positioning
+
+---@class CurveLib.Editor.Graph.Panel
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
 ---@return integer x 
@@ -348,7 +345,92 @@ function PANEL:GetInteriorRect()
     return rect.x, rect.y, rect.Width, rect.Height
 end
 
+-- Converts coordinates from a range of 0-1 (As they are stored in Curves) to the panel-relative coordinates of the Graph's Interior.
+---@param x number The X coordinate in the range 0-1
+---@param y number The Y coordinate in the range 0-1
+function PANEL:NormalizedToInterior( x, y )
+    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
+    return interiorX + ( x * interiorWidth ), interiorY + ( interiorHeight - y * interiorHeight )
+end
+
+
+-- Converts coordinates from the panel-relative coordinates of the Graph's Interior to a range of 0-1 (As they are stored in Curves)
+---@param x number The X coordinate, relative to the Graph Panel
+---@param y number The Y coordinate, relative to the Graph Panel
+function PANEL:PanelToNormalized( x, y )
+    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
+    return ( x - interiorX ) / interiorWidth, 1 - ( y - interiorY ) / interiorHeight
+end
+
+--#endregion
+
+
+
+--#region Interaction Settings
+
+---@class CurveLib.Editor.Graph.Panel
+---@field _IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+---@field _IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+
+PANEL._IsRotationMirrored = false
+PANEL._IsDistanceMirrored = false
+
+---@param value boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+function PANEL:SetMirrorHandleRotation( value )
+    self._IsRotationMirrored = value
+
+    self:GetSidebar().MirrorRotationCheckbox:SetChecked( value )
+end
+
+---@param value boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+function PANEL:SetMirrorHandleDistance( value )
+    self._IsDistanceMirrored = value
+
+    self:GetSidebar().MirrorDistanceCheckbox:SetChecked( value )
+end
+
+---@return boolean # Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
+function PANEL:IsHandleRotationMirrored()
+    return self._IsRotationMirrored
+end
+
+---@return boolean # Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
+function PANEL:IsHandleDistanceMirrored()
+    return self._IsDistanceMirrored
+end
+
+--#endregion
+
+
+
+---
+--- Curve
+---
+
+--#region Curve Management
+
+---@class CurveLib.Editor.Graph.Panel
+---@field CurrentCurve CurveData The Curve currently being edited
+
+---@param curve CurveData
+function PANEL:OpenCurve( curve )
+    self.CurrentCurve = curve
+
+    self:UpdateHandles()
+end
+
+function PANEL:CloseCurve()
+    self.CurrentCurve = nil
+    self:ClearHandles()
+end
+
+--#endregion
+
+
+
 --#region Curve Hovering
+
+---@class CurveLib.Editor.Graph.Panel
 
 -- Returns whether the mouse is hovering over the active curve
 ---@return boolean isHovered Whether the mouse is hovering over the active curve
@@ -417,86 +499,23 @@ function PANEL:GetCursorPosOnCurveAsTime()
     return cache.Time, cache.Distance, cache.X, cache.Y
 end
 
---#endregion Curve Hovering
-
---#region Coordinate Conversion
-
--- Converts coordinates from a range of 0-1 (As they are stored in Curves) to the panel-relative coordinates of the Graph's Interior.
----@param x number The X coordinate in the range 0-1
----@param y number The Y coordinate in the range 0-1
-function PANEL:NormalizedToInterior( x, y )
-    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
-    return interiorX + ( x * interiorWidth ), interiorY + ( interiorHeight - y * interiorHeight )
-end
+--#endregion
 
 
--- Converts coordinates from the panel-relative coordinates of the Graph's Interior to a range of 0-1 (As they are stored in Curves)
----@param x number The X coordinate, relative to the Graph Panel
----@param y number The Y coordinate, relative to the Graph Panel
-function PANEL:PanelToNormalized( x, y )
-    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
-    return ( x - interiorX ) / interiorWidth, 1 - ( y - interiorY ) / interiorHeight
-end
 
---#endregion Coordinate Conversion
+---
+--- Handles
+---
+ 
+--#region Handle Management
 
+---@class CurveLib.Editor.Graph.Panel
+---@field MainHandles table<MainHandle> The Main Handles of the Graph
 
--- Modifies and corrects the position of a Main Handle so that it is within bounds and has its first and last points at the graph's horizontal extremes
----@param index integer The index of the Main Handle being modified
----@param x integer 
----@param y integer
----@return integer correctedX
----@return integer correctedY
-function PANEL:CorrectMainHandlePos( index, x, y )
-    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
+PANEL.MainHandles = {}
 
-    ---@type CurveLib.Editor.Graph.Handle.MainHandle
-    local mainHandle = self.MainHandles[ index ]
-
-    -- First and last Main Handles need to stay at the horizontal extremes
-    local correctedX, correctedY
-    if index == 1 then
-        -- First Main Handle needs to stay at x = 0 (normalized)
-        correctedX = interiorX - mainHandle.HalfWidth
-    elseif index == #self.MainHandles then
-        -- Last Main Handle needs to stay at x = 1 (normalized)
-        correctedX = interiorX + interiorWidth - mainHandle.HalfWidth
-    end
-
-    -- All Main Points stay within the interior bounds
-    correctedX = correctedX or math.Clamp( x, interiorX - mainHandle.HalfWidth, interiorX + interiorWidth - mainHandle.HalfWidth )
-    correctedY = math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
-
-    return correctedX, correctedY
-end
-
--- Modifies and corrects the position of a Side Handle so that it is within bounds
----@param index integer The index of the Main Handle being modified
----@param isRightHandle boolean Which of the Side Handles is being corrected
----@param x integer 
----@param y integer
----@return integer correctedX
----@return integer correctedY
-function PANEL:CorrectSideHandlePos( index, isRightHandle, x, y )
-
-    ---@type CurveLib.Editor.Graph.Handle.MainHandle
-    local mainHandle = self.MainHandles[ index ]
-    local sideHandle
-    if isRightHandle then
-        sideHandle = mainHandle.RightHandle
-    else
-        sideHandle = mainHandle.LeftHandle
-    end
-
-    -- Stay within the interior rect bounds
-    local correctedX = math.Clamp( x, -sideHandle.HalfWidth, self:GetWide() - sideHandle.HalfWidth )
-    local correctedY = math.Clamp( y, -sideHandle.HalfHeight, self:GetTall() - sideHandle.HalfHeight )
-
-    return correctedX, correctedY
-end
-
--- Removes all Main Points on this Graph
-function PANEL:ClearPoints()
+-- Removes all Main Handles on this Graph
+function PANEL:ClearHandles()
     local mainHandles = self.MainHandles
     for index = 1, #mainHandles do
         local mainHandle = mainHandles[ index ]
@@ -512,14 +531,19 @@ function PANEL:ClearPoints()
     self.MainHandles = {}
 end
 
--- Updates the graph to ensure that the handles are populated and positioned correctly
+-- Updates the graph to ensure that the Handles are populated and positioned correctly
 function PANEL:UpdateHandles()
     if not self.CurrentCurve then return end
 
-    -- Each Curve Point in the Curve Data needs a corresponding Main Handle
+    self.SelectedHandles = {}
+
+    -- Remove the previous Curve Data's Main Handles
+    self:ClearHandles()
+
+    -- Create new Main Handles
     self:PopulateHandles()
 
-    -- Move all these new Main Points to the position of their corresponding Curve Point
+    -- Move all these new Main Handles to the position of their corresponding Curve Point
     self:PositionHandles()
 end
 
@@ -528,10 +552,9 @@ end
 ---@private
 function PANEL:PopulateHandles()
 
-    -- Remove the previous Curve Data's Main Points
-    self:ClearPoints()
-
     local count = #self.CurrentCurve.Points
+
+    Log.StartSection( "Populating Handles" )
 
     for index = 1, count do
         local mainHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.MainHandle", self )
@@ -577,24 +600,29 @@ function PANEL:PopulateHandles()
             rightHandle.RightHandle = rightHandle
         end
 
+        Log.Print( index, " ", mainHandle )
         mainHandle.Index = index
         self.MainHandles[ index ] = mainHandle
     end
+
+    Log.EndSection()
 end
 
--- Moves all handles, which are not being dragged, based on their position in the Curve Data being edited
+-- Moves all Handles, which are not being dragged, based on their position in the Curve Data being edited
 ---@private
 function PANEL:PositionHandles()
     if not self.CurrentCurve then return end
 
+    Log.StartSection( "Positioning Handles" )
+
     local points = self.CurrentCurve.Points
 
-    for index = 1, #points do
-        local mainHandle = self.MainHandles[ index ] --[[@as CurveLib.Editor.Graph.Handle.MainHandle]]
+    for index, point in ipairs( points ) do
+        local mainHandle = self.MainHandles[ index ] --[[@as MainHandle]]
         local leftHandle = mainHandle.LeftHandle
         local rightHandle = mainHandle.RightHandle
 
-        local point = points[ index ] --[[@as CurveLib.Curve.Point]]
+        Log.Print( "Positioning Handle #" .. index, mainHandle, leftHandle, rightHandle )
 
         if not mainHandle.IsBeingDragged then
             local posX, posY = self:NormalizedToInterior( point.MainPoint.x, point.MainPoint.y )
@@ -611,104 +639,50 @@ function PANEL:PositionHandles()
             rightHandle:SetCenterPos( posX, posY )
         end
     end
+
+    Log.EndSection()
 end
 
 function PANEL:DeselectAllHandles()
     for selectedHandle in pairs( self.SelectedHandles ) do
-        if ( selectedHandle and selectedHandle ~= NULL and IsValid( selectedHandle ) ) then
+        if ( IsValid( selectedHandle ) ) then
             self:DeselectHandle( selectedHandle )
         end
-        self.SelectedHandles[ selectedHandle ] = nil
     end
+
+    self.SelectedHandles = {}
 end
 
 function PANEL:DeleteSelectedHandles()
-    local hadEdgeHandleSelected = false
-
-    for handle, _ in pairs( self.SelectedHandles ) do
-        ---@cast handle CurveLib.Editor.Graph.Handle.MainHandle
-        if not handle then continue end
-
-        -- Don't delete the first or last Main Handle
-        if handle.Index == 1 or handle.Index == lastHandleIndex then
-            hadEdgeHandleSelected = true
-            continue
-        end
-
-        self.CurrentCurve:RemovePoint( handle.Index )
-    end
-
-    -- Communicate to the user why some Handles were not deleted
-    if hadEdgeHandleSelected then
-        notification.AddLegacy( "You cannot delete a curve's first or last point!", NOTIFY_ERROR, 5 )
-    end
-
-    self:UpdateHandles()
+    --TODO: Re-implement
 end
 
----@param curve CurveLib.Curve.Data
-function PANEL:OpenCurve( curve )
-    self.CurrentCurve = curve
+--#endregion
 
-    self:UpdateHandles()
-end
 
-function PANEL:CloseCurve()
-    self.CurrentCurve = nil
-    self:ClearPoints()
-end
 
---#region Handle Events
+--#region Handle Dragging
+---@class CurveLib.Editor.Graph.Panel
+---@field IsDraggingHandles boolean Whether the user is currently dragging a Handle
+---@field IsDraggingSideHandle boolean Whether a Side Handle is currently being dragged
+---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
 
--- Called when a Handle is selected
----@param handle CurveLib.Editor.Graph.Handle.Base
----@param addToSelection boolean? Whether to add the Handle to the current selection, rather than deselecting all other Handles [Default: false]
-function PANEL:SelectHandle( handle, addToSelection )
-    if not handle.IsMainHandle then return end
-
-    if not addToSelection then
-        self:DeselectAllHandles()
-    end
-
-    handle:SetSelected( true )
-    self.SelectedHandles[ handle ] = true
-
-    if handle.LeftHandle then
-        handle.LeftHandle:SetEnabled( true )
-    end
-
-    if handle.RightHandle then
-        handle.RightHandle:SetEnabled( true )
-    end
-end
-
--- Called when a Handle is deselected
----@param handle CurveLib.Editor.Graph.Handle.Base
-function PANEL:DeselectHandle( handle )
-    if not handle.IsMainHandle then return end
-
-    self.SelectedHandles[ handle ] = nil
-    handle:SetSelected( false )
-
-    if handle.LeftHandle then
-        handle.LeftHandle:SetEnabled( false )
-    end
-
-    if handle.RightHandle then
-        handle.RightHandle:SetEnabled( false )
-    end
-end
+PANEL.IsDraggingHandles = false
+PANEL.IsDraggingSideHandle = false
+PANEL.SiblingDistance = 0
 
 -- Called when a Handle starts being dragged
----@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
+---@param handle BaseHandle | MainHandle | SideHandle
 function PANEL:OnHandleDragStarted( handle )
-    self.IsDraggingHandle = true
+    self.IsDraggingHandles = true
 
     if handle.IsMainHandle then
         self.HandleDragStartX, self.HandleDragStartY = handle:GetCenterPos()
 
         if not handle:IsSelected() then
-            self:SelectHandle( handle )
+            local ctrl, shift, alt = self:GetModifierKeys()
+
+            self:SelectHandle( handle, shift )
         end
     end
 
@@ -728,17 +702,17 @@ function PANEL:OnHandleDragStarted( handle )
 end
 
 -- Called when a Handle stops being dragged
----@param handle CurveLib.Editor.Graph.Handle.Base | CurveLib.Editor.Graph.Handle.MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
+---@param handle BaseHandle | MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
 ---@param wasCanceled boolean? Whether the drag was canceled
 function PANEL:OnHandleDragEnded( handle, wasCanceled )
-    self.IsDraggingHandle = false
+    self.IsDraggingHandles = false
     self.HandleDragStartX = nil
     self.HandleDragStartY = nil
     self.SiblingDistance = 0
 end
 
 -- Called when a Main Handle is moved
----@param mainHandle CurveLib.Editor.Graph.Handle.MainHandle
+---@param mainHandle MainHandle
 ---@return integer x The X coordinate, with any adjustments made
 ---@return integer y The Y coordinate, with any adjustments made
 function PANEL:OnMainHandleDragged( mainHandle, x, y)
@@ -798,13 +772,13 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     local isDistanceMirrored = self:IsHandleDistanceMirrored()
     local isRotationMirrored = self:IsHandleRotationMirrored()
 
-    -- Correct the side handle's proposed position
+    -- Correct the Side Handle's proposed position
     local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, x, y )
 
     -- From here on, all calculations are done in normalized coordinates
     local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX + sideHandle.HalfWidth, correctedSideHandleY + sideHandle.HalfHeight )
 
-    -- Update the Curve Data with the side handle's new normalized coordinates    
+    -- Update the Curve Data with the Side Handle's new normalized coordinates    
     local point = self.CurrentCurve.Points[ mainHandle.Index ]
     local sidePoint = sideHandle.IsRightHandle and point.RightPoint or point.LeftPoint
     sidePoint.x = sideHandleX
@@ -818,7 +792,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
         local mainToSideX = sideHandleX - mainHandleX
         local mainToSideY = sideHandleY - mainHandleY
 
-        -- The sibling's position is created from an angle and distance from the main handle
+        -- The sibling's position is created from an angle and distance from the Main Hhandle
 
         local newSiblingAngle
         if isRotationMirrored then
@@ -837,7 +811,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
         local newSiblingX = mainHandleX + math.cos( newSiblingAngle ) * newSiblingDistance
         local newSiblingY = mainHandleY + math.sin( newSiblingAngle ) * newSiblingDistance
 
-        -- Update the Curve Data with the sibling handle's new normalized coordinates
+        -- Update the Curve Data with the sibling Handle's new normalized coordinates
         local siblingPoint = sideHandle.IsRightHandle and point.LeftPoint or point.RightPoint
         siblingPoint.x = newSiblingX
         siblingPoint.y = newSiblingY
@@ -848,46 +822,228 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     return correctedSideHandleX, correctedSideHandleY
 end
 
--- Called when box selection begins
-function PANEL:OnBoxSelectionStarted()
+-- Modifies and corrects the position of a Main Handle so that it is within bounds and has its first and last points at the graph's horizontal extremes
+---@param index integer The index of the Main Handle being modified
+---@param x integer 
+---@param y integer
+---@return integer correctedX
+---@return integer correctedY
+function PANEL:CorrectMainHandlePos( index, x, y )
+    local interiorX, interiorY, interiorWidth, interiorHeight = self:GetInteriorRect()
+
+    ---@type MainHandle
+    local mainHandle = self.MainHandles[ index ]
+
+    -- First and last Main Handles need to stay at the horizontal extremes
+    local correctedX, correctedY
+    if index == 1 then
+        -- First Main Handle needs to stay at x = 0 (normalized)
+        correctedX = interiorX - mainHandle.HalfWidth
+    elseif index == #self.MainHandles then
+        -- Last Main Handle needs to stay at x = 1 (normalized)
+        correctedX = interiorX + interiorWidth - mainHandle.HalfWidth
+    end
+
+    -- All Main Handles stay within the interior bounds
+    correctedX = correctedX or math.Clamp( x, interiorX - mainHandle.HalfWidth, interiorX + interiorWidth - mainHandle.HalfWidth )
+    correctedY = math.Clamp( y, interiorY - mainHandle.HalfHeight, interiorY + interiorHeight - mainHandle.HalfHeight )
+
+    return correctedX, correctedY
+end
+
+-- Modifies and corrects the position of a Side Handle so that it is within bounds
+---@param index integer The index of the Main Handle being modified
+---@param isRightHandle boolean Which of the Side Handles is being corrected
+---@param x integer 
+---@param y integer
+---@return integer correctedX
+---@return integer correctedY
+function PANEL:CorrectSideHandlePos( index, isRightHandle, x, y )
+
+    ---@type MainHandle
+    local mainHandle = self.MainHandles[ index ]
+    local sideHandle
+    if isRightHandle then
+        sideHandle = mainHandle.RightHandle
+    else
+        sideHandle = mainHandle.LeftHandle
+    end
+
+    -- Stay within the interior rect bounds
+    local correctedX = math.Clamp( x, -sideHandle.HalfWidth, self:GetWide() - sideHandle.HalfWidth )
+    local correctedY = math.Clamp( y, -sideHandle.HalfHeight, self:GetTall() - sideHandle.HalfHeight )
+
+    return correctedX, correctedY
+end
+
+--#endregion
+
+
+
+--#region Handle Selection
+---@class CurveLib.Editor.Graph.Panel
+---@field SelectedHandles table<MainHandle, boolean> The currently selected Main Handles
+---@field IsBoxSelecting boolean Whether the user is currently performing a box selection
+---@field BoxSelectionEndX integer The adjusted X coordinate of the bottom-right corner of the box selection
+---@field BoxSelectionEndY integer The adjusted Y coordinate of the bottom-right corner of the box selection
+PANEL.SelectedHandles = {}
+PANEL.IsBoxSelecting = false
+
+-- Selects a Main Handle
+---@param handle BaseHandle
+---@param addToSelection boolean? Whether to add the Handle to the current selection, rather than deselecting all other Handles [Default: false]
+function PANEL:SelectHandle( handle, addToSelection )
+    if not handle.IsMainHandle then return end
+
+    if not addToSelection then
+        self:DeselectAllHandles()
+    end
+
+    handle:SetSelected( true )
+    self.SelectedHandles[ handle ] = true
+
+    if handle.LeftHandle then
+        handle.LeftHandle:SetEnabled( true )
+    end
+
+    if handle.RightHandle then
+        handle.RightHandle:SetEnabled( true )
+    end
+end
+
+-- Called when a Main Handle is deselected
+---@param handle BaseHandle
+function PANEL:DeselectHandle( handle )
+    if not handle.IsMainHandle then return end
+
+    self.SelectedHandles[ handle ] = nil
+    handle:SetSelected( false )
+
+    if handle.LeftHandle then
+        handle.LeftHandle:SetEnabled( false )
+    end
+
+    if handle.RightHandle then
+        handle.RightHandle:SetEnabled( false )
+    end
+end
+
+---@return boolean # True if the point is within the bounds of the rectangle, false otherwise
+local function IsPointInRect( pointX, pointY, rectStartX, rectStartY, rectWidth, rectHeight )
+    return pointX >= rectStartX and pointX <= rectStartX + rectWidth and pointY >= rectStartY and pointY <= rectStartY + rectHeight
+end
+
+---@param x number The X coordinate of the top-left corner of the rectangle
+---@param y number The Y coordinate of the top-left corner of the rectangle
+---@param width number The width of the rectangle
+---@param height number The height of the rectangle
+---@return table # A table of all Main Handles within the rectangle
+function PANEL:GetMainHandlesInRect( x, y, width, height )
+
+    if width < 0 then
+        x = x + width
+        width = -width
+    end
+
+    if height < 0 then
+        y = y + height
+        height = -height
+    end
+
+    local handles = {}
+
+    for _, mainHandle in ipairs( self.MainHandles ) do
+        local mainHandleX, mainHandleY = mainHandle:GetCenterPos()
+        if IsPointInRect( mainHandleX, mainHandleY, x, y, width, height ) then
+            handles[#handles+1] = mainHandle
+        end
+    end
+
+    return handles
+end
+
+function PANEL:StartBoxSelection()
     self.IsBoxSelecting = true
     self:MouseCapture( true ) -- Capture the mouse so that the box selection can continue even if the cursor leaves the panel
 end
 
 -- Called each frame while box selection is active
 function PANEL:BoxSelectionThink()
-
 end
 
--- Called when box selection ends
 ---@param isCanceled boolean? True if the box selection was canceled prematurely rather than ending naturally. [Default: false] 
-function PANEL:OnBoxSelectionEnded( isCanceled )
+function PANEL:EndBoxSelection( isCanceled )
     self.IsBoxSelecting = false
     self:MouseCapture( false )
 
     if isCanceled then
         self.LeftMouseDownX = nil
         self.LeftMouseDownY = nil
+        return
+    end
+
+    local handlesInBox = self:GetMainHandlesInRect( self.LeftMouseDownX, self.LeftMouseDownY, self.BoxSelectionEndX - self.LeftMouseDownX, self.BoxSelectionEndY - self.LeftMouseDownY )
+
+    -- Don't do anything if they didn't select any Handles
+    if #handlesInBox == 0 then return end
+
+    local ctrl, shift, alt = self:GetModifierKeys()
+    if not shift then
+        self:DeselectAllHandles()
+    end
+
+    for _, handle in ipairs( handlesInBox ) do
+        self:SelectHandle( handle, true )
     end
 end
 
--- Called externally when a handle is hovered
----@param handle CurveLib.Editor.Graph.Handle.Base
+--#endregion
+
+
+
+--#region Handle Hovering
+---@class CurveLib.Editor.Graph.Panel
+---@field HoveredHandle BaseHandle? The Handle currently being hovered over
+
+-- Called externally when a Handle is hovered
+---@param handle BaseHandle
 function PANEL:OnHandleHoverStarted( handle )
     self.HoveredHandle = handle
 end
 
--- Called externally when a handle no longer hovered
----@param handle CurveLib.Editor.Graph.Handle.Base
+-- Called externally when a Handle no longer hovered
+---@param handle BaseHandle
 function PANEL:OnHandleHoverEnded( handle )
     self.HoveredHandle = nil
+end
+
+--#endregion
+
+
+
+---
+--- Input
+---
+
+--#region Mouse Input
+---@class CurveLib.Editor.Graph.Panel
+---@field HeldMouseButtons table<MOUSE|integer, boolean> The mouse buttons currently being held down
+---@field LeftMouseDownX integer? The X coordinate of the cursor when the left mouse button was pressed
+---@field LeftMouseDownY integer? The Y coordinate of the cursor when the left mouse button was pressed
+---@field RightMouseDownX integer? The X coordinate of the cursor when the right mouse button was pressed
+---@field RightMouseDownY integer? The Y coordinate of the cursor when the right mouse button was pressed
+
+PANEL.HeldMouseButtons = {}
+
+---@param mouseButton MOUSE|integer
+---@return boolean # `true` if the mouse button is currently held down, `false` otherwise
+function PANEL:IsMouseDown( mouseButton )
+    return self.HeldMouseButtons[ mouseButton ]
 end
 
 -- Called when the graph is clicked
 ---@param mouseButton MOUSE
 function PANEL:OnMousePressed( mouseButton )
-    self.HeldMouseButtons = self.HeldMouseButtons or {}
-
     if mouseButton == MOUSE_LEFT then
         self.LeftMouseDownX, self.LeftMouseDownY = self:CursorPos()
     elseif mouseButton == MOUSE_RIGHT then
@@ -900,8 +1056,6 @@ end
 -- Called when the mouse is released
 ---@param mouseButton MOUSE
 function PANEL:OnMouseReleased( mouseButton )
-    self.HeldMouseButtons = self.HeldMouseButtons or {}
-
     local isLeftMouseDown = self.HeldMouseButtons[ MOUSE_LEFT ]
     if mouseButton == MOUSE_LEFT and isLeftMouseDown and self.LeftMouseDownX and self.LeftMouseDownY then
         local leftMouseUpX, leftMouseUpY = self:CursorPos()
@@ -913,17 +1067,20 @@ function PANEL:OnMouseReleased( mouseButton )
             if self:IsCurveHovered() then
                 local time = self:GetCursorPosOnCurveAsTime()
                 local pointIndex = self.CurrentCurve:AddPoint( time )
+
                 self:UpdateHandles()
 
-                self:SelectHandle( self.MainHandles[ pointIndex ] )
+                local ctrl, shift, alt = self:GetModifierKeys()
+
+                self:SelectHandle( self.MainHandles[ pointIndex ], shift )
             else
-                -- Clicking on the background deselects all handles
+                -- Clicking on the background deselects all Handles
                 self:DeselectAllHandles()
             end
         end
 
         if self.IsBoxSelecting then
-            self:OnBoxSelectionEnded()
+            self:EndBoxSelection()
         end
     end
 
@@ -937,10 +1094,31 @@ function PANEL:OnMouseReleased( mouseButton )
     end
 end
 
+--#endregion
+
+
+
+--#region Keyboard Input
+---@class CurveLib.Editor.Graph.Panel
+---@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
+
+PANEL.HeldKeys = {}
+
 ---@param keycode KEY|integer
----@return boolean # True if the key is currently held down, false otherwise
+---@return boolean # `true` if the key is currently held down, `false` otherwise
 function PANEL:IsKeyDown( keycode )
-    return self.HeldKeys and self.HeldKeys[ keycode ]
+    return self.HeldKeys[ keycode ]
+end
+
+-- Returns the state of the modifier keys
+---@return boolean ctrl
+---@return boolean shift
+---@return boolean alt
+function PANEL:GetModifierKeys()
+    local ctrl = self:IsKeyDown( KEY_LCONTROL ) or self:IsKeyDown( KEY_RCONTROL )
+    local shift = self:IsKeyDown( KEY_LSHIFT ) or self:IsKeyDown( KEY_RSHIFT )
+    local alt = self:IsKeyDown( KEY_LALT ) or self:IsKeyDown( KEY_RALT )
+    return ctrl, shift, alt
 end
 
 -- The Esc key requires special handling
@@ -956,11 +1134,7 @@ end
 -- Called when a key is pressed
 ---@param keycode KEY|integer
 function PANEL:OnKeyCodePressed( keycode )
-    self.HeldKeys = self.HeldKeys or {}
-
-    local ctrl = self:IsKeyDown( KEY_LCONTROL ) or self:IsKeyDown( KEY_RCONTROL )
-    local shift = self:IsKeyDown( KEY_LSHIFT ) or self:IsKeyDown( KEY_RSHIFT )
-    local alt = self:IsKeyDown( KEY_LALT ) or self:IsKeyDown( KEY_RALT )
+    local ctrl, shift, alt = self:GetModifierKeys()
 
     -- ESC - Cancel ongoing actions
     if keycode == KEY_ESCAPE then
@@ -968,7 +1142,7 @@ function PANEL:OnKeyCodePressed( keycode )
         if table.Count( self.HeldKeys ) > 0 then
             self.HeldKeys = nil
         elseif self.IsBoxSelecting then
-            self:OnBoxSelectionEnded( true )
+            self:EndBoxSelection( true )
         elseif self.SelectedHandles then
             self:DeselectAllHandles()
         end
@@ -977,14 +1151,14 @@ function PANEL:OnKeyCodePressed( keycode )
         return
     end
 
-    -- CTRL + A - Select all handles
+    -- CTRL + A - Select all Handles
     if ctrl and keycode == KEY_A then
         for _, handle in ipairs( self.MainHandles ) do
             self:SelectHandle( handle, true )
         end
     end
 
-    -- CTRL + N - Open a new curve
+    -- CTRL + N - Open a new Curve
     if ctrl and keycode == KEY_N then
         self.EditorFrame:OpenNewCurve()
     end
@@ -995,8 +1169,6 @@ end
 -- Called when a key is released
 ---@param keycode KEY|integer
 function PANEL:OnKeyCodeReleased( keycode )
-    if not self.HeldKeys then return end
-
     if ( keycode == KEY_DELETE or keycode == KEY_BACKSPACE ) then
         self:DeleteSelectedHandles()
     end
@@ -1004,10 +1176,9 @@ function PANEL:OnKeyCodeReleased( keycode )
     self.HeldKeys[ keycode ] = nil
 end
 
-function PANEL:OnSizeChanged( width, height )
-    self.Caches.InteriorRect = nil
-    self:PositionHandles()
-end
+--#endregion
+
+
 
 vgui.Register( "CurveLib.Editor.Graph.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )

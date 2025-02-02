@@ -1,9 +1,6 @@
 require( "vguihotload" )
 
----@alias MainHandle CurveLib.Editor.Graph.Handle.MainHandle
----@alias SideHandle CurveLib.Editor.Graph.Handle.SideHandle
----@alias HandleConfig CurveLib.Editor.Config.Graph.Handles.Handle
----@alias GraphPanel CurveLib.Editor.Graph.Panel
+---@alias BaseHandle CurveLib.Editor.Graph.Handle.Base
 
 ---@class CurveLib.Editor.Graph.Handle.Base : DPanel
 ---@field x integer

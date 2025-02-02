@@ -1,4 +1,5 @@
-print( "Panel Base Loaded" )
+---@alias PanelBase CurveLib.Editor.PanelBase
+
 ---@class CurveLib.Editor.PanelBase : DPanel
 ---@field Config table
 ---@field EditorFrame CurveLib.Editor.Frame
