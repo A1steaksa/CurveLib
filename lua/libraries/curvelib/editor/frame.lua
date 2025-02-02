@@ -138,6 +138,8 @@ function FRAME:InitConfig()
 end
 
 function FRAME:PreHotload()
+    Log.StartSection( "Prehotload" )
+
     local data = {}
     data.Size = Vector( self:GetSize() )
     data.Pos = Vector( self:GetPos() )
@@ -148,16 +150,26 @@ function FRAME:PreHotload()
     data.CurrentAddonCurveName = self.CurrentAddonCurveName
     data.Curve = self.CurrentCurve
 
+    Log.StartSection( "Storing Selected Handles" )
     data.SelectedIndices = {}
     ---@param handle CurveLib.Editor.Graph.Handle.MainHandle
     for handle, _ in pairs( self.Panels.Graph.SelectedHandles ) do
+        if not IsValid( handle ) then
+            Log.Print( "Skipping invalid handle" )
+            continue
+        end
+        Log.Print( "Storing handle", handle )
         data.SelectedIndices[ handle.Index ] = true
     end
+    Log.EndSection()
 
+    Log.EndSection()
     return data
 end
 
 function FRAME:PostHotload( data )
+    Log.StartSection( "Posthotload" )
+
     if data.IsMaximized then
         self:Maximize()
 
@@ -181,10 +193,16 @@ function FRAME:PostHotload( data )
     end
 
     if data.SelectedIndices then
+        Log.StartSection( "Restoring Selected Handles" )
         for index, _ in pairs( data.SelectedIndices ) do
-            self.Panels.Graph:SelectHandle( self.Panels.Graph.MainHandles[ index ], true )
+            local handle = self.Panels.Graph.MainHandles[ index ]
+            Log.Print( "Restoring selection to [", index, "] = ",  handle )
+            self.Panels.Graph:SelectHandle( handle, true )
         end
+        Log.EndSection()
     end
+
+    Log.EndSection()
 end
 
 -- Add our window to the C menu
