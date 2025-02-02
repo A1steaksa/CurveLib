@@ -64,6 +64,8 @@ function FRAME:Init()
     self:SetMinHeight( Default.FrameSize.MinHeight )
     self:InvalidateLayout( true )
 
+    self:SetTitle( "Curve Editor" )
+
     self:SetSizable( true )
     self:SetVisible( true )
     self:Center()
