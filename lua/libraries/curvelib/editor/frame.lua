@@ -124,7 +124,6 @@ function FRAME:OpenCurve( curve )
     self.Panels.Graph:OpenCurve( curve )
     self.Panels.MenuBar:OnCurveOpened()
     self.Panels.Sidebar:OnCurveOpened()
-    self.Panels.Graph:OpenCurve( curve )
 end
 
 -- Closes the currently open Curve.
