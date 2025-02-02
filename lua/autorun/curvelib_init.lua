@@ -23,6 +23,11 @@ resource.AddFile( "materials/curvelib/logo.png" )
 
 
 ---
+--- Better Print
+---
+RunShared( "libraries/better-print/better-print.lua" )
+
+---
 --- CurveLib Core
 ---
 
