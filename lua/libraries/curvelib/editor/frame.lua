@@ -121,6 +121,7 @@ function FRAME:OpenCurve( curve )
 
     self.CurrentCurve = curve
 
+    self.Panels.Graph:OpenCurve( curve )
     self.Panels.MenuBar:OnCurveOpened()
     self.Panels.Sidebar:OnCurveOpened()
     self.Panels.Graph:OpenCurve( curve )
