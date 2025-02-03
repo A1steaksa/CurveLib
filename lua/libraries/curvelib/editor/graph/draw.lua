@@ -304,4 +304,13 @@ function DRAW.BoxSelection( startX, startY, endX, endY )
     drawBase.OutlinedRect( startX, startY, width, height, 0, Alignment.TopLeft, 1, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 ) )
 end
 
+---@param selectedHandles table<CurveLib.Editor.Graph.Handle.MainHandle, boolean>
+function DRAW.SelectedOutline( selectedHandles )
+    if not selectedHandles or not istable( selectedHandles ) then return end
+
+    local startX, startY, width, height = curveUtils.GetHandlesBoundingBox( selectedHandles )
+
+    drawBase.OutlinedRect( startX, startY, width, height, 0, Alignment.TopLeft, 1, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 ) )
+end
+
 return _G.CurveLib.GraphDraw
