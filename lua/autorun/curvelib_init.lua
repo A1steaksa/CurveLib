@@ -80,6 +80,19 @@ RunClient( "libraries/curvelib/editor/graph/handle/side-handle.lua" )
 RunClient( "libraries/curvelib/editor/graph/draw.lua" )
 RunClient( "libraries/curvelib/editor/graph/panel.lua" )
 
+-- Editor Graph Panel Modules
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/config.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/coordinates-positioning.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/curve-hovering.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/curve-management.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/handle-dragging.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/handle-hovering.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/handle-management.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/handle-selection.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/interaction-settings.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/keyboard-input.lua" )
+AddCSLuaFile( "libraries/curvelib/editor/graph/panel-modules/mouse-input.lua" )
+
 -- Curve Editor Frame
 RunClient( "libraries/curvelib/editor/config.lua" )
 RunClient( "libraries/curvelib/editor/frame.lua" )
