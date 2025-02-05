@@ -2,7 +2,8 @@ require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load KeyboardInput module of CurveLib.Editor.Graph.Panel" ) return end
 
 

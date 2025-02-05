@@ -6,7 +6,8 @@ require( "vguihotload" )
 ---@field LeftMouseDownY integer? The Y coordinate of the cursor when the left mouse button was pressed
 ---@field RightMouseDownX integer? The X coordinate of the cursor when the right mouse button was pressed
 ---@field RightMouseDownY integer? The Y coordinate of the cursor when the right mouse button was pressed
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load MouseInput module of CurveLib.Editor.Graph.Panel" ) return end
 
 PANEL.HeldMouseButtons = {}

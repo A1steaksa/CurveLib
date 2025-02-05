@@ -1,7 +1,8 @@
 require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load CoordinatesPositioning module of CurveLib.Editor.Graph.Panel" ) return end
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot

@@ -26,7 +26,8 @@ HandleDragData.DragStartY = 0
 ---@field IsDraggingHandles boolean Whether the user is currently dragging a Handle
 ---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
 ---@field HandleDragData HandleDragData
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load HandleDragging module of CurveLib.Editor.Graph.Panel" ) return end
 
 PANEL.IsDraggingHandles = false

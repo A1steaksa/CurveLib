@@ -4,8 +4,12 @@ require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field MainHandles table<MainHandle> The Main Handles of the Graph
-local PANEL = IN_PROGRESS_GRAPH_PANEL
-if not PANEL then error( "Failed to load HandleManagement module of CurveLib.Editor.Graph.Panel" ) return end
+PANEL = PANEL
+
+if not PANEL then
+    vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
+    return
+end
 
 PANEL.MainHandles = {}
 
@@ -49,7 +53,7 @@ function PANEL:PopulateHandles()
 
     local count = #self.CurrentCurve.Points
 
-    Log.StartSection( "Populating Handles" )
+    Log.StartSection( "Poopulating Handles" )
 
     for index = 1, count do
         local mainHandle = vgui.Create( "CurveLib.Editor.Graph.Handle.MainHandle", self )
@@ -117,7 +121,7 @@ function PANEL:PositionHandles()
         local leftHandle = mainHandle.LeftHandle
         local rightHandle = mainHandle.RightHandle
 
-        Log.Print( "Positioning Handle #" .. index, mainHandle, leftHandle, rightHandle )
+        Log.Print( "Positioning Handle #" .. index )
 
         if not mainHandle.IsBeingDragged then
             local posX, posY = self:NormalizedToInterior( point.MainPoint.x, point.MainPoint.y )

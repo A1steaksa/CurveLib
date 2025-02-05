@@ -3,7 +3,8 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Graph.Panel
 ---@field _IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
 ---@field _IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load InteractionSettings module of CurveLib.Editor.Graph.Panel" ) return end
 
 PANEL._IsRotationMirrored = false

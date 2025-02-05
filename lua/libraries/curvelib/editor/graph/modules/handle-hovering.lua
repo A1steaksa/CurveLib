@@ -2,7 +2,8 @@ require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field HoveredHandle BaseHandle? The Handle currently being hovered over
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load HandleHovering module of CurveLib.Editor.Graph.Panel" ) return end
 
 -- Called externally when a Handle is hovered

@@ -1,7 +1,8 @@
 require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
-local PANEL = IN_PROGRESS_GRAPH_PANEL
+PANEL = PANEL
+
 if not PANEL then error( "Failed to load Config module of CurveLib.Editor.Graph.Panel" ) return end
 
 local fonts = {

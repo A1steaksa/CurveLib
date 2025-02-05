@@ -10,36 +10,29 @@ local drawGraph = include( "libraries/curvelib/editor/graph/draw.lua" )
 ---@class CurveLib.Editor.Graph.Panel : CurveLib.Editor.PanelBase
 ---@field Caches table A table of cached values to improve performance
 ---@field Config GraphConfig The active configuration for this Graph
-local PANEL = {}
+
+---@global
+PANEL = {}
 
 PANEL.Caches = {}
 PANEL.Config = nil
-
--- Used to access the panel in the panel's modules
----@type GraphPanel?
-IN_PROGRESS_GRAPH_PANEL = PANEL
 
 Log.ShouldSuppress( false )
 
 --- Load the panel's modules
 Log.StartSection( "Loading CurveLib.Editor.Graph.Panel's modules..." )
-include( "libraries/curvelib/editor/graph/panel-modules/config.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/coordinates-positioning.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/curve-hovering.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/curve-management.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/handle-dragging.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/handle-hovering.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/handle-management.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/handle-selection.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/interaction-settings.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/keyboard-input.lua" )
-include( "libraries/curvelib/editor/graph/panel-modules/mouse-input.lua" )
+include( "libraries/curvelib/editor/graph/modules/config.lua" )
+include( "libraries/curvelib/editor/graph/modules/coordinates-positioning.lua" )
+include( "libraries/curvelib/editor/graph/modules/curve-hovering.lua" )
+include( "libraries/curvelib/editor/graph/modules/curve-management.lua" )
+include( "libraries/curvelib/editor/graph/modules/handle-dragging.lua" )
+include( "libraries/curvelib/editor/graph/modules/handle-hovering.lua" )
+include( "libraries/curvelib/editor/graph/modules/handle-management.lua" )
+include( "libraries/curvelib/editor/graph/modules/handle-selection.lua" )
+include( "libraries/curvelib/editor/graph/modules/interaction-settings.lua" )
+include( "libraries/curvelib/editor/graph/modules/keyboard-input.lua" )
+include( "libraries/curvelib/editor/graph/modules/mouse-input.lua" )
 Log.EndSection()
-
-PrintTable(  PANEL )
-
--- The global variable is not needed after modules are loaded
-IN_PROGRESS_GRAPH_PANEL = nil
 
 function PANEL:Init()
     self:RequestFocus()
@@ -145,5 +138,7 @@ end
 
 vgui.Register( "CurveLib.Editor.Graph.Panel", PANEL, "CurveLib.Editor.PanelBase" )
 vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
+
+PANEL = nil
 
 Log.EndSection()
