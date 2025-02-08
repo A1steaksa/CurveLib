@@ -109,7 +109,7 @@ function Log.EndSection( ... )
     local endingString = "Done"
     local args = { ... }
     if #args > 0 then
-        endingString = endingString .. "- " .. table.concat( args, " " )
+        endingString = endingString .. " - " .. table.concat( args, " " )
     end
 
     Log.PrintIndent(  Log._IndentLevel - 1 )
@@ -146,3 +146,8 @@ function Log.Print( ... )
 
     Log._InternalPrint( ... )
 end
+
+concommand.Add( "Log.Reset", function()
+    Log._IndentLevel = 0
+    Log._IsDebugging = false
+end )
