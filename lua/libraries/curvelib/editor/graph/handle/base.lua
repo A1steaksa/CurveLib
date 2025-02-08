@@ -187,10 +187,11 @@ function PANEL:UpdateVisuals()
     end
 
     local goalColor = goalState.Color
-    self.CurrentColor.r = math.Approach( self.CurrentColor.r, goalColor.r, FrameTime() * goalState.ColorChangeRate )
-    self.CurrentColor.g = math.Approach( self.CurrentColor.g, goalColor.g, FrameTime() * goalState.ColorChangeRate )
-    self.CurrentColor.b = math.Approach( self.CurrentColor.b, goalColor.b, FrameTime() * goalState.ColorChangeRate )
-    self.CurrentColor.a = math.Approach( self.CurrentColor.a, goalColor.a, FrameTime() * goalState.ColorChangeRate )
+    local colorChange = FrameTime() * goalState.ColorChangeRate
+    self.CurrentColor.r = math.Approach( self.CurrentColor.r, goalColor.r, colorChange )
+    self.CurrentColor.g = math.Approach( self.CurrentColor.g, goalColor.g, colorChange )
+    self.CurrentColor.b = math.Approach( self.CurrentColor.b, goalColor.b, colorChange )
+    self.CurrentColor.a = math.Approach( self.CurrentColor.a, goalColor.a, colorChange )
 
     self.CurrentRadius = math.Approach( self.CurrentRadius, goalState.Radius, FrameTime() * goalState.RadiusChangeRate )
 end
