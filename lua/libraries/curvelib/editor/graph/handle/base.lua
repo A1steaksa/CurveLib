@@ -138,7 +138,10 @@ function PANEL:OnMouseReleased( mouseButton )
         self.GraphPanel:OnHandleDragEnded( self )
     else
         if mouseButton == MOUSE_LEFT then
-            self.GraphPanel:SelectHandle( self )
+
+            local shift = input.IsKeyDown( KEY_LSHIFT ) or input.IsKeyDown( KEY_RSHIFT )
+
+            self.GraphPanel:SelectHandle( self, shift )
         end
     end
 end
