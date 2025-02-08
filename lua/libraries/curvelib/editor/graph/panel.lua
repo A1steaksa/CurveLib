@@ -1,5 +1,7 @@
 require( "vguihotload" )
 
+Log.ShouldSuppress( false )
+
 Log.StartSection( "Loading CurveLib.Editor.Graph.Panel..." )
 
 ---@type CurveLib.Editor.Graph.Draw
@@ -16,8 +18,6 @@ PANEL = {}
 
 PANEL.Caches = {}
 PANEL.Config = nil
-
-Log.ShouldSuppress( false )
 
 --- Load the panel's modules
 Log.StartSection( "Loading CurveLib.Editor.Graph.Panel's modules..." )
