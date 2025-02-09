@@ -138,7 +138,7 @@ function utils.GetRectangleCornerOffsets( width, height, rotation )
 end
 
 -- Returns the bounding box of a set of handles
----@param handles table<CurveLib.Editor.Graph.Handle.MainHandle, boolean>
+---@param handles { [CurveLib.Editor.Graph.Handle.MainHandle]: boolean } 
 ---@return integer startX, integer startY, integer width, integer height
 function utils.GetHandlesBoundingBox( handles )
     local startX, startY, endX, endY
