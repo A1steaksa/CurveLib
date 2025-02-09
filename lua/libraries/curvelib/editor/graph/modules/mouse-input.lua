@@ -28,8 +28,6 @@ function PANEL:OnMousePressed( mouseButton )
     elseif mouseButton == MOUSE_RIGHT then
         self.RightMouseDownX, self.RightMouseDownY = self:CursorPos()
     end
-
-    self.HeldMouseButtons[ mouseButton ] = true
 end
 
 -- Called when the mouse is released
