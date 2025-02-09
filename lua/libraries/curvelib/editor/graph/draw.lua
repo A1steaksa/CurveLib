@@ -313,4 +313,35 @@ function DRAW.SelectedOutline( selectedHandles )
     drawBase.OutlinedRect( startX, startY, width, height, 0, Alignment.TopLeft, 1, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 ) )
 end
 
+---@param dragData HandleDragData
+function DRAW.HandleDrag( dragData )
+    if not dragData then return end
+
+    local config, graph = DRAW.UnpackEntry()
+
+    local mouseOffsetX = dragData.DragStartX - dragData.BoundingX
+    local mouseOffsetY = dragData.DragStartY - dragData.BoundingY
+
+    -- Original location bounding box
+    drawBase.OutlinedRect(
+        dragData.BoundingX, dragData.BoundingY,
+        dragData.BoundingWidth, dragData.BoundingHeight,
+        0, Alignment.TopLeft, 3, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 )
+    )
+
+    -- Line from original location to current location
+    drawBase.Line(
+        dragData.DragStartX, dragData.DragStartY,
+        dragData.DragEndX, dragData.DragEndY,
+        1, HorizontalAlignment.Center, Color( 0, 0, 200, 255 )
+    )
+
+    -- Current location bounding box
+    drawBase.OutlinedRect(
+        dragData.DragEndX - mouseOffsetX, dragData.DragEndY - mouseOffsetY,
+        dragData.BoundingWidth, dragData.BoundingHeight,
+        0, Alignment.TopLeft, 3, PerimeterAlignment.Outside, Color( 0, 0, 200, 255 )
+    )
+end
+
 return _G.CurveLib.GraphDraw

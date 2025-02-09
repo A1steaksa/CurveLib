@@ -110,9 +110,14 @@ function PANEL:Paint( width, height )
 
     -- Box around selected handles
     if ( table.Count( self.SelectedHandles ) > 0 ) then
-        Log.ShouldSuppress( false )
         drawGraph.SelectedOutline( self.SelectedHandles )
-        Log.ShouldSuppress( true )
+    end
+
+    if ( self.IsDraggingHandles and self.HandleUnderMouseDown.IsMainHandle ) then
+        local dragData = self.HandleDragData
+        if ( dragData ) then
+            drawGraph.HandleDrag( dragData )
+        end
     end
 
     -- Box selection
