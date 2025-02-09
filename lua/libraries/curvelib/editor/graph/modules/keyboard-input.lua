@@ -6,7 +6,6 @@ PANEL = PANEL
 
 if not PANEL then error( "Failed to load KeyboardInput module of CurveLib.Editor.Graph.Panel" ) return end
 
-
 PANEL.HeldKeys = {}
 
 ---@param keycode KEY|integer
@@ -45,7 +44,7 @@ function PANEL:OnKeyCodePressed( keycode )
     if keycode == KEY_ESCAPE then
         -- If there are keys down, cancel them
         if table.Count( self.HeldKeys ) > 0 then
-            self.HeldKeys = nil
+            self.HeldKeys = {}
         elseif self.IsBoxSelecting then
             self:EndBoxSelection( true )
         elseif self.SelectedHandles then
