@@ -92,6 +92,15 @@ end
 
 -- Called each frame while box selection is active
 function PANEL:BoxSelectionThink()
+    if self.IsBoxSelecting then return end
+    if not self:IsMouseDown( MOUSE_LEFT ) then return end
+
+    local mouseX, mouseY = self:CursorPos()
+    local distanceFromMouseDown = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
+
+    if distanceFromMouseDown < self.Config:GetDragDistanceThreshold() then return end
+
+    self:StartBoxSelection()
 end
 
 ---@param isCanceled boolean? True if the box selection was canceled prematurely rather than ending naturally. [Default: false] 
