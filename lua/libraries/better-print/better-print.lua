@@ -21,7 +21,7 @@ Log._MaxIndentLevel = 10
 Log._DebugStartIndentLevel = 0
 
 -- Whether suppression was enabled when debugging started
-Log._DebugStartSuppression = true
+Log._DebugStartSuppression = false
 
 ---@private
 Log._IsDebugging = false
