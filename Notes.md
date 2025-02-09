@@ -1,4 +1,4 @@
-# Notes for this Branch
+# Notes for Feature Node Selection Branch
 
 ## Major Goals
 
@@ -24,3 +24,16 @@ Maybe need to have the graph panel draw the handles manually?
 ❓ Outlined Rect drawing doesn't respect line alignment and the corners are hollow
 
 ❓ Sidebar checkboxes don't work
+
+# Notes for Feature Multi Handle Drag Branch
+
+## Major Goals
+
+⏹️ Move Handles together when multiple are selected and one is dragged
+
+⏹️ Prevent Main Handles from being dragged into positions where their Side Handles would leave the graph
+
+## Notes
+
+* Handle dragging logic currently lives within the Handle Base.  That's just not going to work long-term.  
+It'll need to be moved to the Graph Panel and the Handle will just be detecting and passing inputs to the Graph Panel.
