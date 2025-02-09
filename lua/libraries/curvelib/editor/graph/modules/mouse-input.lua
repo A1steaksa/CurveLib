@@ -33,8 +33,8 @@ end
 -- Called when the mouse is released
 ---@param mouseButton MOUSE
 function PANEL:OnMouseReleased( mouseButton )
-    local isLeftMouseDown = self.HeldMouseButtons[ MOUSE_LEFT ]
-    if mouseButton == MOUSE_LEFT and isLeftMouseDown and self.LeftMouseDownX and self.LeftMouseDownY then
+    local isLeftMouseDown = self:IsMouseDown( MOUSE_LEFT )
+    if isLeftMouseDown then
         local leftMouseUpX, leftMouseUpY = self:CursorPos()
         local dragDistance = math.sqrt( math.pow( leftMouseUpX - self.LeftMouseDownX, 2 ) + math.pow( leftMouseUpY - self.LeftMouseDownY, 2 ) )
         local wasClick = dragDistance < self.Config:GetDragDistanceThreshold()
