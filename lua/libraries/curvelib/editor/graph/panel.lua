@@ -1,7 +1,5 @@
 require( "vguihotload" )
 
-Log.ShouldSuppress( false )
-
 Log.StartSection( "Loading CurveLib.Editor.Graph.Panel..." )
 
 ---@type CurveLib.Editor.Graph.Draw
@@ -48,24 +46,16 @@ function PANEL:PostConnectionInit()
 end
 
 function PANEL:Think()
-    if self.HeldMouseButtons and self.HeldMouseButtons[ MOUSE_LEFT ] then
-        -- If we don't know where the mouse was pressed, something has gone wrong
-        if not self.LeftMouseDownX or not self.LeftMouseDownY then return end
+    local leftMouseDown = self:IsMouseDown( MOUSE_LEFT )
+    -- local rightMouseDown = self:IsMouseDown( MOUSE_RIGHT )
 
-        if self.IsDraggingHandles then return end
+    if leftMouseDown then
 
-        if not self.IsBoxSelecting then
-            local mouseX, mouseY = self:CursorPos()
-            local distanceFromMouseDown = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
-
-            if distanceFromMouseDown >= self.Config:GetDragDistanceThreshold() then
-                self:StartBoxSelection()
-            end
+        if self.HandleUnderMouseDown or self.IsDraggingHandles then
+            self:HandleDragThink()
+        else
+            self:BoxSelectionThink()
         end
-    end
-
-    if self.IsBoxSelecting then
-        self:BoxSelectionThink()
     end
 end
 

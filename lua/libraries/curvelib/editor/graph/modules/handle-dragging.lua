@@ -13,7 +13,6 @@ local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
 ---@field BoundingHeight integer The height of the bounding box
 ---@field DragStartX integer The X coordinate of the mouse when the drag started
 ---@field DragStartY integer The Y coordinate of the mouse when the drag started
-
 local HandleDragData = {}
 HandleDragData.BoundingX = 0
 HandleDragData.BoundingY = 0
@@ -21,11 +20,14 @@ HandleDragData.BoundingWidth = 0
 HandleDragData.BoundingHeight = 0
 HandleDragData.DragStartX = 0
 HandleDragData.DragStartY = 0
+HandleDragData.DragEndX = 0
+HandleDragData.DragEndY = 0
 
 ---@class CurveLib.Editor.Graph.Panel
----@field IsDraggingHandles boolean Whether the user is currently dragging a Handle
----@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
+---@field IsDraggingHandles boolean Whether the user is currently dragging the selected Handles.
+---@field HandleUnderMouseDown? BaseHandle | MainHandle | SideHandle The Handle, if any, that the cursor was over when the left mouse button was pressed.
 ---@field HandleDragData HandleDragData
+---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
 PANEL = PANEL
 
 if not PANEL then error( "Failed to load HandleDragging module of CurveLib.Editor.Graph.Panel" ) return end
@@ -34,9 +36,62 @@ PANEL.IsDraggingHandles = false
 PANEL.SiblingDistance = 0
 PANEL.HandleDragData = HandleDragData
 
--- Called when a Handle detects that it is being dragged
----@param handle BaseHandle | MainHandle | SideHandle
-function PANEL:OnHandleDragStarted( handle )
+function PANEL:HandleDragThink()
+    -- Check if we've moved the mouse enough to count as a drag
+    if not self.IsDraggingHandles then
+        local mouseX, mouseY = self:CursorPos()
+        local dragDistance = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
+
+        if dragDistance >= self.Config:GetDragDistanceThreshold() then
+            self:StartHandleDragging()
+        else
+            return
+        end
+    end
+
+    self:UpdateDraggedHandles()
+end
+
+
+function PANEL:UpdateDraggedHandles()
+    local dragData = self.HandleDragData
+    local mouseX, mouseY = self:CursorPos()
+
+    -- The area the bounding box can move within
+    local interiorLeftX, interiorTopY, interiorWidth, interiorHeight = self:GetInteriorRect()
+    local interiorRightX = interiorLeftX + interiorWidth
+    local interiorBottomY = interiorTopY + interiorHeight
+
+    -- Where the drag started, relative to the top-left corner of the bounding box
+    local cursorDistanceToBoundingLeftX = dragData.DragStartX - dragData.BoundingX
+    local cursorDistanceToBoundingTopY = dragData.DragStartY - dragData.BoundingY
+    local cursorDistanceToBoundingRightX = dragData.BoundingWidth - cursorDistanceToBoundingLeftX
+    local cursorDistanceToBoundingBottomY = dragData.BoundingHeight - cursorDistanceToBoundingTopY
+
+    -- Constrain the X position
+    dragData.DragEndX = math.Clamp( mouseX,
+        interiorLeftX + cursorDistanceToBoundingLeftX,
+        interiorRightX - cursorDistanceToBoundingRightX
+    )
+
+    -- Constrain the Y position
+    dragData.DragEndY = math.Clamp( mouseY,
+        interiorTopY + cursorDistanceToBoundingTopY,
+        interiorBottomY - cursorDistanceToBoundingBottomY
+    )
+end
+
+-- Called when a Handle detects that the mouse has been pressed over it
+---@param handle BaseHandle | MainHandle | SideHandle The Handle that was pressed
+---@param mouseCode MOUSE | integer The mouse button that was pressed
+function PANEL:OnHandleMousePressed( handle, mouseCode )
+    self:MouseCapture( true )
+    self.HandleUnderMouseDown = handle
+    self:OnMousePressed( mouseCode )
+end
+
+-- Starts the Handle drag operation
+function PANEL:StartHandleDragging()
     self.IsDraggingHandles = true
 
     if handle.IsMainHandle then
