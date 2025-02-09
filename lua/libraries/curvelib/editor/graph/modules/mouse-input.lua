@@ -15,7 +15,7 @@ PANEL.HeldMouseButtons = {}
 ---@param mouseButton MOUSE|integer
 ---@return boolean # `true` if the mouse button is currently held down, `false` otherwise
 function PANEL:IsMouseDown( mouseButton )
-    return self.HeldMouseButtons[ mouseButton ]
+    return ( self.HeldMouseButtons[ mouseButton ] and self.LeftMouseDownX ~= nil and self.LeftMouseDownY ~= nil )
 end
 
 -- Called when the graph is clicked
