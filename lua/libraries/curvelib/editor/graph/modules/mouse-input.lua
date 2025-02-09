@@ -35,8 +35,10 @@ end
 function PANEL:OnMouseReleased( mouseButton )
     self:MouseCapture( false )
 
+    local releasedLeft = mouseButton == MOUSE_LEFT
+
     local isLeftMouseDown = self:IsMouseDown( MOUSE_LEFT )
-    if isLeftMouseDown then
+    if isLeftMouseDown and releasedLeft then
         local leftMouseUpX, leftMouseUpY = self:CursorPos()
         local dragDistance = math.sqrt( math.pow( leftMouseUpX - self.LeftMouseDownX, 2 ) + math.pow( leftMouseUpY - self.LeftMouseDownY, 2 ) )
         local wasClick = dragDistance < self.Config:GetDragDistanceThreshold()

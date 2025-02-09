@@ -94,22 +94,22 @@ end
 function PANEL:StartHandleDragging()
     self.IsDraggingHandles = true
 
-    if handle.IsMainHandle then
-
-        -- You can only drag selected Handles, so if this Handle isn't selected, select it.
-        if not handle:IsSelected() then
-            local ctrl, shift, alt = self:GetModifierKeys()
-            self:SelectHandle( handle, shift )
-        end
+    if self.HandleUnderMouseDown.IsMainHandle then
+        Log.Print( "Main Handle", self.HandleUnderMouseDown, self.HandleUnderMouseDown.IsMainHandle )
 
         HandleDragData.BoundingX,
         HandleDragData.BoundingY,
         HandleDragData.BoundingWidth,
         HandleDragData.BoundingHeight = curveUtils.GetHandlesBoundingBox( self.SelectedHandles )
 
-    elseif handle.IsSideHandle then
-        local mainHandle = handle.MainHandle
-        local siblingHandle = handle.SiblingHandle
+        HandleDragData.DragStartX, HandleDragData.DragStartY = self.LeftMouseDownX, self.LeftMouseDownY
+
+    elseif self.HandleUnderMouseDown.IsSideHandle then
+
+        Log.Print( "Dragging side handle" )
+
+        local mainHandle = self.HandleUnderMouseDown.MainHandle
+        local siblingHandle = self.HandleUnderMouseDown.SiblingHandle
 
         if siblingHandle then
             local mainHandleX, mainHandleY = self:PanelToNormalized( mainHandle:GetCenterPos() )
@@ -118,15 +118,14 @@ function PANEL:StartHandleDragging()
             self.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
         end
     end
-
 end
 
--- Called when a Handle stops being dragged
----@param handle BaseHandle | MainHandle | CurveLib.Editor.Graph.Handle.SideHandle
----@param wasCanceled boolean? Whether the drag was canceled
-function PANEL:OnHandleDragEnded( handle, wasCanceled )
+-- Stops the Handle drag operation
+function PANEL:EndHandleDragging()
     self.IsDraggingHandles = false
+    self.HandleUnderMouseDown = nil
     self.SiblingDistance = nil
+    self:MouseCapture( false )
 end
 
 -- Called when a Main Handle is moved
