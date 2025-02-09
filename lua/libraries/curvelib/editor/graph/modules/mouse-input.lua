@@ -33,6 +33,8 @@ end
 -- Called when the mouse is released
 ---@param mouseButton MOUSE
 function PANEL:OnMouseReleased( mouseButton )
+    self:MouseCapture( false )
+
     local isLeftMouseDown = self:IsMouseDown( MOUSE_LEFT )
     if isLeftMouseDown then
         local leftMouseUpX, leftMouseUpY = self:CursorPos()
@@ -58,6 +60,10 @@ function PANEL:OnMouseReleased( mouseButton )
 
         if self.IsBoxSelecting then
             self:EndBoxSelection()
+        end
+
+        if self.IsDraggingHandles then
+            self:EndHandleDragging()
         end
     end
 
