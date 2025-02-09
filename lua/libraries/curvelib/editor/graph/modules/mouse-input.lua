@@ -21,6 +21,8 @@ end
 -- Called when the graph is clicked
 ---@param mouseButton MOUSE
 function PANEL:OnMousePressed( mouseButton )
+    self.HeldMouseButtons[ mouseButton ] = true
+
     if mouseButton == MOUSE_LEFT then
         self.LeftMouseDownX, self.LeftMouseDownY = self:CursorPos()
     elseif mouseButton == MOUSE_RIGHT then
