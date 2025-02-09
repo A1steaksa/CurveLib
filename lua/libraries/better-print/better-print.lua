@@ -10,11 +10,11 @@ Log._LastPrintWasDone = false
 
 -- Whether to suppress output
 ---@private
-Log._SuppressOutput = true
+Log._SuppressOutput = false
 
 -- The maximum level of indentation to print
 ---@private
-Log._MaxIndentLevel = 10
+Log._MaxIndentLevel = 0
 
 -- When debugging a function, this is the level of indentation that 
 ---@private
@@ -90,7 +90,7 @@ end
 
 function Log.StartSection( name )
     if Log._SuppressOutput then return end
-    if Log._IndentLevel >= Log._MaxIndentLevel then return end
+    if Log._MaxIndentLevel > 0 and Log._IndentLevel >= Log._MaxIndentLevel then return end
 
     -- Ensure at least one line break between sections
     if Log._LastPrintWasDone then
@@ -104,7 +104,7 @@ end
 
 function Log.EndSection( ... )
     if Log._SuppressOutput then return end
-    if Log._IndentLevel >= Log._MaxIndentLevel then return end
+    if Log._MaxIndentLevel > 0 and Log._IndentLevel >= Log._MaxIndentLevel then return end
 
     local endingString = "Done"
     local args = { ... }
@@ -123,7 +123,7 @@ end
 ---@private
 function Log._InternalPrint( ... )
     if Log._SuppressOutput then return end
-    if Log._IndentLevel >= Log._MaxIndentLevel then return end
+    if Log._MaxIndentLevel > 0 and Log._IndentLevel >= Log._MaxIndentLevel then return end
 
     Log.PrintIndent()
 
@@ -140,7 +140,7 @@ end
 -- Prints the specified arguments to the console
 function Log.Print( ... )
     if Log._SuppressOutput then return end
-    if Log._IndentLevel >= Log._MaxIndentLevel then return end
+    if Log._MaxIndentLevel > 0 and Log._IndentLevel >= Log._MaxIndentLevel then return end
 
     Log._LastPrintWasDone = false
 
