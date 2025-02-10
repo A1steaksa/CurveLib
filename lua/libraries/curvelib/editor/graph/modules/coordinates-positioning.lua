@@ -3,7 +3,10 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Graph.Panel
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load CoordinatesPositioning module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
 ---@return integer x 

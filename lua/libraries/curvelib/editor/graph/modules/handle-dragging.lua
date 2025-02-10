@@ -30,7 +30,10 @@ MainHandleDragData.DragEndY = 0
 ---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load HandleDragging module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 PANEL.IsDraggingHandles = false
 PANEL.SiblingDistance = 0

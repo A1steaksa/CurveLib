@@ -1,6 +1,6 @@
 require( "vguihotload" )
 
-Log.StartSection( "Loading CurveLib.Editor.Graph.Panel..." )
+vguihotload.RegisterMultipartPanel( "CurveLib.Editor.Graph.Panel", "libraries/curvelib/editor/graph/panel.lua" )
 
 ---@type CurveLib.Editor.Graph.Draw
 local drawGraph = include( "libraries/curvelib/editor/graph/draw.lua" )
@@ -50,7 +50,6 @@ function PANEL:Think()
     -- local rightMouseDown = self:IsMouseDown( MOUSE_RIGHT )
 
     if leftMouseDown then
-
         if self.HandleUnderMouseDown or self.IsDraggingHandles then
             self:HandleDragThink()
         else
@@ -132,8 +131,5 @@ function PANEL:OnSizeChanged( width, height )
 end
 
 vgui.Register( "CurveLib.Editor.Graph.Panel", PANEL, "CurveLib.Editor.PanelBase" )
-vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
 
 PANEL = nil
-
-Log.EndSection()

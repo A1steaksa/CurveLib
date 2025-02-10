@@ -1,5 +1,3 @@
-Log.StartSection( "Running HandleManagement module..." )
-
 require( "vguihotload" )
 
 ---@class CurveLib.Editor.Graph.Panel
@@ -7,7 +5,7 @@ require( "vguihotload" )
 PANEL = PANEL
 
 if not PANEL then
-    vguihotload.HandleHotload( "CurveLib.Editor.Frame" )
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
     return
 end
 
@@ -149,5 +147,3 @@ end
 function PANEL:DeleteSelectedHandles()
     --TODO: Re-implement
 end
-
-Log.EndSection()

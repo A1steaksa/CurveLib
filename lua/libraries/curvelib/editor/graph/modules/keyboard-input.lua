@@ -4,7 +4,10 @@ require( "vguihotload" )
 ---@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load KeyboardInput module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 PANEL.HeldKeys = {}
 

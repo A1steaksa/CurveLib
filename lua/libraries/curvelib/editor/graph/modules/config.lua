@@ -3,7 +3,10 @@ require( "vguihotload" )
 ---@class CurveLib.Editor.Graph.Panel
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load Config module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 local fonts = {
     NumberLineSmall = "CurveLib_Graph_Small",

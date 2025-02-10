@@ -4,7 +4,10 @@ require( "vguihotload" )
 ---@field HoveredHandle BaseHandle? The Handle currently being hovered over
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load HandleHovering module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 -- Called externally when a Handle is hovered
 ---@param handle BaseHandle

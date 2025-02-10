@@ -8,7 +8,10 @@ require( "vguihotload" )
 ---@field RightMouseDownY integer? The Y coordinate of the cursor when the right mouse button was pressed
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load MouseInput module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 PANEL.HeldMouseButtons = {}
 

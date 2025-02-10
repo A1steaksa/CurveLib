@@ -4,7 +4,10 @@ require( "vguihotload" )
 ---@field CurrentCurve CurveData The Curve currently being edited
 PANEL = PANEL
 
-if not PANEL then error( "Failed to load CurveManagement module of CurveLib.Editor.Graph.Panel" ) return end
+if not PANEL then
+    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
+    return
+end
 
 ---@param curve CurveData
 function PANEL:OpenCurve( curve )
