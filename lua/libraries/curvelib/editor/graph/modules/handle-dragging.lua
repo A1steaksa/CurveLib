@@ -36,22 +36,65 @@ PANEL.IsDraggingHandles = false
 PANEL.SiblingDistance = 0
 PANEL.MainHandleDragData = MainHandleDragData
 
+-- Called when a Handle detects that the mouse has been pressed over it
+---@param handle BaseHandle | MainHandle | SideHandle The Handle that was pressed
+---@param mouseCode MOUSE | integer The mouse button that was pressed
+function PANEL:OnHandleMousePressed( handle, mouseCode )
+    self:MouseCapture( true )
+    self.HandleUnderMouseDown = handle
+    self:OnMousePressed( mouseCode )
+end
+
 function PANEL:HandleDragThink()
     -- Check if we've moved the mouse enough to count as a drag
     if not self.IsDraggingHandles then
         local mouseX, mouseY = self:CursorPos()
         local dragDistance = math.sqrt( math.pow( mouseX - self.LeftMouseDownX, 2 ) + math.pow( mouseY - self.LeftMouseDownY, 2 ) )
 
-        if dragDistance >= self.Config:GetDragDistanceThreshold() then
-            self:StartHandleDragging()
-        else
-            return
-        end
+        if dragDistance < self.Config:GetDragDistanceThreshold() then return end
+
+        self:StartHandleDragging()
     end
 
-    self:UpdateDraggedHandles()
+    if self.HandleUnderMouseDown.IsMainHandle then
+        self:UpdateDraggedMainHandles()
+    elseif self.HandleUnderMouseDown.IsSideHandle then
+        self:UpdateDraggedSideHandle()
+    end
 end
 
+-- Starts the Handle drag operation
+function PANEL:StartHandleDragging()
+    self.IsDraggingHandles = true
+
+    if self.HandleUnderMouseDown.IsMainHandle then
+        -- Tell our selected Handles that we're dragging them
+        for handle, _ in pairs( self.SelectedHandles ) do
+            handle.IsBeingDragged = true
+        end
+
+        MainHandleDragData.DragStartX = self.LeftMouseDownX
+        MainHandleDragData.DragStartY = self.LeftMouseDownY
+
+        MainHandleDragData.BoundingX,
+        MainHandleDragData.BoundingY,
+        MainHandleDragData.BoundingWidth,
+        MainHandleDragData.BoundingHeight = curveUtils.GetHandlesBoundingBox( self.SelectedHandles )
+
+    elseif self.HandleUnderMouseDown.IsSideHandle then
+        -- Calculate how far from the Main Handle our sibling Side Handle is, if we have one
+        -- This will later be used to position our sibling if rotation is being mirrored
+        local siblingHandle = self.HandleUnderMouseDown.SiblingHandle
+        if siblingHandle then
+            local mainHandleX, mainHandleY = self:PanelToNormalized( self.HandleUnderMouseDown.MainHandle:GetCenterPos() )
+            local siblingHandleX, siblingHandleY = self:PanelToNormalized( siblingHandle:GetCenterPos() )
+
+            self.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
+        end
+    end
+end
+
+function PANEL:UpdateDraggedMainHandles()
     local dragData = self.MainHandleDragData
     local mouseX, mouseY = self:CursorPos()
 
@@ -79,108 +122,12 @@ end
     )
 end
 
--- Called when a Handle detects that the mouse has been pressed over it
----@param handle BaseHandle | MainHandle | SideHandle The Handle that was pressed
----@param mouseCode MOUSE | integer The mouse button that was pressed
-function PANEL:OnHandleMousePressed( handle, mouseCode )
-    self:MouseCapture( true )
-    self.HandleUnderMouseDown = handle
-    self:OnMousePressed( mouseCode )
-end
+function PANEL:UpdateDraggedSideHandle()
+    local mouseX, mouseY = self:CursorPos()
 
--- Starts the Handle drag operation
-function PANEL:StartHandleDragging()
-    self.IsDraggingHandles = true
+    local sideHandle = self.HandleUnderMouseDown
+    ---@cast sideHandle SideHandle
 
-    if self.HandleUnderMouseDown.IsMainHandle then
-        Log.Print( "Main Handle", self.HandleUnderMouseDown, self.HandleUnderMouseDown.IsMainHandle )
-
-        HandleDragData.BoundingX,
-        HandleDragData.BoundingY,
-        HandleDragData.BoundingWidth,
-        HandleDragData.BoundingHeight = curveUtils.GetHandlesBoundingBox( self.SelectedHandles )
-
-        HandleDragData.DragStartX, HandleDragData.DragStartY = self.LeftMouseDownX, self.LeftMouseDownY
-
-    elseif self.HandleUnderMouseDown.IsSideHandle then
-
-        Log.Print( "Dragging side handle" )
-
-        local mainHandle = self.HandleUnderMouseDown.MainHandle
-        local siblingHandle = self.HandleUnderMouseDown.SiblingHandle
-
-        if siblingHandle then
-            local mainHandleX, mainHandleY = self:PanelToNormalized( mainHandle:GetCenterPos() )
-            local siblingHandleX, siblingHandleY = self:PanelToNormalized( siblingHandle:GetCenterPos() )
-
-            self.SiblingDistance = math.sqrt( math.pow( siblingHandleX - mainHandleX, 2 ) + math.pow( siblingHandleY - mainHandleY, 2 ) )
-        end
-    end
-end
-
--- Stops the Handle drag operation
-function PANEL:EndHandleDragging()
-    self.IsDraggingHandles = false
-    self.HandleUnderMouseDown = nil
-    self.SiblingDistance = nil
-    self:MouseCapture( false )
-end
-
--- Called when a Main Handle is moved
----@param mainHandle MainHandle
----@return integer x The X coordinate, with any adjustments made
----@return integer y The Y coordinate, with any adjustments made
-function PANEL:OnMainHandleDragged( mainHandle, x, y)
-    ---@type CurveLib.Curve.Point
-    local point = self.CurrentCurve.Points[ mainHandle.Index ]
-
-    local correctedX, correctedY = self:CorrectMainHandlePos( mainHandle.Index, x, y )
-    local correctedNormalX, correctedNormalY = self:PanelToNormalized( correctedX + mainHandle.HalfWidth, correctedY + mainHandle.HalfHeight )
-
-    local oldX, oldY = mainHandle:GetX(), mainHandle:GetY()
-
-    -- Move the Left Handle with the Main Handle
-    if point.LeftPoint then
-        local leftHandle = mainHandle.LeftHandle
-
-        local newPosX, newPosY = leftHandle.x + (correctedX - oldX), leftHandle.y + ( correctedY - oldY )
-        newPosX, newPosY = self:CorrectSideHandlePos( mainHandle.Index, false, newPosX, newPosY )
-
-        -- Move the vgui element
-        leftHandle.x = newPosX
-        leftHandle.y = newPosY
-
-        -- Update the Curve Data
-        point.LeftPoint.x, point.LeftPoint.y = self:PanelToNormalized( newPosX + leftHandle.HalfWidth, newPosY + leftHandle.HalfHeight )
-    end
-
-    -- Move the Right Handle with the Main Handle
-    if point.RightPoint then
-        local rightHandle = mainHandle.RightHandle
-
-        local newPosX, newPosY = rightHandle.x + (correctedX - oldX), rightHandle.y + ( correctedY - oldY )
-        newPosX, newPosY = self:CorrectSideHandlePos( mainHandle.Index, true, newPosX, newPosY )
-
-        -- Move the vgui element
-        rightHandle.x = newPosX
-        rightHandle.y = newPosY
-
-        -- Update the Curve Data
-        point.RightPoint.x, point.RightPoint.y = self:PanelToNormalized( newPosX + rightHandle.HalfWidth, newPosY + rightHandle.HalfHeight )
-    end
-
-    point.MainPoint.x = correctedNormalX
-    point.MainPoint.y = correctedNormalY
-
-    return correctedX, correctedY
-end
-
-
--- Called when a Handle Point is moved
----@param sideHandle CurveLib.Editor.Graph.Handle.SideHandle
----@return integer x The X coordinate, with any adjustments made
----@return integer y The Y coordinate, with any adjustments made
-function PANEL:OnSideHandleDragged( sideHandle, x, y )
     local mainHandle = sideHandle.MainHandle
     local siblingHandle = sideHandle.SiblingHandle
 
@@ -188,7 +135,7 @@ function PANEL:OnSideHandleDragged( sideHandle, x, y )
     local isRotationMirrored = self:IsHandleRotationMirrored()
 
     -- Correct the Side Handle's proposed position
-    local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, x, y )
+    local correctedSideHandleX, correctedSideHandleY = self:CorrectSideHandlePos( sideHandle.MainHandle.Index, sideHandle.IsRightHandle, mouseX, mouseY )
 
     -- From here on, all calculations are done in normalized coordinates
     local sideHandleX, sideHandleY = self:PanelToNormalized( correctedSideHandleX + sideHandle.HalfWidth, correctedSideHandleY + sideHandle.HalfHeight )
