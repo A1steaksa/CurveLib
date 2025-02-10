@@ -112,16 +112,12 @@ end
 function PANEL:PositionHandles()
     if not self.CurrentCurve then return end
 
-    Log.StartSection( "Positioning Handles" )
-
     local points = self.CurrentCurve.Points
 
     for index, point in ipairs( points ) do
         local mainHandle = self.MainHandles[ index ] --[[@as MainHandle]]
         local leftHandle = mainHandle.LeftHandle
         local rightHandle = mainHandle.RightHandle
-
-        Log.Print( "Positioning Handle #" .. index )
 
         if not mainHandle.IsBeingDragged then
             local posX, posY = self:NormalizedToInterior( point.MainPoint.x, point.MainPoint.y )
@@ -138,8 +134,6 @@ function PANEL:PositionHandles()
             rightHandle:SetCenterPos( posX, posY )
         end
     end
-
-    Log.EndSection()
 end
 
 function PANEL:DeselectAllHandles()
