@@ -1,4 +1,5 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@type CurveLib.Editor.Utils
 local curveUtils = include( "libraries/curvelib/editor/utils.lua" )
@@ -28,11 +29,6 @@ MainHandleDragData.DragEndY = 0
 ---@field HandleUnderMouseDown? BaseHandle | MainHandle | SideHandle The Handle, if any, that the cursor was over when the left mouse button was pressed.
 ---@field MainHandleDragData MainHandleDragData
 ---@field SiblingDistance number The distance between the currently-being-dragged Handle's sibling Handle and their Main Handle.  Used to maintain this distance when mirroring rotation.
-PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
 end
 
 PANEL.IsDraggingHandles = false

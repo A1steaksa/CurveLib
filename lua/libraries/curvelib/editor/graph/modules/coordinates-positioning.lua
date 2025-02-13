@@ -1,12 +1,8 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@class CurveLib.Editor.Graph.Panel
 PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
-end
 
 -- Returns a rectangle that defines the position and dimensions of the Graph's interior plot
 ---@return integer x 

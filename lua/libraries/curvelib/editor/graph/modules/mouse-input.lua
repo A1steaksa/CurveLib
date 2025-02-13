@@ -1,4 +1,5 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field HeldMouseButtons table<MOUSE|integer, boolean> The mouse buttons currently being held down
@@ -7,11 +8,6 @@ require( "vguihotload" )
 ---@field RightMouseDownX integer? The X coordinate of the cursor when the right mouse button was pressed
 ---@field RightMouseDownY integer? The Y coordinate of the cursor when the right mouse button was pressed
 PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
-end
 
 PANEL.HeldMouseButtons = {}
 

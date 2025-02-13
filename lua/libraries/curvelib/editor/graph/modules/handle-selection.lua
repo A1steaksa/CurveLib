@@ -1,4 +1,5 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field SelectedHandles table<MainHandle, boolean> The currently selected Main Handles
@@ -6,11 +7,6 @@ require( "vguihotload" )
 ---@field BoxSelectionEndX integer The adjusted X coordinate of the bottom-right corner of the box selection
 ---@field BoxSelectionEndY integer The adjusted Y coordinate of the bottom-right corner of the box selection
 PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
-end
 
 PANEL.SelectedHandles = {}
 PANEL.IsBoxSelecting = false

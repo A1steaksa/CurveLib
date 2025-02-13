@@ -1,13 +1,9 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field HeldKeys table<KEY|integer, boolean> The keyboard keys currently being held down
 PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
-end
 
 PANEL.HeldKeys = {}
 

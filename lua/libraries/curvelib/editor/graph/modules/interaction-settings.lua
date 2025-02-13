@@ -1,14 +1,10 @@
 require( "vguihotload" )
+if not PANEL then vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" ) return end
 
 ---@class CurveLib.Editor.Graph.Panel
 ---@field _IsRotationMirrored boolean Whether Side Handles should mirror each other's angle around the Main Handle when one is moved
 ---@field _IsDistanceMirrored boolean Whether Side Handles should mirror each other's distance from the Main Handle when one is moved
 PANEL = PANEL
-
-if not PANEL then
-    vguihotload.HandleMultipartPanelHotload( "CurveLib.Editor.Graph.Panel" )
-    return
-end
 
 PANEL._IsRotationMirrored = false
 PANEL._IsDistanceMirrored = false
